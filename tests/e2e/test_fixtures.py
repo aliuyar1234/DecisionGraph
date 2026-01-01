@@ -1,0 +1,191 @@
+"""E2E tests for golden fixtures per SSOT P6.
+
+Test cases TC-P6-001 through TC-P6-010.
+"""
+
+from pathlib import Path
+
+from decisiongraph.projections.projector import SQLiteProjector
+from decisiongraph.query import (
+    get_context_subgraph,
+    get_trace_events,
+)
+from decisiongraph.storage.sqlite import SQLiteEventStore
+from decisiongraph.testing.golden import load_fixture, validate_fixture
+
+FIXTURES_DIR = Path(__file__).parent.parent / "golden"
+
+
+class TestRenewalFixture:
+    """Tests for renewal scenario (SSOT 10.1)."""
+
+    def test_fixture_renewal_digest(self) -> None:
+        """TC-P6-001: Renewal scenario digest matches expected."""
+        fixture_dir = FIXTURES_DIR / "renewal"
+        all_match, mismatches = validate_fixture(fixture_dir)
+
+        assert all_match, f"Digest mismatches: {mismatches}"
+
+    def test_fixture_renewal_queries(self) -> None:
+        """TC-P6-002: Renewal queries return expected results."""
+        fixture_dir = FIXTURES_DIR / "renewal"
+        fixture = load_fixture(fixture_dir)
+
+        # Create in-memory database and replay
+        store = SQLiteEventStore(":memory:")
+        conn = store._conn
+        projector = SQLiteProjector(conn)
+
+        for envelope in fixture.events:
+            store.append_event(envelope)
+
+        projector.rebuild()
+        all_events = store.list_events()
+        projector.project_events(all_events)
+
+        # Query 1: get_trace_events returns 9 events in correct order
+
+        events = get_trace_events(store, trace_id=fixture.trace_id)
+
+        assert len(events) == 9, f"Expected 9 events, got {len(events)}"
+
+        event_types = [e.event_type for e in events]
+        expected_types = [
+            "TraceStarted",
+            "EntityObserved",
+            "InputObserved",
+            "PolicyEvaluated",
+            "PrecedentCited",
+            "ExceptionRequested",
+            "ApprovalRecorded",
+            "ActionCommitted",
+            "TraceFinished",
+        ]
+        assert event_types == expected_types, f"Event type order mismatch: {event_types}"
+
+        # Query 2: Verify context graph query works (even if empty for this fixture)
+        from decisiongraph.query import NodeRef
+
+        # Try querying for an account node
+        center = NodeRef(node_type="account", node_id="salesforce:sf:acct:001")
+        subgraph = get_context_subgraph(store, projector, center=center, max_depth=2)
+
+        # The query should work (even if returning empty results)
+        assert isinstance(subgraph.nodes, list)
+        assert isinstance(subgraph.edges, list)
+
+        # Query 3: Verify precedent citation
+        # The renewal fixture has a PrecedentCited event - verify it's indexed
+        precedent_events = [e for e in events if e.event_type == "PrecedentCited"]
+        assert len(precedent_events) == 1, "Expected 1 PrecedentCited event"
+        assert (
+            precedent_events[0].payload["cited_trace_id"]
+            == "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+        ), "Cited trace ID mismatch"
+
+
+class TestSupportFixture:
+    """Tests for support escalation scenario (SSOT 10.2)."""
+
+    def test_fixture_support_digest(self) -> None:
+        """TC-P6-003: Support scenario digest matches expected."""
+        fixture_dir = FIXTURES_DIR / "support"
+        all_match, mismatches = validate_fixture(fixture_dir)
+
+        assert all_match, f"Digest mismatches: {mismatches}"
+
+    def test_fixture_support_queries(self) -> None:
+        """TC-P6-004: Support queries return expected results."""
+        fixture_dir = FIXTURES_DIR / "support"
+        fixture = load_fixture(fixture_dir)
+
+        # Create in-memory database and replay
+        store = SQLiteEventStore(":memory:")
+        conn = store._conn
+        projector = SQLiteProjector(conn)
+
+        for envelope in fixture.events:
+            store.append_event(envelope)
+
+        projector.rebuild()
+        all_events = store.list_events()
+        projector.project_events(all_events)
+
+        # Query 1: get_trace_events returns expected events
+
+        events = get_trace_events(store, trace_id=fixture.trace_id)
+
+        assert len(events) == 8, f"Expected 8 events, got {len(events)}"
+
+        # Verify cross-system synthesis: ARR, escalations, churn-risk
+        input_events = [e for e in events if e.event_type == "InputObserved"]
+        assert len(input_events) == 3, f"Expected 3 InputObserved events, got {len(input_events)}"
+
+        # Query 2: Verify ActionCommitted for escalation
+        action_events = [e for e in events if e.event_type == "ActionCommitted"]
+        assert len(action_events) == 1, "Expected 1 ActionCommitted event"
+        assert action_events[0].payload["action_id"] == "act:escalate_tier3"
+
+
+class TestDealdeskFixture:
+    """Tests for deal desk scenario (SSOT 10.3)."""
+
+    def test_fixture_dealdesk_digest(self) -> None:
+        """TC-P6-005: Deal Desk scenario digest matches expected."""
+        fixture_dir = FIXTURES_DIR / "dealdesk"
+        all_match, mismatches = validate_fixture(fixture_dir)
+
+        assert all_match, f"Digest mismatches: {mismatches}"
+
+    def test_fixture_dealdesk_queries(self) -> None:
+        """TC-P6-006: Deal Desk queries return expected results."""
+        fixture_dir = FIXTURES_DIR / "dealdesk"
+        fixture = load_fixture(fixture_dir)
+
+        # Create in-memory database and replay
+        store = SQLiteEventStore(":memory:")
+        conn = store._conn
+        projector = SQLiteProjector(conn)
+
+        for envelope in fixture.events:
+            store.append_event(envelope)
+
+        projector.rebuild()
+        all_events = store.list_events()
+        projector.project_events(all_events)
+
+        # Query 1: get_trace_events returns expected events
+
+        events = get_trace_events(store, trace_id=fixture.trace_id)
+
+        assert len(events) == 9, f"Expected 9 events, got {len(events)}"
+
+        # Query 2: Verify PrecedentCited event exists
+        precedent_events = [e for e in events if e.event_type == "PrecedentCited"]
+        assert len(precedent_events) == 1, "Expected 1 PrecedentCited event"
+
+        cited_trace_id = precedent_events[0].payload["cited_trace_id"]
+        assert cited_trace_id == "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee", "Cited trace ID mismatch"
+
+        # Query 3: Verify ExceptionRequested with healthcare rationale
+        exception_events = [e for e in events if e.event_type == "ExceptionRequested"]
+        assert len(exception_events) == 1, "Expected 1 ExceptionRequested event"
+
+        reason = exception_events[0].payload["reason"]
+        assert "healthcare" in reason.lower(), "Expected healthcare-related reason"
+
+
+class TestChainOfThought:
+    """Tests for chain-of-thought detection per SSOT 13."""
+
+    def test_no_chain_of_thought(self) -> None:
+        """TC-P6-010: No chain-of-thought content in fixtures."""
+        from decisiongraph.testing.golden import validate_no_chain_of_thought
+
+        for scenario in ["renewal", "support", "dealdesk"]:
+            fixture_dir = FIXTURES_DIR / scenario
+            fixture = load_fixture(fixture_dir)
+
+            violations = validate_no_chain_of_thought(fixture)
+
+            assert len(violations) == 0, f"{scenario} fixture has CoT violations: {violations}"

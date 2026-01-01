@@ -1,0 +1,125 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "decisiongraph"
+version = "0.1.0"
+description = "Append-only decision trace library for AI agents"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.12"
+authors = [
+    {name = "DecisionGraph Authors"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+keywords = ["decision", "trace", "audit", "agent", "ai"]
+
+# No runtime dependencies for core (DD-004)
+dependencies = []
+
+[project.optional-dependencies]
+postgres = ["psycopg>=3.0"]
+dev = [
+    "pytest>=8.0",
+    "mypy>=1.8",
+    "ruff>=0.1",
+    "import-linter>=2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/decisiongraph/decisiongraph"
+Documentation = "https://github.com/decisiongraph/decisiongraph"
+Repository = "https://github.com/decisiongraph/decisiongraph"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+decisiongraph = ["py.typed"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["decisiongraph"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.importlinter]
+root_package = "decisiongraph"
+root_package_paths = ["src"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Domain layer cannot import from infrastructure layers"
+type = "forbidden"
+source_modules = ["decisiongraph.domain"]
+forbidden_modules = [
+    "decisiongraph.storage",
+    "decisiongraph.projections",
+    "decisiongraph.api",
+]
+
+[[tool.importlinter.contracts]]
+name = "Query layer cannot import concrete storage backends"
+type = "forbidden"
+source_modules = ["decisiongraph.query"]
+forbidden_modules = [
+    "decisiongraph.storage.sqlite",
+    "decisiongraph.storage.postgres",
+]
+
+[[tool.importlinter.contracts]]
+name = "Storage and projections are independent"
+type = "independence"
+modules = [
+    "decisiongraph.storage",
+    "decisiongraph.projections",
+]
+# Note: Query layer reads from both storage (events) and projections (graph)
+# so it is intentionally allowed to import their interfaces

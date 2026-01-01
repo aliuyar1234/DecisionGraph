@@ -1,0 +1,270 @@
+{
+  "scenario": "support",
+  "ssot_reference": "10.2",
+  "description": "Support Escalation with cross-system synthesis to Tier 3",
+  "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+  "events": [
+    {
+      "event_id": "c1111111-1111-1111-1111-111111111111",
+      "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "trace_seq": 0,
+      "event_type": "TraceStarted",
+      "occurred_at": "2025-12-31T11:00:00Z",
+      "source": {
+        "producer_id": "support-agent-service",
+        "system": "support-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "support-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": null,
+      "idempotency_key": "start:support:ticket:456",
+      "schema_version": 1,
+      "payload": {
+        "workflow": "support_escalation",
+        "title": "Escalation for ticket ZD-456",
+        "primary_entity": {
+          "entity_type": "ticket",
+          "entity_id": "ZD-456",
+          "system": "zendesk"
+        }
+      },
+      "tags": []
+    },
+    {
+      "event_id": "c2222222-2222-2222-2222-222222222222",
+      "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "trace_seq": 1,
+      "event_type": "EntityObserved",
+      "occurred_at": "2025-12-31T11:00:01Z",
+      "source": {
+        "producer_id": "support-agent-service",
+        "system": "support-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "support-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "c1111111-1111-1111-1111-111111111111",
+      "idempotency_key": "ent:ticket:ZD-456",
+      "schema_version": 1,
+      "payload": {
+        "entity": {
+          "entity_type": "ticket",
+          "entity_id": "ZD-456",
+          "system": "zendesk"
+        },
+        "role": "primary",
+        "facts": []
+      },
+      "tags": []
+    },
+    {
+      "event_id": "c3333333-3333-3333-3333-333333333333",
+      "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "trace_seq": 2,
+      "event_type": "InputObserved",
+      "occurred_at": "2025-12-31T11:00:02Z",
+      "source": {
+        "producer_id": "support-agent-service",
+        "system": "support-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "support-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "c2222222-2222-2222-2222-222222222222",
+      "idempotency_key": "input:crm.arr",
+      "schema_version": 1,
+      "payload": {
+        "input_id": "input:crm.arr",
+        "source": {
+          "system": "salesforce",
+          "object_type": "account",
+          "object_id": "sf:acct:002"
+        },
+        "facts": [
+          {
+            "key": "annual_recurring_revenue",
+            "value": {
+              "type": "int",
+              "value": "500000"
+            },
+            "as_of": "2025-12-31T10:55:00Z"
+          }
+        ]
+      },
+      "tags": []
+    },
+    {
+      "event_id": "c4444444-4444-4444-4444-444444444444",
+      "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "trace_seq": 3,
+      "event_type": "InputObserved",
+      "occurred_at": "2025-12-31T11:00:03Z",
+      "source": {
+        "producer_id": "support-agent-service",
+        "system": "support-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "support-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "c3333333-3333-3333-3333-333333333333",
+      "idempotency_key": "input:zendesk.open_escalations",
+      "schema_version": 1,
+      "payload": {
+        "input_id": "input:zendesk.open_escalations",
+        "source": {
+          "system": "zendesk",
+          "object_type": "escalation_summary",
+          "object_id": "sf:acct:002"
+        },
+        "facts": [
+          {
+            "key": "open_escalations_count",
+            "value": {
+              "type": "int",
+              "value": "3"
+            },
+            "as_of": "2025-12-31T10:58:00Z"
+          }
+        ]
+      },
+      "tags": []
+    },
+    {
+      "event_id": "c5555555-5555-5555-5555-555555555555",
+      "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "trace_seq": 4,
+      "event_type": "InputObserved",
+      "occurred_at": "2025-12-31T11:00:04Z",
+      "source": {
+        "producer_id": "support-agent-service",
+        "system": "support-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "support-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "c4444444-4444-4444-4444-444444444444",
+      "idempotency_key": "input:slack.churn_risk",
+      "schema_version": 1,
+      "payload": {
+        "input_id": "input:slack.churn_risk",
+        "source": {
+          "system": "slack",
+          "object_type": "message",
+          "object_id": "slack://C123/p456"
+        },
+        "facts": [
+          {
+            "key": "churn_risk_flag",
+            "value": {
+              "type": "bool",
+              "value": "true"
+            },
+            "as_of": "2025-12-31T10:45:00Z"
+          }
+        ]
+      },
+      "tags": []
+    },
+    {
+      "event_id": "c6666666-6666-6666-6666-666666666666",
+      "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "trace_seq": 5,
+      "event_type": "PolicyEvaluated",
+      "occurred_at": "2025-12-31T11:00:05Z",
+      "source": {
+        "producer_id": "support-agent-service",
+        "system": "support-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "support-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "c5555555-5555-5555-5555-555555555555",
+      "idempotency_key": "policy_eval:escalation_criteria@2.1",
+      "schema_version": 1,
+      "payload": {
+        "policy": {
+          "policy_id": "escalation_criteria",
+          "policy_version": "2.1"
+        },
+        "inputs": ["input:crm.arr", "input:zendesk.open_escalations", "input:slack.churn_risk"],
+        "decision": "allow",
+        "violations": [],
+        "explanation": {
+          "summary": "High ARR customer with churn risk and multiple escalations. Escalate to Tier 3."
+        }
+      },
+      "tags": []
+    },
+    {
+      "event_id": "c7777777-7777-7777-7777-777777777777",
+      "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "trace_seq": 6,
+      "event_type": "ActionCommitted",
+      "occurred_at": "2025-12-31T11:00:06Z",
+      "source": {
+        "producer_id": "support-agent-service",
+        "system": "support-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "support-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "c6666666-6666-6666-6666-666666666666",
+      "idempotency_key": "commit:zendesk:escalate:456",
+      "schema_version": 1,
+      "payload": {
+        "action_id": "act:escalate_tier3",
+        "status": "success",
+        "external_reference": "zendesk:escalation:tier3:456",
+        "error": null
+      },
+      "tags": []
+    },
+    {
+      "event_id": "c8888888-8888-8888-8888-888888888888",
+      "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "trace_seq": 7,
+      "event_type": "TraceFinished",
+      "occurred_at": "2025-12-31T11:00:07Z",
+      "source": {
+        "producer_id": "support-agent-service",
+        "system": "support-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "support-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "c7777777-7777-7777-7777-777777777777",
+      "idempotency_key": "finish:support:ticket:456",
+      "schema_version": 1,
+      "payload": {
+        "outcome": "success",
+        "summary": "Ticket escalated to Tier 3 based on cross-system synthesis."
+      },
+      "tags": []
+    }
+  ]
+}

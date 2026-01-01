@@ -1,0 +1,292 @@
+{
+  "scenario": "renewal",
+  "ssot_reference": "10.1",
+  "description": "Renewal Agent with 20% discount exception and Finance approval",
+  "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "events": [
+    {
+      "event_id": "11111111-1111-1111-1111-111111111111",
+      "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "trace_seq": 0,
+      "event_type": "TraceStarted",
+      "occurred_at": "2025-12-31T10:00:00Z",
+      "source": {
+        "producer_id": "renewal-agent-service",
+        "system": "agent-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "renewal-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": null,
+      "idempotency_key": "start:sf:opp:123",
+      "schema_version": 1,
+      "payload": {
+        "workflow": "renewal_discount",
+        "title": "Renewal discount for sf:opp:123",
+        "primary_entity": {
+          "entity_type": "account",
+          "entity_id": "sf:acct:001",
+          "system": "salesforce"
+        }
+      },
+      "tags": []
+    },
+    {
+      "event_id": "22222222-2222-2222-2222-222222222222",
+      "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "trace_seq": 1,
+      "event_type": "EntityObserved",
+      "occurred_at": "2025-12-31T10:00:01Z",
+      "source": {
+        "producer_id": "renewal-agent-service",
+        "system": "agent-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "renewal-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "11111111-1111-1111-1111-111111111111",
+      "idempotency_key": "ent:account:sf:acct:001",
+      "schema_version": 1,
+      "payload": {
+        "entity": {
+          "entity_type": "account",
+          "entity_id": "sf:acct:001",
+          "system": "salesforce"
+        },
+        "role": "primary",
+        "facts": []
+      },
+      "tags": []
+    },
+    {
+      "event_id": "33333333-3333-3333-3333-333333333333",
+      "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "trace_seq": 2,
+      "event_type": "InputObserved",
+      "occurred_at": "2025-12-31T10:00:02Z",
+      "source": {
+        "producer_id": "renewal-agent-service",
+        "system": "agent-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "renewal-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "22222222-2222-2222-2222-222222222222",
+      "idempotency_key": "input:pd.sev1_count",
+      "schema_version": 1,
+      "payload": {
+        "input_id": "input:pd.sev1_count",
+        "source": {
+          "system": "PagerDuty",
+          "object_type": "incident_summary",
+          "object_id": "sf:acct:001"
+        },
+        "facts": [
+          {
+            "key": "sev1_last_90d",
+            "value": {
+              "type": "int",
+              "value": "3"
+            },
+            "as_of": "2025-12-31T09:55:00Z"
+          }
+        ]
+      },
+      "tags": []
+    },
+    {
+      "event_id": "44444444-4444-4444-4444-444444444444",
+      "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "trace_seq": 3,
+      "event_type": "PolicyEvaluated",
+      "occurred_at": "2025-12-31T10:00:03Z",
+      "source": {
+        "producer_id": "renewal-agent-service",
+        "system": "agent-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "renewal-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "33333333-3333-3333-3333-333333333333",
+      "idempotency_key": "policy_eval:renewal_discount_cap@3.2",
+      "schema_version": 1,
+      "payload": {
+        "policy": {
+          "policy_id": "renewal_discount_cap",
+          "policy_version": "3.2"
+        },
+        "inputs": ["input:pd.sev1_count"],
+        "decision": "require_exception",
+        "violations": [
+          {
+            "code": "CAP_EXCEEDED",
+            "details": {
+              "cap": "10%",
+              "requested": "20%"
+            }
+          }
+        ],
+        "explanation": {
+          "summary": "Requested discount 20% exceeds cap 10% unless exception approved."
+        }
+      },
+      "tags": []
+    },
+    {
+      "event_id": "55555555-5555-5555-5555-555555555555",
+      "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "trace_seq": 4,
+      "event_type": "PrecedentCited",
+      "occurred_at": "2025-12-31T10:00:04Z",
+      "source": {
+        "producer_id": "renewal-agent-service",
+        "system": "agent-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "renewal-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "44444444-4444-4444-4444-444444444444",
+      "idempotency_key": "prec:trace:last_qtr",
+      "schema_version": 1,
+      "payload": {
+        "cited_trace_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        "reason": "Similar churn-risk exception approved last quarter.",
+        "similarity_score": null
+      },
+      "tags": []
+    },
+    {
+      "event_id": "66666666-6666-6666-6666-666666666666",
+      "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "trace_seq": 5,
+      "event_type": "ExceptionRequested",
+      "occurred_at": "2025-12-31T10:00:05Z",
+      "source": {
+        "producer_id": "renewal-agent-service",
+        "system": "agent-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "renewal-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "55555555-5555-5555-5555-555555555555",
+      "idempotency_key": "exc:req:over_cap",
+      "schema_version": 1,
+      "payload": {
+        "exception_id": "exc:renewal_discount_over_cap",
+        "policy": {
+          "policy_id": "renewal_discount_cap",
+          "policy_version": "3.2"
+        },
+        "reason": "3 SEV-1 incidents; consistent with precedent.",
+        "evidence": []
+      },
+      "tags": []
+    },
+    {
+      "event_id": "77777777-7777-7777-7777-777777777777",
+      "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "trace_seq": 6,
+      "event_type": "ApprovalRecorded",
+      "occurred_at": "2025-12-31T10:05:00Z",
+      "source": {
+        "producer_id": "renewal-agent-service",
+        "system": "agent-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "renewal-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "66666666-6666-6666-6666-666666666666",
+      "idempotency_key": "appr:finance:001",
+      "schema_version": 1,
+      "payload": {
+        "approval_id": "appr:finance-001",
+        "subject": {
+          "subject_type": "exception",
+          "exception_id": "exc:renewal_discount_over_cap",
+          "action_id": null
+        },
+        "approver": {
+          "actor_type": "person",
+          "actor_id": "vp_finance_123"
+        },
+        "decision": "approved",
+        "reason": "Approved due to service impact and precedent.",
+        "evidence": []
+      },
+      "tags": []
+    },
+    {
+      "event_id": "88888888-8888-8888-8888-888888888888",
+      "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "trace_seq": 7,
+      "event_type": "ActionCommitted",
+      "occurred_at": "2025-12-31T10:06:00Z",
+      "source": {
+        "producer_id": "renewal-agent-service",
+        "system": "agent-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "renewal-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "77777777-7777-7777-7777-777777777777",
+      "idempotency_key": "commit:sf:opp:123",
+      "schema_version": 1,
+      "payload": {
+        "action_id": "act:update_discount",
+        "status": "success",
+        "external_reference": "sf:update:xyz",
+        "error": null
+      },
+      "tags": []
+    },
+    {
+      "event_id": "99999999-9999-9999-9999-999999999999",
+      "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "trace_seq": 8,
+      "event_type": "TraceFinished",
+      "occurred_at": "2025-12-31T10:06:01Z",
+      "source": {
+        "producer_id": "renewal-agent-service",
+        "system": "agent-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "renewal-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "88888888-8888-8888-8888-888888888888",
+      "idempotency_key": "finish:sf:opp:123",
+      "schema_version": 1,
+      "payload": {
+        "outcome": "success",
+        "summary": "Discount 20% applied with Finance exception approval."
+      },
+      "tags": []
+    }
+  ]
+}
