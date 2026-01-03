@@ -5,19 +5,15 @@ using SQLite as the persistence layer.
 """
 
 import contextlib
-import json
 import sqlite3
 from pathlib import Path
 from typing import Any
 
 from decisiongraph.domain.events import (
     EVENT_TYPE_TRACE_FINISHED,
-    EVENT_TYPE_TRACE_STARTED,
     EventEnvelope,
     StoredEvent,
 )
-from decisiongraph.domain.types import ActorRef, SourceRef
-from decisiongraph.domain.validation import check_pii_guard, validate_idempotency_key
 from decisiongraph.errors import (
     DG_ERR_CONFLICT,
     DG_ERR_EVENT_SEQUENCE_INVALID,
@@ -25,9 +21,12 @@ from decisiongraph.errors import (
     DG_ERR_STORAGE,
     DecisionGraphError,
 )
-from decisiongraph.serialization import compute_payload_hash
+from decisiongraph.storage._shared import (
+    prepare_event_for_insert,
+    row_to_stored_event,
+    validate_trace_seq,
+)
 from decisiongraph.storage.migrations import MigrationEngine
-from decisiongraph.time import now_rfc3339
 
 
 class SQLiteEventStore:
@@ -99,21 +98,12 @@ class SQLiteEventStore:
         Raises:
             DecisionGraphError: With appropriate error code
         """
-        # Validate idempotency key
-        validate_idempotency_key(envelope.idempotency_key)
-
-        # Check PII guard
-        check_pii_guard(envelope.payload)
-
-        # Compute payload hash before transaction
-        payload_hash = compute_payload_hash(envelope.payload)
-        payload_json = json.dumps(envelope.payload, sort_keys=True, ensure_ascii=False)
-        tags_json = json.dumps(list(envelope.tags), ensure_ascii=False)
-        recorded_at = now_rfc3339()
+        # Validate and prepare event data (shared logic)
+        prepared = prepare_event_for_insert(envelope)
 
         try:
             # Check for idempotent retry first
-            existing = self._check_idempotency(envelope, payload_hash)
+            existing = self._check_idempotency(envelope, prepared.payload_hash)
             if existing is not None:
                 return existing
 
@@ -124,33 +114,9 @@ class SQLiteEventStore:
                     f"Trace '{envelope.trace_id}' is already finished",
                 )
 
-            # Validate trace_seq
+            # Validate trace_seq rules (shared logic)
             expected_seq = self.get_next_trace_seq(envelope.trace_id)
-            if envelope.trace_seq != expected_seq:
-                raise DecisionGraphError(
-                    DG_ERR_EVENT_SEQUENCE_INVALID,
-                    f"Expected trace_seq {expected_seq}, got {envelope.trace_seq}",
-                )
-
-            # TraceStarted must be first event (trace_seq=0)
-            if (
-                envelope.event_type == EVENT_TYPE_TRACE_STARTED
-                and envelope.trace_seq != 0
-            ):
-                raise DecisionGraphError(
-                    DG_ERR_EVENT_SEQUENCE_INVALID,
-                    "TraceStarted must have trace_seq=0",
-                )
-
-            # Non-TraceStarted must not be first event
-            if (
-                envelope.event_type != EVENT_TYPE_TRACE_STARTED
-                and envelope.trace_seq == 0
-            ):
-                raise DecisionGraphError(
-                    DG_ERR_EVENT_SEQUENCE_INVALID,
-                    f"First event must be TraceStarted, got {envelope.event_type}",
-                )
+            validate_trace_seq(envelope, expected_seq)
 
             # Insert event
             cursor = self._conn.execute(
@@ -171,7 +137,7 @@ class SQLiteEventStore:
                     envelope.trace_seq,
                     envelope.event_type,
                     envelope.occurred_at,
-                    recorded_at,
+                    prepared.recorded_at,
                     envelope.source.producer_id,
                     envelope.source.system,
                     envelope.source.subsystem,
@@ -181,9 +147,9 @@ class SQLiteEventStore:
                     envelope.causation_event_id,
                     envelope.idempotency_key,
                     envelope.schema_version,
-                    payload_json,
-                    payload_hash,
-                    tags_json,
+                    prepared.payload_json,
+                    prepared.payload_hash,
+                    prepared.tags_json,
                 ),
             )
             self._conn.commit()
@@ -201,12 +167,12 @@ class SQLiteEventStore:
                 trace_seq=envelope.trace_seq,
                 event_type=envelope.event_type,
                 occurred_at=envelope.occurred_at,
-                recorded_at=recorded_at,
+                recorded_at=prepared.recorded_at,
                 source=envelope.source,
                 actor=envelope.actor,
                 idempotency_key=envelope.idempotency_key,
                 payload=envelope.payload,
-                payload_hash=payload_hash,
+                payload_hash=prepared.payload_hash,
                 correlation_id=envelope.correlation_id,
                 causation_event_id=envelope.causation_event_id,
                 schema_version=envelope.schema_version,
@@ -261,7 +227,7 @@ class SQLiteEventStore:
         # Check if payload matches
         if row["payload_hash"] == payload_hash:
             # Idempotent retry - return existing event
-            return self._row_to_stored_event(row)
+            return row_to_stored_event(row)
         else:
             # Different payload - conflict
             raise DecisionGraphError(
@@ -269,44 +235,6 @@ class SQLiteEventStore:
                 f"Idempotency key '{envelope.idempotency_key}' already used "
                 f"with different payload",
             )
-
-    def _row_to_stored_event(self, row: sqlite3.Row) -> StoredEvent:
-        """Convert a database row to StoredEvent.
-
-        Args:
-            row: SQLite Row object
-
-        Returns:
-            StoredEvent instance
-        """
-        payload = json.loads(row["payload_json"])
-        tags = json.loads(row["tags_json"])
-
-        return StoredEvent(
-            log_seq=row["log_seq"],
-            event_id=row["event_id"],
-            trace_id=row["trace_id"],
-            trace_seq=row["trace_seq"],
-            event_type=row["event_type"],
-            occurred_at=row["occurred_at"],
-            recorded_at=row["recorded_at"],
-            source=SourceRef(
-                producer_id=row["producer_id"],
-                system=row["system"],
-                subsystem=row["subsystem"],
-            ),
-            actor=ActorRef(
-                actor_type=row["actor_type"],
-                actor_id=row["actor_id"],
-            ),
-            idempotency_key=row["idempotency_key"],
-            payload=payload,
-            payload_hash=row["payload_hash"],
-            correlation_id=row["correlation_id"],
-            causation_event_id=row["causation_event_id"],
-            schema_version=row["schema_version"],
-            tags=tags,
-        )
 
     def get_trace_events(
         self,
@@ -338,7 +266,7 @@ class SQLiteEventStore:
             params.append(limit)
 
         cursor = self._conn.execute(query, params)
-        return [self._row_to_stored_event(row) for row in cursor.fetchall()]
+        return [row_to_stored_event(row) for row in cursor.fetchall()]
 
     def list_events(
         self,
@@ -383,7 +311,7 @@ class SQLiteEventStore:
             params.append(limit)
 
         cursor = self._conn.execute(query, params)
-        return [self._row_to_stored_event(row) for row in cursor.fetchall()]
+        return [row_to_stored_event(row) for row in cursor.fetchall()]
 
     def get_last_log_seq(self) -> int:
         """Get the current maximum log_seq.
