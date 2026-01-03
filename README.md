@@ -145,6 +145,31 @@ uv run mypy src/ --strict
 uv run ruff check src/
 ```
 
+## Test Coverage
+
+**452 tests** covering:
+
+| Category | Tests | Coverage |
+|----------|-------|----------|
+| Unit tests | 300+ | Domain types, events, validation, serialization, projections |
+| Integration tests | 80+ | SQLite/PostgreSQL backends, projection replay, queries |
+| E2E tests | 50+ | API workflows, CLI commands, golden fixtures |
+
+Key areas tested:
+- **Storage**: Idempotency conflicts, trace sequence validation, transaction rollback
+- **Projections**: Hash verification, gap detection, cursor tracking, rebuild
+- **Queries**: Staleness detection, pagination, filtering, graph traversal
+- **Validation**: PII guard patterns, idempotency key limits, JSON safety
+- **Serialization**: Unicode handling, deep nesting, hash stability
+
+```bash
+# Run all tests
+uv run pytest
+
+# Run with coverage
+uv run pytest --cov=decisiongraph
+```
+
 ## Structure
 
 ```
