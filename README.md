@@ -15,10 +15,12 @@ DecisionGraph is a library, not a service. Embed it directly in your agent code.
 ## Install
 
 ```bash
-pip install decisiongraph
+git clone https://github.com/aliuyar1234/DecisionGraph.git
+cd DecisionGraph
+uv sync
 
-# With PostgreSQL
-pip install decisiongraph[postgres]
+# With PostgreSQL support
+uv sync --extra postgres
 ```
 
 ## Usage
