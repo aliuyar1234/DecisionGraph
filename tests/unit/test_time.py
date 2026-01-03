@@ -1,6 +1,6 @@
 """Unit tests for time utilities."""
 
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -34,7 +34,7 @@ class TestToRfc3339:
 
     def test_non_utc_timezone_converted(self) -> None:
         # Create a datetime with +05:00 offset
-        tz_plus5 = timezone.utc  # Just use UTC for this test
+        tz_plus5 = UTC  # Just use UTC for this test
         dt = datetime(2026, 1, 15, 10, 30, 45, 123456, tzinfo=tz_plus5)
         result = to_rfc3339(dt)
         assert result.endswith("Z")

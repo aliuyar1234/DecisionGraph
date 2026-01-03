@@ -64,7 +64,7 @@ class TestEventTypes:
             "ActionCommitted",
             "TraceFinished",
         }
-        assert ALL_EVENT_TYPES == expected
+        assert expected == ALL_EVENT_TYPES
 
     def test_constants_match_strings(self) -> None:
         """Constants match their string values."""

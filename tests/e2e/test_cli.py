@@ -4,8 +4,6 @@ Test cases TC-P6-007 and TC-P6-008.
 """
 
 import json
-import subprocess
-import sys
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch

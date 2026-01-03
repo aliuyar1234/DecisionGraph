@@ -1,10 +1,8 @@
 """Tests for projection digests."""
 
-import pytest
 
 from decisiongraph.domain.events import (
     EVENT_TYPE_ENTITY_OBSERVED,
-    EVENT_TYPE_TRACE_FINISHED,
     EVENT_TYPE_TRACE_STARTED,
 )
 from decisiongraph.ids import generate_trace_id
@@ -87,66 +85,70 @@ class TestDigestComputation:
     def test_digest_ignores_recorded_at(self) -> None:
         """TC-P3-012: Digest ignores recorded_at (wall-clock)."""
         # Create two stores with same events but potentially different recorded_at
-        with SQLiteEventStore(":memory:") as store1:
-            with SQLiteEventStore(":memory:") as store2:
-                projector1 = SQLiteProjector(store1._conn)
-                projector2 = SQLiteProjector(store2._conn)
+        with (
+            SQLiteEventStore(":memory:") as store1,
+            SQLiteEventStore(":memory:") as store2,
+        ):
+            projector1 = SQLiteProjector(store1._conn)
+            projector2 = SQLiteProjector(store2._conn)
 
-                trace_id = generate_trace_id()
+            trace_id = generate_trace_id()
 
-                # Same event data
-                env = create_test_envelope(
-                    trace_id=trace_id,
-                    trace_seq=0,
-                    event_type=EVENT_TYPE_TRACE_STARTED,
-                    payload={"workflow": "test", "title": "Test"},
-                )
+            # Same event data
+            env = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=0,
+                event_type=EVENT_TYPE_TRACE_STARTED,
+                payload={"workflow": "test", "title": "Test"},
+            )
 
-                event1 = store1.append_event(env)
-                event2 = store2.append_event(env)
+            event1 = store1.append_event(env)
+            event2 = store2.append_event(env)
 
-                projector1.project_event(event1)
-                projector2.project_event(event2)
+            projector1.project_event(event1)
+            projector2.project_event(event2)
 
-                digest1 = compute_context_graph_digest(store1._conn)
-                digest2 = compute_context_graph_digest(store2._conn)
+            digest1 = compute_context_graph_digest(store1._conn)
+            digest2 = compute_context_graph_digest(store2._conn)
 
-                # Digests should be identical because we use occurred_at not recorded_at
-                assert digest1 == digest2
+            # Digests should be identical because we use occurred_at not recorded_at
+            assert digest1 == digest2
 
     def test_different_events_different_digest(self) -> None:
         """Different events produce different digests."""
-        with SQLiteEventStore(":memory:") as store1:
-            with SQLiteEventStore(":memory:") as store2:
-                projector1 = SQLiteProjector(store1._conn)
-                projector2 = SQLiteProjector(store2._conn)
+        with (
+            SQLiteEventStore(":memory:") as store1,
+            SQLiteEventStore(":memory:") as store2,
+        ):
+            projector1 = SQLiteProjector(store1._conn)
+            projector2 = SQLiteProjector(store2._conn)
 
-                trace_id1 = generate_trace_id()
-                trace_id2 = generate_trace_id()
+            trace_id1 = generate_trace_id()
+            trace_id2 = generate_trace_id()
 
-                env1 = create_test_envelope(
-                    trace_id=trace_id1,
-                    trace_seq=0,
-                    event_type=EVENT_TYPE_TRACE_STARTED,
-                    payload={"workflow": "test", "title": "Test 1"},
-                )
-                env2 = create_test_envelope(
-                    trace_id=trace_id2,
-                    trace_seq=0,
-                    event_type=EVENT_TYPE_TRACE_STARTED,
-                    payload={"workflow": "test", "title": "Test 2"},
-                )
+            env1 = create_test_envelope(
+                trace_id=trace_id1,
+                trace_seq=0,
+                event_type=EVENT_TYPE_TRACE_STARTED,
+                payload={"workflow": "test", "title": "Test 1"},
+            )
+            env2 = create_test_envelope(
+                trace_id=trace_id2,
+                trace_seq=0,
+                event_type=EVENT_TYPE_TRACE_STARTED,
+                payload={"workflow": "test", "title": "Test 2"},
+            )
 
-                event1 = store1.append_event(env1)
-                event2 = store2.append_event(env2)
+            event1 = store1.append_event(env1)
+            event2 = store2.append_event(env2)
 
-                projector1.project_event(event1)
-                projector2.project_event(event2)
+            projector1.project_event(event1)
+            projector2.project_event(event2)
 
-                digest1 = compute_context_graph_digest(store1._conn)
-                digest2 = compute_context_graph_digest(store2._conn)
+            digest1 = compute_context_graph_digest(store1._conn)
+            digest2 = compute_context_graph_digest(store2._conn)
 
-                assert digest1 != digest2
+            assert digest1 != digest2
 
     def test_trace_summary_digest(self) -> None:
         """Trace summary digest works."""

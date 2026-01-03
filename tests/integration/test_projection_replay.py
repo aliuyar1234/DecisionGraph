@@ -11,7 +11,11 @@ from decisiongraph.domain.events import (
     EVENT_TYPE_TRACE_FINISHED,
     EVENT_TYPE_TRACE_STARTED,
 )
-from decisiongraph.errors import DG_ERR_CONFLICT, DG_ERR_EVENT_SEQUENCE_INVALID, DecisionGraphError
+from decisiongraph.errors import (
+    DG_ERR_CONFLICT,
+    DG_ERR_EVENT_SEQUENCE_INVALID,
+    DecisionGraphError,
+)
 from decisiongraph.ids import generate_trace_id
 from decisiongraph.projections import (
     SQLiteProjector,

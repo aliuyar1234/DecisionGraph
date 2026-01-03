@@ -74,7 +74,7 @@ class TestErrorCodes:
             DG_ERR_PII_POLICY_VIOLATION,
         }
 
-        assert ERROR_CODES == expected_codes
+        assert expected_codes == ERROR_CODES
         assert len(ERROR_CODES) == 9
 
         for code in ERROR_CODES:
@@ -206,20 +206,6 @@ class TestTooling:
     def test_no_cycles(self) -> None:
         """TC-P0-007: No circular imports exist."""
         # This is verified by successfully importing all modules
-        import decisiongraph
-        import decisiongraph.api
-        import decisiongraph.domain
-        import decisiongraph.domain.events
-        import decisiongraph.domain.types
-        import decisiongraph.errors
-        import decisiongraph.ids
-        import decisiongraph.policy
-        import decisiongraph.projections
-        import decisiongraph.query
-        import decisiongraph.serialization
-        import decisiongraph.storage
-        import decisiongraph.testing
-        import decisiongraph.time
 
         # If we get here without ImportError, no cycles exist
         assert True

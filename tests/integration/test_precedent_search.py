@@ -6,7 +6,6 @@ This module tests:
 - Exclusion of unfinished traces
 """
 
-import pytest
 
 from decisiongraph.domain.events import (
     EVENT_TYPE_POLICY_EVALUATED,
