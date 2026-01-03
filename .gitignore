@@ -71,8 +71,6 @@ nul
 
 # Specify/Spec files
 .specify/
-specs/
-SPEC_v1.0.3-minpatch.md
 
 # Linter/tool caches
 .import_linter_cache/
