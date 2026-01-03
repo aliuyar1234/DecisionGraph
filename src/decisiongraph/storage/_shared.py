@@ -18,6 +18,7 @@ from decisiongraph.domain.types import ActorRef, SourceRef
 from decisiongraph.domain.validation import check_pii_guard, validate_idempotency_key
 from decisiongraph.errors import (
     DG_ERR_EVENT_SEQUENCE_INVALID,
+    DG_ERR_STORAGE,
     DecisionGraphError,
 )
 from decisiongraph.serialization import compute_payload_hash
@@ -123,9 +124,18 @@ def row_to_stored_event(row: Mapping[str, Any]) -> StoredEvent:
 
     Returns:
         StoredEvent instance
+
+    Raises:
+        DecisionGraphError: If JSON deserialization fails (corrupted data)
     """
-    payload = json.loads(row["payload_json"])
-    tags = json.loads(row["tags_json"])
+    try:
+        payload = json.loads(row["payload_json"])
+        tags = json.loads(row["tags_json"])
+    except json.JSONDecodeError as e:
+        raise DecisionGraphError(
+            DG_ERR_STORAGE,
+            f"Failed to deserialize event data for event_id={row.get('event_id', 'unknown')}: {e}",
+        ) from e
 
     return StoredEvent(
         log_seq=row["log_seq"],

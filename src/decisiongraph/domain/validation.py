@@ -90,12 +90,20 @@ def validate_idempotency_key(key: str) -> None:
     Raises:
         DecisionGraphError: With DG_ERR_INVALID_ARGUMENT if:
             - Key is empty
+            - Key contains null bytes
             - Key exceeds 200 bytes when UTF-8 encoded
     """
     if not key:
         raise DecisionGraphError(
             DG_ERR_INVALID_ARGUMENT,
             "Idempotency key cannot be empty",
+        )
+
+    # Null bytes can cause truncation in C-based libraries and SQL
+    if "\x00" in key:
+        raise DecisionGraphError(
+            DG_ERR_INVALID_ARGUMENT,
+            "Idempotency key cannot contain null bytes",
         )
 
     key_bytes = key.encode("utf-8")

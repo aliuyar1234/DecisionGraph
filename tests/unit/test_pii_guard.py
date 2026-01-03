@@ -183,6 +183,14 @@ class TestIdempotencyKeyValidation:
         """Valid idempotency key is accepted."""
         validate_idempotency_key("trace-123-0")  # Should not raise
 
+    def test_null_byte_rejected(self) -> None:
+        """Idempotency key with null byte is rejected."""
+        with pytest.raises(DecisionGraphError) as exc_info:
+            validate_idempotency_key("key-with\x00null")
+
+        assert exc_info.value.code == DG_ERR_INVALID_ARGUMENT
+        assert "null bytes" in str(exc_info.value)
+
     def test_long_key_rejected(self) -> None:
         """Key exceeding 200 bytes is rejected."""
         # Create a key longer than 200 bytes

@@ -23,20 +23,57 @@ from decisiongraph.query import get_trace_events
 from decisiongraph.storage.sqlite import SQLiteEventStore
 
 
+def _validate_db_path(db_path: str) -> Path:
+    """Validate database path for security.
+
+    Args:
+        db_path: User-provided database path
+
+    Returns:
+        Resolved, validated Path object
+
+    Raises:
+        SystemExit: If path is invalid or potentially malicious
+    """
+    path = Path(db_path)
+
+    # Check for symlink attacks - resolve to canonical path
+    try:
+        resolved = path.resolve(strict=False)
+    except OSError as e:
+        print(f"Error: Invalid path '{db_path}': {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Warn if symlink (could point to unexpected location)
+    if path.is_symlink():
+        print(
+            f"Warning: '{db_path}' is a symlink to '{resolved}'",
+            file=sys.stderr,
+        )
+
+    # Check existence
+    if not resolved.exists():
+        print(f"Error: Database file '{db_path}' not found", file=sys.stderr)
+        sys.exit(1)
+
+    # Check it's a file, not a directory
+    if not resolved.is_file():
+        print(f"Error: '{db_path}' is not a file", file=sys.stderr)
+        sys.exit(1)
+
+    return resolved
+
+
 def cmd_replay(db_path: str) -> None:
     """Rebuild projections and print digest.
 
     Args:
         db_path: Path to SQLite database
     """
-    if not Path(db_path).exists():
-        print(f"Error: Database file '{db_path}' not found", file=sys.stderr)
-        sys.exit(1)
+    validated_path = _validate_db_path(db_path)
 
-    # Open database in read-only mode (for safety)
-    # Note: We actually need write access to rebuild projections
-    # This is a deliberate design choice - replay modifies projections but not events
-    store = SQLiteEventStore(db_path)
+    # Open database - replay modifies projections but not events
+    store = SQLiteEventStore(str(validated_path))
     conn = store._conn
     projector = SQLiteProjector(conn)
 
@@ -67,11 +104,9 @@ def cmd_dump_trace(db_path: str, trace_id: str) -> None:
         db_path: Path to SQLite database
         trace_id: Trace ID to dump
     """
-    if not Path(db_path).exists():
-        print(f"Error: Database file '{db_path}' not found", file=sys.stderr)
-        sys.exit(1)
+    validated_path = _validate_db_path(db_path)
 
-    store = SQLiteEventStore(db_path)
+    store = SQLiteEventStore(str(validated_path))
 
     # Get trace events
     try:

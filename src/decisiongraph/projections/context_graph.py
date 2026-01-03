@@ -290,8 +290,13 @@ class ContextGraphEmitter:
         """
         payload = event.payload
         policy = payload.get("policy", {})
-        policy_id = policy.get("policy_id", "unknown")
+        policy_id = policy.get("policy_id")
         policy_version = policy.get("policy_version", "")
+
+        # Handle missing policy_id - use event_id as fallback to avoid node collision
+        if policy_id is None:
+            policy_id = f"unknown:{event.event_id}"
+
         full_policy_id = f"{policy_id}:{policy_version}" if policy_version else policy_id
 
         trace_node_id = make_node_id(NODE_TYPE_TRACE, event.trace_id)
