@@ -15,6 +15,7 @@ from decisiongraph.errors import (
     DG_ERR_NOT_FOUND,
     DecisionGraphError,
 )
+from decisiongraph.query.constants import MAX_QUERY_LIMIT
 
 if TYPE_CHECKING:
     from decisiongraph.domain.events import StoredEvent
@@ -113,10 +114,10 @@ def get_trace_events(
         DecisionGraphError: If trace not found or invalid arguments
     """
     # Validate limit
-    if limit is not None and limit > 10000:
+    if limit is not None and limit > MAX_QUERY_LIMIT:
         raise DecisionGraphError(
             DG_ERR_INVALID_ARGUMENT,
-            f"limit must be <= 10000, got {limit}",
+            f"limit must be <= {MAX_QUERY_LIMIT}, got {limit}",
         )
 
     # Query from event store (delegates to storage backend)
@@ -172,10 +173,10 @@ def list_events(
             f"since_log_seq ({since_log_seq}) must be <= until_log_seq ({until_log_seq})",
         )
 
-    if limit is not None and limit > 10000:
+    if limit is not None and limit > MAX_QUERY_LIMIT:
         raise DecisionGraphError(
             DG_ERR_INVALID_ARGUMENT,
-            f"limit must be <= 10000, got {limit}",
+            f"limit must be <= {MAX_QUERY_LIMIT}, got {limit}",
         )
 
     # Query from event store (delegates to storage backend)

@@ -9,6 +9,8 @@ This module defines filter and cursor types for querying:
 from dataclasses import dataclass
 from typing import Literal
 
+from decisiongraph.query.constants import MAX_GRAPH_DEPTH, MAX_QUERY_LIMIT
+
 
 @dataclass(frozen=True)
 class EventFilter:
@@ -46,8 +48,8 @@ class EventFilter:
             raise ValueError("since_trace_seq must be non-negative")
         if self.limit is not None and self.limit <= 0:
             raise ValueError("limit must be positive")
-        if self.limit is not None and self.limit > 10000:
-            raise ValueError("limit must be <= 10000")
+        if self.limit is not None and self.limit > MAX_QUERY_LIMIT:
+            raise ValueError(f"limit must be <= {MAX_QUERY_LIMIT}")
 
 
 @dataclass(frozen=True)
@@ -72,8 +74,8 @@ class GraphFilter:
         """Validate filter parameters."""
         if self.max_depth < 0:
             raise ValueError("max_depth must be non-negative")
-        if self.max_depth > 10:
-            raise ValueError("max_depth must be <= 10")
+        if self.max_depth > MAX_GRAPH_DEPTH:
+            raise ValueError(f"max_depth must be <= {MAX_GRAPH_DEPTH}")
         if self.max_nodes <= 0:
             raise ValueError("max_nodes must be positive")
         if self.max_edges <= 0:

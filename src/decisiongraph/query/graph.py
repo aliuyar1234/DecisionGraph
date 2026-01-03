@@ -19,6 +19,7 @@ from decisiongraph.errors import (
     DecisionGraphError,
 )
 from decisiongraph.projections.interfaces import Edge, Node
+from decisiongraph.query.constants import MAX_GRAPH_DEPTH
 from decisiongraph.query.filters import GraphEdgeCursor, GraphFilter
 
 if TYPE_CHECKING:
@@ -134,10 +135,10 @@ def get_context_subgraph(
             filter_opts = replace(filter_opts, max_depth=max_depth)
 
     # Validate max_depth
-    if filter_opts.max_depth > 10:
+    if filter_opts.max_depth > MAX_GRAPH_DEPTH:
         raise DecisionGraphError(
             DG_ERR_INVALID_ARGUMENT,
-            f"max_depth must be <= 10, got {filter_opts.max_depth}",
+            f"max_depth must be <= {MAX_GRAPH_DEPTH}, got {filter_opts.max_depth}",
         )
 
     # Access the projector's connection
