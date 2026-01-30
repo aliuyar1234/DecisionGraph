@@ -7,9 +7,11 @@ precedent index).
 
 import json
 import sqlite3
+from collections.abc import Iterable
 from typing import Any
 
 from decisiongraph.domain.events import (
+    EVENT_TYPE_POLICY_EVALUATED,
     EVENT_TYPE_PRECEDENT_CITED,
     EVENT_TYPE_TRACE_FINISHED,
     EVENT_TYPE_TRACE_STARTED,
@@ -18,6 +20,8 @@ from decisiongraph.domain.events import (
 from decisiongraph.errors import (
     DG_ERR_CONFLICT,
     DG_ERR_EVENT_SEQUENCE_INVALID,
+    DG_ERR_INVALID_ARGUMENT,
+    DG_ERR_SCHEMA_VIOLATION,
     DecisionGraphError,
 )
 from decisiongraph.projections.context_graph import ContextGraphEmitter
@@ -53,11 +57,11 @@ class SQLiteProjector:
         self._conn.row_factory = sqlite3.Row
         self._emitter = ContextGraphEmitter()
 
-        # Track trace_seq per trace for gap detection
-        self._trace_seq_tracker: dict[str, int] = {}
-
         # Initialize cursor from database
         self._cursor = self._load_cursor()
+
+        # Track trace_seq per trace for gap detection
+        self._trace_seq_tracker = self._load_trace_seq_tracker(self._cursor)
 
     @property
     def connection(self) -> sqlite3.Connection:
@@ -67,6 +71,14 @@ class SQLiteProjector:
             SQLite connection for executing queries
         """
         return self._conn
+
+    def execute_query(
+        self, sql: str, params: Iterable[Any] | None = None
+    ) -> list[sqlite3.Row]:
+        """Execute a read query with parameters."""
+        params_list = list(params) if params is not None else []
+        cursor = self._conn.execute(sql, params_list)
+        return cursor.fetchall()
 
     def _load_cursor(self) -> int:
         """Load last_processed_log_seq from dg_projection_meta.
@@ -83,6 +95,25 @@ class SQLiteProjector:
         )
         row = cursor.fetchone()
         return row["last_processed_log_seq"] if row else 0
+
+    def _load_trace_seq_tracker(self, cursor: int) -> dict[str, int]:
+        """Load per-trace next expected trace_seq based on projected cursor."""
+        if cursor <= 0:
+            return {}
+
+        tracker: dict[str, int] = {}
+        rows = self._conn.execute(
+            """
+            SELECT trace_id, MAX(trace_seq) AS max_seq
+            FROM dg_event_log
+            WHERE log_seq <= ?
+            GROUP BY trace_id
+            """,
+            (cursor,),
+        ).fetchall()
+        for row in rows:
+            tracker[row["trace_id"]] = int(row["max_seq"]) + 1
+        return tracker
 
     def _save_cursor(self, log_seq: int) -> None:
         """Save cursor to dg_projection_meta.
@@ -118,6 +149,23 @@ class SQLiteProjector:
         Raises:
             DecisionGraphError: If event fails validation
         """
+        prev_cursor = self._cursor
+        prev_trace_seq = self._trace_seq_tracker.get(event.trace_id)
+        try:
+            self._conn.execute("BEGIN")
+            self._project_event_in_tx(event)
+            self._conn.commit()
+        except Exception:
+            self._conn.rollback()
+            self._cursor = prev_cursor
+            if prev_trace_seq is None:
+                self._trace_seq_tracker.pop(event.trace_id, None)
+            else:
+                self._trace_seq_tracker[event.trace_id] = prev_trace_seq
+            raise
+
+    def _project_event_in_tx(self, event: StoredEvent) -> None:
+        """Project a single event assuming an active transaction."""
         # Verify payload hash
         expected_hash = compute_payload_hash(event.payload)
         if event.payload_hash != expected_hash:
@@ -128,7 +176,7 @@ class SQLiteProjector:
             )
 
         # Verify trace_seq is monotonic (no gaps)
-        self._check_trace_seq(event)
+        expected_seq = self._check_trace_seq(event)
 
         # Emit and store context graph nodes/edges
         emission = self._emitter.emit(event)
@@ -142,13 +190,15 @@ class SQLiteProjector:
             self._on_trace_started(event)
         elif event.event_type == EVENT_TYPE_TRACE_FINISHED:
             self._on_trace_finished(event)
+        elif event.event_type == EVENT_TYPE_POLICY_EVALUATED:
+            self._on_policy_evaluated(event)
 
-        # Update cursor
+        # Update trace_seq tracker and cursor
+        self._trace_seq_tracker[event.trace_id] = expected_seq + 1
         self._cursor = event.log_seq
         self._save_cursor(event.log_seq)
-        self._conn.commit()
 
-    def _check_trace_seq(self, event: StoredEvent) -> None:
+    def _check_trace_seq(self, event: StoredEvent) -> int:
         """Check that trace_seq is monotonic (no gaps).
 
         Args:
@@ -168,8 +218,7 @@ class SQLiteProjector:
                 f"trace_seq gap in trace {trace_id}: "
                 f"expected {expected_seq}, got {trace_seq}",
             )
-
-        self._trace_seq_tracker[trace_id] = trace_seq + 1
+        return expected_seq
 
     def _insert_node(self, node: Node) -> None:
         """Insert node into dg_cg_nodes.
@@ -245,6 +294,9 @@ class SQLiteProjector:
         # Extract node_type from node_id (format: type:id)
         parts = node_id.split(":", 1)
         node_type = parts[0] if len(parts) > 1 else "unknown"
+        resolved_trace_id = trace_id
+        if node_type == "trace" and len(parts) > 1:
+            resolved_trace_id = parts[1]
 
         self._conn.execute(
             """
@@ -252,7 +304,7 @@ class SQLiteProjector:
                 (node_id, node_type, trace_id, log_seq, created_at, metadata_json)
             VALUES (?, ?, ?, ?, ?, '{}')
             """,
-            (node_id, node_type, trace_id, log_seq, created_at),
+            (node_id, node_type, resolved_trace_id, log_seq, created_at),
         )
 
     def _on_trace_started(self, event: StoredEvent) -> None:
@@ -287,6 +339,36 @@ class SQLiteProjector:
                 primary_entity_id,
                 event.occurred_at,
                 event.log_seq,
+            ),
+        )
+
+    def _on_policy_evaluated(self, event: StoredEvent) -> None:
+        """Handle PolicyEvaluated event for policy evaluation index."""
+        payload = event.payload
+        policy = payload.get("policy", {})
+        policy_id = policy.get("policy_id")
+        policy_version = policy.get("policy_version")
+
+        if not policy_id or not policy_version:
+            raise DecisionGraphError(
+                DG_ERR_SCHEMA_VIOLATION,
+                "PolicyEvaluated requires policy_id and policy_version",
+            )
+
+        index_id = f"{event.trace_id}:{policy_id}:{policy_version}:{event.event_id}"
+        self._conn.execute(
+            """
+            INSERT OR IGNORE INTO dg_policy_eval_index
+                (index_id, trace_id, policy_id, policy_version, log_seq, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                index_id,
+                event.trace_id,
+                policy_id,
+                policy_version,
+                event.log_seq,
+                event.occurred_at,
             ),
         )
 
@@ -333,6 +415,7 @@ class SQLiteProjector:
             (trace_id, EVENT_TYPE_PRECEDENT_CITED),
         )
 
+        entries: list[tuple[str, str, str, str, str | None, int, str]] = []
         for row in cursor.fetchall():
             payload = json.loads(row["payload_json"])
             cited_trace_id = payload.get("cited_trace_id", "")
@@ -341,13 +424,7 @@ class SQLiteProjector:
 
             if cited_trace_id:
                 index_id = f"{trace_id}:{cited_trace_id}:{row['event_id']}"
-                self._conn.execute(
-                    """
-                    INSERT OR IGNORE INTO dg_precedent_index
-                        (index_id, trace_id, cited_trace_id, reason, similarity_score,
-                         log_seq, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
+                entries.append(
                     (
                         index_id,
                         trace_id,
@@ -356,8 +433,19 @@ class SQLiteProjector:
                         similarity_score,
                         row["log_seq"],
                         row["occurred_at"],
-                    ),
+                    )
                 )
+
+        if entries:
+            self._conn.executemany(
+                """
+                INSERT OR IGNORE INTO dg_precedent_index
+                    (index_id, trace_id, cited_trace_id, reason, similarity_score,
+                     log_seq, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                entries,
+            )
 
     def rebuild(self) -> None:
         """Rebuild projection from scratch.
@@ -368,6 +456,7 @@ class SQLiteProjector:
         self._conn.execute("DELETE FROM dg_cg_edges")
         self._conn.execute("DELETE FROM dg_cg_nodes")
         self._conn.execute("DELETE FROM dg_precedent_index")
+        self._conn.execute("DELETE FROM dg_policy_eval_index")
         self._conn.execute("DELETE FROM dg_trace_summary")
         self._conn.execute(
             "DELETE FROM dg_projection_meta WHERE projection_name = ?",
@@ -379,14 +468,44 @@ class SQLiteProjector:
         self._trace_seq_tracker.clear()
         self._conn.commit()
 
-    def project_events(self, events: list[StoredEvent]) -> None:
+    def project_events(
+        self, events: list[StoredEvent], batch_size: int | None = None
+    ) -> None:
         """Project multiple events in order.
 
         Args:
             events: List of events to project (must be in log_seq order)
+            batch_size: Optional batch size for commits
         """
-        for event in events:
-            self.project_event(event)
+        if not events:
+            return
+
+        if batch_size is None:
+            self._project_events_in_tx(events)
+            return
+
+        if batch_size <= 0:
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "batch_size must be positive",
+            )
+
+        for i in range(0, len(events), batch_size):
+            self._project_events_in_tx(events[i : i + batch_size])
+
+    def _project_events_in_tx(self, events: list[StoredEvent]) -> None:
+        prev_cursor = self._cursor
+        prev_tracker = dict(self._trace_seq_tracker)
+        try:
+            self._conn.execute("BEGIN")
+            for event in events:
+                self._project_event_in_tx(event)
+            self._conn.commit()
+        except Exception:
+            self._conn.rollback()
+            self._cursor = prev_cursor
+            self._trace_seq_tracker = prev_tracker
+            raise
 
     def get_nodes(self, trace_id: str | None = None) -> list[dict[str, Any]]:
         """Get nodes from the context graph.

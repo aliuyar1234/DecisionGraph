@@ -14,12 +14,25 @@ from decisiongraph.domain.events import (
 )
 from decisiongraph.domain.types import ActorRef, EntityRef, SourceRef
 from decisiongraph.ids import generate_event_id, generate_trace_id
+from decisiongraph.projections.interfaces import ProjectionEngine
 from decisiongraph.projections.projector import SQLiteProjector
 from decisiongraph.query import find_precedents, get_trace_events
 from decisiongraph.query.graph import ContextSubgraph, NodeRef, get_context_subgraph
 from decisiongraph.query.precedents import PrecedentHit, PrecedentQuery
+from decisiongraph.storage.interface import EventStore
 from decisiongraph.storage.sqlite import SQLiteEventStore
 from decisiongraph.time import now_rfc3339
+
+# Optional PostgreSQL support
+try:
+    from decisiongraph.projections.postgres import PostgresProjector
+    from decisiongraph.storage.postgres import PostgresEventStore
+
+    HAS_POSTGRES = True
+except ImportError:  # pragma: no cover - optional dependency
+    PostgresProjector = None  # type: ignore[misc,assignment]
+    PostgresEventStore = None  # type: ignore[misc,assignment]
+    HAS_POSTGRES = False
 
 
 class DecisionGraph:
@@ -27,8 +40,24 @@ class DecisionGraph:
 
     def __init__(self, db_path: str | Path) -> None:
         """Initialize DecisionGraph with SQLite backend."""
-        self._store = SQLiteEventStore(db_path)
-        self._projector = SQLiteProjector(self._store._conn)
+        self._store: EventStore = SQLiteEventStore(db_path)
+        self._projector: ProjectionEngine = SQLiteProjector(self._store.connection)
+
+    @classmethod
+    def from_postgres(cls, conninfo: str) -> "DecisionGraph":
+        """Initialize DecisionGraph with PostgreSQL backend."""
+        if not HAS_POSTGRES or PostgresEventStore is None or PostgresProjector is None:
+            raise ImportError(
+                "PostgreSQL support requires psycopg. "
+                "Install with: pip install decisiongraph[postgres]"
+            )
+
+        store = PostgresEventStore(conninfo)
+        projector = PostgresProjector(store.connection)
+        instance = cls.__new__(cls)
+        instance._store = store
+        instance._projector = projector
+        return instance
 
     def close(self) -> None:
         """Close the database connection."""
@@ -48,6 +77,11 @@ class DecisionGraph:
         source: SourceRef,
         actor: ActorRef,
         idempotency_key: str | None = None,
+        correlation_id: str | None = None,
+        causation_event_id: str | None = None,
+        schema_version: int = 1,
+        tags: list[str] | None = None,
+        occurred_at: str | None = None,
     ) -> StoredEvent:
         trace_seq = self._store.get_next_trace_seq(trace_id)
         event_id = generate_event_id()
@@ -60,16 +94,49 @@ class DecisionGraph:
             trace_id=trace_id,
             trace_seq=trace_seq,
             event_type=event_type,
-            occurred_at=now_rfc3339(),
+            occurred_at=occurred_at or now_rfc3339(),
             source=source,
             actor=actor,
             idempotency_key=idempotency_key,
             payload=payload,
+            correlation_id=correlation_id,
+            causation_event_id=causation_event_id,
+            schema_version=schema_version,
+            tags=tags or [],
         )
 
         stored = self._store.append_event(envelope)
         self._projector.project_event(stored)
         return stored
+
+    def append_event(
+        self,
+        trace_id: str,
+        event_type: str,
+        payload: dict[str, Any],
+        source: SourceRef,
+        actor: ActorRef,
+        idempotency_key: str | None = None,
+        correlation_id: str | None = None,
+        causation_event_id: str | None = None,
+        schema_version: int = 1,
+        tags: list[str] | None = None,
+        occurred_at: str | None = None,
+    ) -> StoredEvent:
+        """Append any supported event type."""
+        return self._append_event(
+            trace_id=trace_id,
+            event_type=event_type,
+            payload=payload,
+            source=source,
+            actor=actor,
+            idempotency_key=idempotency_key,
+            correlation_id=correlation_id,
+            causation_event_id=causation_event_id,
+            schema_version=schema_version,
+            tags=tags,
+            occurred_at=occurred_at,
+        )
 
     def start_trace(
         self,
@@ -162,6 +229,20 @@ class DecisionGraph:
 
     def is_trace_finished(self, trace_id: str) -> bool:
         return self._store.is_trace_finished(trace_id)
+
+    def sync_projections(self, batch_size: int | None = None) -> int:
+        """Apply any new events to projections."""
+        since_log_seq = self._projector.get_cursor()
+        events = self._store.list_events(since_log_seq=since_log_seq)
+        if events:
+            self._projector.project_events(events, batch_size=batch_size)
+        return len(events)
+
+    def replay_projections(self, batch_size: int | None = None) -> None:
+        """Rebuild projections from scratch."""
+        self._projector.rebuild()
+        events = self._store.list_events()
+        self._projector.project_events(events, batch_size=batch_size)
 
 
 __all__ = ["DecisionGraph"]

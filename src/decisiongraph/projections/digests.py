@@ -13,11 +13,27 @@ Key rules:
 
 import hashlib
 import json
-import sqlite3
-from typing import Any
+from collections.abc import Iterable
+from typing import Any, cast
+
+try:
+    import sqlite3
+except ImportError:  # pragma: no cover - sqlite3 is stdlib
+    sqlite3 = None  # type: ignore[assignment]
 
 
-def compute_context_graph_digest(conn: sqlite3.Connection) -> str:
+def _fetch_rows(
+    conn: Any, sql: str, params: Iterable[Any] | None = None
+) -> list[Any]:
+    if hasattr(conn, "execute"):
+        cursor = conn.execute(sql, params or [])
+        return cast(list[Any], cursor.fetchall())
+    with conn.cursor() as cur:
+        cur.execute(sql, params or [])
+        return cast(list[Any], cur.fetchall())
+
+
+def compute_context_graph_digest(conn: Any) -> str:
     """Compute digest over context graph (nodes + edges).
 
     Digest is computed as:
@@ -32,10 +48,12 @@ def compute_context_graph_digest(conn: sqlite3.Connection) -> str:
     Returns:
         SHA-256 digest prefixed with "sha256:"
     """
-    conn.row_factory = sqlite3.Row
+    if sqlite3 is not None and hasattr(conn, "row_factory"):
+        conn.row_factory = sqlite3.Row
 
     # Get nodes in deterministic order
-    nodes_cursor = conn.execute(
+    nodes_rows = _fetch_rows(
+        conn,
         """
         SELECT node_id, node_type, trace_id, log_seq, created_at, metadata_json
         FROM dg_cg_nodes
@@ -44,7 +62,7 @@ def compute_context_graph_digest(conn: sqlite3.Connection) -> str:
     )
 
     nodes_data: list[dict[str, Any]] = []
-    for row in nodes_cursor.fetchall():
+    for row in nodes_rows:
         # Exclude recorded_at (wall-clock) - use created_at (from event.occurred_at)
         nodes_data.append({
             "node_id": row["node_id"],
@@ -56,7 +74,8 @@ def compute_context_graph_digest(conn: sqlite3.Connection) -> str:
         })
 
     # Get edges in deterministic order
-    edges_cursor = conn.execute(
+    edges_rows = _fetch_rows(
+        conn,
         """
         SELECT edge_id, edge_type, from_node_id, to_node_id, trace_id, log_seq, created_at, metadata_json
         FROM dg_cg_edges
@@ -65,7 +84,7 @@ def compute_context_graph_digest(conn: sqlite3.Connection) -> str:
     )
 
     edges_data: list[dict[str, Any]] = []
-    for row in edges_cursor.fetchall():
+    for row in edges_rows:
         edges_data.append({
             "edge_id": row["edge_id"],
             "edge_type": row["edge_type"],
@@ -91,7 +110,7 @@ def compute_context_graph_digest(conn: sqlite3.Connection) -> str:
     return f"sha256:{digest}"
 
 
-def compute_trace_summary_digest(conn: sqlite3.Connection) -> str:
+def compute_trace_summary_digest(conn: Any) -> str:
     """Compute digest over trace summaries.
 
     Args:
@@ -100,9 +119,11 @@ def compute_trace_summary_digest(conn: sqlite3.Connection) -> str:
     Returns:
         SHA-256 digest prefixed with "sha256:"
     """
-    conn.row_factory = sqlite3.Row
+    if sqlite3 is not None and hasattr(conn, "row_factory"):
+        conn.row_factory = sqlite3.Row
 
-    cursor = conn.execute(
+    rows = _fetch_rows(
+        conn,
         """
         SELECT trace_id, workflow, title, primary_entity_type, primary_entity_id,
                outcome, started_at, finished_at, event_count, last_log_seq
@@ -112,7 +133,7 @@ def compute_trace_summary_digest(conn: sqlite3.Connection) -> str:
     )
 
     summaries: list[dict[str, Any]] = []
-    for row in cursor.fetchall():
+    for row in rows:
         # Exclude any wall-clock times, use event times only
         summaries.append({
             "trace_id": row["trace_id"],
@@ -132,7 +153,7 @@ def compute_trace_summary_digest(conn: sqlite3.Connection) -> str:
     return f"sha256:{digest}"
 
 
-def compute_precedent_index_digest(conn: sqlite3.Connection) -> str:
+def compute_precedent_index_digest(conn: Any) -> str:
     """Compute digest over precedent index.
 
     Args:
@@ -141,9 +162,11 @@ def compute_precedent_index_digest(conn: sqlite3.Connection) -> str:
     Returns:
         SHA-256 digest prefixed with "sha256:"
     """
-    conn.row_factory = sqlite3.Row
+    if sqlite3 is not None and hasattr(conn, "row_factory"):
+        conn.row_factory = sqlite3.Row
 
-    cursor = conn.execute(
+    rows = _fetch_rows(
+        conn,
         """
         SELECT index_id, trace_id, cited_trace_id, reason, similarity_score,
                log_seq, created_at
@@ -153,7 +176,7 @@ def compute_precedent_index_digest(conn: sqlite3.Connection) -> str:
     )
 
     entries: list[dict[str, Any]] = []
-    for row in cursor.fetchall():
+    for row in rows:
         entries.append({
             "index_id": row["index_id"],
             "trace_id": row["trace_id"],
@@ -169,7 +192,7 @@ def compute_precedent_index_digest(conn: sqlite3.Connection) -> str:
     return f"sha256:{digest}"
 
 
-def compute_full_projection_digest(conn: sqlite3.Connection) -> str:
+def compute_full_projection_digest(conn: Any) -> str:
     """Compute digest over all projections.
 
     Combines context graph + trace summary + precedent index.

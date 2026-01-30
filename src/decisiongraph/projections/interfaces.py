@@ -6,7 +6,7 @@ This module defines:
 """
 
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Any, Protocol
 
 from decisiongraph.domain.events import StoredEvent
 
@@ -113,7 +113,7 @@ class Edge:
 # =============================================================================
 
 
-class Projector(Protocol):
+class ProjectionBuilder(Protocol):
     """Protocol for projection builders per SSOT 6.2.5.
 
     A projector transforms events from the append-only log into
@@ -153,6 +153,47 @@ class Projector(Protocol):
         ...
 
 
+class ProjectionBackend(Protocol):
+    """Protocol for queryable projection backends."""
+
+    @property
+    def connection(self) -> Any:
+        """Database connection for low-level operations."""
+        ...
+
+    def execute_query(
+        self, sql: str, params: list[Any] | tuple[Any, ...] | None = None
+    ) -> list[Any]:
+        """Execute a read query and return rows."""
+        ...
+
+    def get_cursor(self) -> int:
+        """Get last projected log_seq cursor."""
+        ...
+
+    def get_trace_summary(self, trace_id: str) -> dict[str, Any] | None:
+        """Get trace summary by trace_id."""
+        ...
+
+
+class ProjectionEngine(ProjectionBackend, Protocol):
+    """Protocol for projection backends that can build projections."""
+
+    def project_event(self, event: StoredEvent) -> None:
+        """Project a single event."""
+        ...
+
+    def project_events(
+        self, events: list[StoredEvent], batch_size: int | None = None
+    ) -> None:
+        """Project multiple events."""
+        ...
+
+    def rebuild(self) -> None:
+        """Rebuild projections from scratch."""
+        ...
+
+
 __all__ = [
     # Node types
     "NODE_TYPE_TRACE",
@@ -178,5 +219,7 @@ __all__ = [
     "Node",
     "Edge",
     # Protocol
-    "Projector",
+    "ProjectionBuilder",
+    "ProjectionBackend",
+    "ProjectionEngine",
 ]

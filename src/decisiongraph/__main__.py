@@ -74,7 +74,7 @@ def cmd_replay(db_path: str) -> None:
 
     # Open database - replay modifies projections but not events
     store = SQLiteEventStore(str(validated_path))
-    conn = store._conn
+    conn = store.connection
     projector = SQLiteProjector(conn)
 
     # Rebuild projections
@@ -106,7 +106,7 @@ def cmd_dump_trace(db_path: str, trace_id: str) -> None:
     """
     validated_path = _validate_db_path(db_path)
 
-    store = SQLiteEventStore(str(validated_path))
+    store = SQLiteEventStore(str(validated_path), read_only=True)
 
     # Get trace events
     try:

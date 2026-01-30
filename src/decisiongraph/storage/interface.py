@@ -104,5 +104,9 @@ class EventStore(Protocol):
         """
         ...
 
+    def close(self) -> None:
+        """Close the underlying connection/resources."""
+        ...
+
 
 __all__ = ["EventStore"]

@@ -15,11 +15,11 @@ from decisiongraph.errors import (
     DG_ERR_NOT_FOUND,
     DecisionGraphError,
 )
+from decisiongraph.projections.interfaces import ProjectionBackend
 from decisiongraph.query.constants import MAX_QUERY_LIMIT
 
 if TYPE_CHECKING:
     from decisiongraph.domain.events import StoredEvent
-    from decisiongraph.projections.projector import SQLiteProjector
     from decisiongraph.storage.interface import EventStore
 
 
@@ -50,7 +50,7 @@ class TraceSummary:
 
 def get_trace_summary(
     _store: "EventStore",
-    projector: "SQLiteProjector",
+    projector: ProjectionBackend,
     trace_id: str,
 ) -> TraceSummary:
     """Get trace metadata per SSOT 7.4.1.

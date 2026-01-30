@@ -15,9 +15,15 @@ from decisiongraph.domain.events import (
     StoredEvent,
 )
 from decisiongraph.domain.types import ActorRef, SourceRef
-from decisiongraph.domain.validation import check_pii_guard, validate_idempotency_key
+from decisiongraph.domain.validation import (
+    check_event_pii,
+    validate_idempotency_key,
+    validate_payload_json_safe,
+    validate_payload_schema,
+)
 from decisiongraph.errors import (
     DG_ERR_EVENT_SEQUENCE_INVALID,
+    DG_ERR_IDEMPOTENCY_CONFLICT,
     DG_ERR_STORAGE,
     DecisionGraphError,
 )
@@ -61,8 +67,12 @@ def prepare_event_for_insert(envelope: EventEnvelope) -> PreparedEvent:
     # Validate idempotency key
     validate_idempotency_key(envelope.idempotency_key)
 
-    # Check PII guard
-    check_pii_guard(envelope.payload)
+    # Validate payload schema and JSON safety
+    validate_payload_json_safe(envelope.payload)
+    validate_payload_schema(envelope.event_type, envelope.payload)
+
+    # Check PII guard across payload and metadata
+    check_event_pii(envelope)
 
     # Compute values
     payload_hash = compute_payload_hash(envelope.payload)
@@ -76,6 +86,63 @@ def prepare_event_for_insert(envelope: EventEnvelope) -> PreparedEvent:
         tags_json=tags_json,
         recorded_at=recorded_at,
     )
+
+
+def validate_idempotent_reuse(
+    envelope: EventEnvelope,
+    row: Mapping[str, Any],
+    payload_hash: str,
+) -> StoredEvent:
+    """Validate idempotent reuse matches metadata, not just payload.
+
+    Args:
+        envelope: Incoming event envelope
+        row: Existing database row for the idempotency key
+        payload_hash: Hash of incoming payload
+
+    Returns:
+        StoredEvent if idempotent reuse is valid
+
+    Raises:
+        DecisionGraphError: If idempotency key reused with conflicting data
+    """
+    stored = row_to_stored_event(row)
+
+    if stored.payload_hash != payload_hash:
+        raise DecisionGraphError(
+            DG_ERR_IDEMPOTENCY_CONFLICT,
+            f"Idempotency key '{envelope.idempotency_key}' already used "
+            "with different payload",
+        )
+
+    mismatches: list[str] = []
+    if stored.trace_id != envelope.trace_id:
+        mismatches.append("trace_id")
+    if stored.trace_seq != envelope.trace_seq:
+        mismatches.append("trace_seq")
+    if stored.event_type != envelope.event_type:
+        mismatches.append("event_type")
+    if stored.source != envelope.source:
+        mismatches.append("source")
+    if stored.actor != envelope.actor:
+        mismatches.append("actor")
+    if stored.correlation_id != envelope.correlation_id:
+        mismatches.append("correlation_id")
+    if stored.causation_event_id != envelope.causation_event_id:
+        mismatches.append("causation_event_id")
+    if stored.schema_version != envelope.schema_version:
+        mismatches.append("schema_version")
+    if list(stored.tags) != list(envelope.tags):
+        mismatches.append("tags")
+
+    if mismatches:
+        raise DecisionGraphError(
+            DG_ERR_IDEMPOTENCY_CONFLICT,
+            f"Idempotency key '{envelope.idempotency_key}' already used "
+            f"with different metadata: {', '.join(mismatches)}",
+        )
+
+    return stored
 
 
 def validate_trace_seq(
@@ -169,4 +236,5 @@ __all__ = [
     "prepare_event_for_insert",
     "validate_trace_seq",
     "row_to_stored_event",
+    "validate_idempotent_reuse",
 ]

@@ -33,6 +33,7 @@ from decisiongraph.errors import (
 from decisiongraph.storage._shared import (
     prepare_event_for_insert,
     row_to_stored_event,
+    validate_idempotent_reuse,
     validate_trace_seq,
 )
 
@@ -123,19 +124,23 @@ class PostgresEventStore:
             name: Migration name
             sql: SQL to execute
         """
-        with self._conn.cursor() as cur:
-            # Execute migration SQL
-            cur.execute(sql)
+        try:
+            with self._conn.cursor() as cur:
+                # Execute migration SQL
+                cur.execute(sql)
 
-            # Record as applied
-            cur.execute(
-                f"""
-                INSERT INTO {self.SCHEMA_MIGRATIONS_TABLE} (version, name)
-                VALUES (%s, %s)
-                """,
-                (version, name),
-            )
-        self._conn.commit()
+                # Record as applied
+                cur.execute(
+                    f"""
+                    INSERT INTO {self.SCHEMA_MIGRATIONS_TABLE} (version, name)
+                    VALUES (%s, %s)
+                    """,
+                    (version, name),
+                )
+            self._conn.commit()
+        except psycopg.Error:
+            self._conn.rollback()
+            raise
 
     def _migrate(self) -> None:
         """Apply pending database migrations."""
@@ -150,6 +155,11 @@ class PostgresEventStore:
     def close(self) -> None:
         """Close the database connection."""
         self._conn.close()
+
+    @property
+    def connection(self) -> Connection[Any]:
+        """Get the database connection."""
+        return self._conn
 
     def __enter__(self) -> "PostgresEventStore":
         """Context manager entry."""
@@ -258,6 +268,11 @@ class PostgresEventStore:
         except psycopg.errors.UniqueViolation as e:
             self._conn.rollback()
             error_str = str(e).lower()
+            if "trace_finished" in error_str:
+                raise DecisionGraphError(
+                    DG_ERR_CONFLICT,
+                    f"Trace '{envelope.trace_id}' is already finished",
+                ) from e
             if "idempotency" in error_str:
                 raise DecisionGraphError(
                     DG_ERR_IDEMPOTENCY_CONFLICT,
@@ -271,6 +286,12 @@ class PostgresEventStore:
             raise DecisionGraphError(DG_ERR_STORAGE, f"Database error: {e}") from e
         except psycopg.Error as e:
             self._conn.rollback()
+            error_str = str(e).lower()
+            if "trace_finished" in error_str:
+                raise DecisionGraphError(
+                    DG_ERR_CONFLICT,
+                    f"Trace '{envelope.trace_id}' is already finished",
+                ) from e
             raise DecisionGraphError(DG_ERR_STORAGE, f"Database error: {e}") from e
 
     def _check_idempotency(
@@ -301,17 +322,7 @@ class PostgresEventStore:
         if row is None:
             return None
 
-        # Check if payload matches
-        if row["payload_hash"] == payload_hash:
-            # Idempotent retry - return existing event
-            return row_to_stored_event(row)
-        else:
-            # Different payload - conflict
-            raise DecisionGraphError(
-                DG_ERR_IDEMPOTENCY_CONFLICT,
-                f"Idempotency key '{envelope.idempotency_key}' already used "
-                f"with different payload",
-            )
+        return validate_idempotent_reuse(envelope, row, payload_hash)
 
     def get_trace_events(
         self,

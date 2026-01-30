@@ -9,23 +9,21 @@ This module provides graph query functionality:
 """
 
 import json
-from collections import deque
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from decisiongraph.errors import (
     DG_ERR_INVALID_ARGUMENT,
     DG_ERR_PROJECTION_OUT_OF_DATE,
     DecisionGraphError,
 )
-from decisiongraph.projections.interfaces import Edge, Node
+from decisiongraph.projections.interfaces import Edge, Node, ProjectionBackend
 from decisiongraph.query.constants import MAX_GRAPH_DEPTH
 from decisiongraph.query.filters import GraphEdgeCursor, GraphFilter
 
 if TYPE_CHECKING:
     from typing import Literal
 
-    from decisiongraph.projections.projector import SQLiteProjector
     from decisiongraph.storage.interface import EventStore
 
 
@@ -77,7 +75,7 @@ class GraphEdgePage:
     next_cursor: GraphEdgeCursor | None
 
 
-def _check_staleness(store: "EventStore", projector: "SQLiteProjector") -> None:
+def _check_staleness(store: "EventStore", projector: "ProjectionBackend") -> None:
     """Check if projections are up-to-date with event log.
 
     Args:
@@ -99,7 +97,7 @@ def _check_staleness(store: "EventStore", projector: "SQLiteProjector") -> None:
 
 def get_context_subgraph(
     store: "EventStore",
-    projector: "SQLiteProjector",
+    projector: "ProjectionBackend",
     center: NodeRef,
     max_depth: int = 1,
     filter_opts: GraphFilter | None = None,
@@ -141,84 +139,79 @@ def get_context_subgraph(
             f"max_depth must be <= {MAX_GRAPH_DEPTH}, got {filter_opts.max_depth}",
         )
 
-    # Access the projector's connection
-    conn = projector.connection
-
     # BFS traversal from center node
     center_key = center.node_key
     visited_nodes: set[str] = set()
     visited_edges: set[str] = set()
-    node_queue: deque[tuple[str, int]] = deque()  # (node_id, depth)
-
-    # Add center node
-    node_queue.append((center_key, 0))
+    frontier: set[str] = {center_key}
     visited_nodes.add(center_key)
 
     truncated = False
+    current_depth = 0
 
-    # BFS traversal
-    while node_queue and not truncated:
-        current_node_id, current_depth = node_queue.popleft()
-
-        # Stop if we've reached max_depth
-        if current_depth >= filter_opts.max_depth:
-            continue
-
-        # Get edges from this node
-        cursor = conn.execute(
-            """
-            SELECT * FROM dg_cg_edges
-            WHERE from_node_id = ? OR to_node_id = ?
-            ORDER BY edge_id
-            """,
-            (current_node_id, current_node_id),
+    # BFS traversal by depth, batching frontier queries
+    while frontier and not truncated and current_depth < filter_opts.max_depth:
+        placeholders = ",".join("?" * len(frontier))
+        params: list[Any] = list(frontier) + list(frontier)
+        where_clause = (
+            f"(from_node_id IN ({placeholders}) OR to_node_id IN ({placeholders}))"
         )
 
-        for row in cursor.fetchall():
+        if filter_opts.edge_types:
+            edge_placeholders = ",".join("?" * len(filter_opts.edge_types))
+            where_clause += f" AND edge_type IN ({edge_placeholders})"
+            params.extend(list(filter_opts.edge_types))
+
+        rows = projector.execute_query(
+            f"SELECT * FROM dg_cg_edges WHERE {where_clause} ORDER BY edge_id",
+            params,
+        )
+
+        next_frontier: set[str] = set()
+        for row in rows:
             edge_id = row["edge_id"]
 
-            # Check edge type filter
-            if filter_opts.edge_types and row["edge_type"] not in filter_opts.edge_types:
+            if edge_id in visited_edges:
                 continue
 
-            # Add edge if not visited
-            if edge_id not in visited_edges:
-                visited_edges.add(edge_id)
+            visited_edges.add(edge_id)
 
-                # Check max_edges limit
-                if len(visited_edges) > filter_opts.max_edges:
+            if len(visited_edges) > filter_opts.max_edges:
+                truncated = True
+                break
+
+            from_node = row["from_node_id"]
+            to_node = row["to_node_id"]
+
+            for neighbor in (from_node, to_node):
+                if neighbor in visited_nodes:
+                    continue
+                if filter_opts.node_types:
+                    node_type = neighbor.split(":", 1)[0] if ":" in neighbor else ""
+                    if node_type not in filter_opts.node_types:
+                        continue
+
+                visited_nodes.add(neighbor)
+                next_frontier.add(neighbor)
+
+                if len(visited_nodes) > filter_opts.max_nodes:
                     truncated = True
                     break
+            if truncated:
+                break
 
-                # Add neighbor nodes to queue
-                from_node = row["from_node_id"]
-                to_node = row["to_node_id"]
-
-                for neighbor in [from_node, to_node]:
-                    if neighbor != current_node_id and neighbor not in visited_nodes:
-                        # Check node type filter
-                        if filter_opts.node_types:
-                            node_type = neighbor.split(":", 1)[0] if ":" in neighbor else ""
-                            if node_type not in filter_opts.node_types:
-                                continue
-
-                        visited_nodes.add(neighbor)
-                        node_queue.append((neighbor, current_depth + 1))
-
-                        # Check max_nodes limit
-                        if len(visited_nodes) > filter_opts.max_nodes:
-                            truncated = True
-                            break
+        frontier = next_frontier
+        current_depth += 1
 
     # Fetch all visited nodes
     nodes: list[Node] = []
     if visited_nodes:
         placeholders = ",".join("?" * len(visited_nodes))
-        cursor = conn.execute(
+        rows = projector.execute_query(
             f"SELECT * FROM dg_cg_nodes WHERE node_id IN ({placeholders}) ORDER BY node_id",
             list(visited_nodes),
         )
-        for row in cursor.fetchall():
+        for row in rows:
             nodes.append(
                 Node(
                     node_id=row["node_id"],
@@ -234,11 +227,11 @@ def get_context_subgraph(
     edges: list[Edge] = []
     if visited_edges:
         placeholders = ",".join("?" * len(visited_edges))
-        cursor = conn.execute(
+        rows = projector.execute_query(
             f"SELECT * FROM dg_cg_edges WHERE edge_id IN ({placeholders}) ORDER BY edge_id",
             list(visited_edges),
         )
-        for row in cursor.fetchall():
+        for row in rows:
             edges.append(
                 Edge(
                     edge_id=row["edge_id"],
@@ -262,7 +255,7 @@ def get_context_subgraph(
 
 def list_node_edges(
     store: "EventStore",
-    projector: "SQLiteProjector",
+    projector: "ProjectionBackend",
     node: NodeRef,
     direction: "Literal['outgoing', 'incoming', 'both']" = "both",
     cursor: GraphEdgeCursor | None = None,
@@ -296,8 +289,12 @@ def list_node_edges(
             f"limit must be positive, got {limit}",
         )
 
-    # Access the projector's connection
-    conn = projector.connection
+    if cursor and cursor.direction != direction:
+        raise DecisionGraphError(
+            DG_ERR_INVALID_ARGUMENT,
+            "cursor.direction must match direction argument",
+        )
+
     node_key = node.node_key
 
     # Build query based on direction
@@ -327,8 +324,7 @@ def list_node_edges(
 
     params.append(limit + 1)  # Fetch one extra to check if there's a next page
 
-    result = conn.execute(query, params)
-    rows = result.fetchall()
+    rows = projector.execute_query(query, params)
 
     # Convert to Edge objects
     edges: list[Edge] = []

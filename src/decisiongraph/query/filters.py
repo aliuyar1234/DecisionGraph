@@ -9,6 +9,7 @@ This module defines filter and cursor types for querying:
 from dataclasses import dataclass
 from typing import Literal
 
+from decisiongraph.errors import DG_ERR_INVALID_ARGUMENT, DecisionGraphError
 from decisiongraph.query.constants import MAX_GRAPH_DEPTH, MAX_QUERY_LIMIT
 
 
@@ -35,21 +36,39 @@ class EventFilter:
     def __post_init__(self) -> None:
         """Validate filter parameters."""
         if self.since_log_seq is not None and self.since_log_seq < 0:
-            raise ValueError("since_log_seq must be non-negative")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "since_log_seq must be non-negative",
+            )
         if self.until_log_seq is not None and self.until_log_seq < 0:
-            raise ValueError("until_log_seq must be non-negative")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "until_log_seq must be non-negative",
+            )
         if (
             self.since_log_seq is not None
             and self.until_log_seq is not None
             and self.since_log_seq > self.until_log_seq
         ):
-            raise ValueError("since_log_seq must be <= until_log_seq")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "since_log_seq must be <= until_log_seq",
+            )
         if self.since_trace_seq is not None and self.since_trace_seq < 0:
-            raise ValueError("since_trace_seq must be non-negative")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "since_trace_seq must be non-negative",
+            )
         if self.limit is not None and self.limit <= 0:
-            raise ValueError("limit must be positive")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "limit must be positive",
+            )
         if self.limit is not None and self.limit > MAX_QUERY_LIMIT:
-            raise ValueError(f"limit must be <= {MAX_QUERY_LIMIT}")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                f"limit must be <= {MAX_QUERY_LIMIT}",
+            )
 
 
 @dataclass(frozen=True)
@@ -73,17 +92,35 @@ class GraphFilter:
     def __post_init__(self) -> None:
         """Validate filter parameters."""
         if self.max_depth < 0:
-            raise ValueError("max_depth must be non-negative")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "max_depth must be non-negative",
+            )
         if self.max_depth > MAX_GRAPH_DEPTH:
-            raise ValueError(f"max_depth must be <= {MAX_GRAPH_DEPTH}")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                f"max_depth must be <= {MAX_GRAPH_DEPTH}",
+            )
         if self.max_nodes <= 0:
-            raise ValueError("max_nodes must be positive")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "max_nodes must be positive",
+            )
         if self.max_edges <= 0:
-            raise ValueError("max_edges must be positive")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "max_edges must be positive",
+            )
         if self.edge_types is not None and not self.edge_types:
-            raise ValueError("edge_types must not be empty if specified")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "edge_types must not be empty if specified",
+            )
         if self.node_types is not None and not self.node_types:
-            raise ValueError("node_types must not be empty if specified")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "node_types must not be empty if specified",
+            )
 
 
 @dataclass(frozen=True)
@@ -101,9 +138,15 @@ class GraphEdgeCursor:
     def __post_init__(self) -> None:
         """Validate cursor parameters."""
         if not self.edge_key:
-            raise ValueError("edge_key must not be empty")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "edge_key must not be empty",
+            )
         if self.direction not in ("outgoing", "incoming", "both"):
-            raise ValueError('direction must be "outgoing", "incoming", or "both"')
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                'direction must be "outgoing", "incoming", or "both"',
+            )
 
 
 __all__ = [

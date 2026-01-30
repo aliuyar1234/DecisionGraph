@@ -14,9 +14,9 @@ from decisiongraph.errors import (
     DG_ERR_PROJECTION_OUT_OF_DATE,
     DecisionGraphError,
 )
+from decisiongraph.projections.interfaces import ProjectionBackend
 
 if TYPE_CHECKING:
-    from decisiongraph.projections.projector import SQLiteProjector
     from decisiongraph.storage.interface import EventStore
 
 
@@ -43,13 +43,25 @@ class PrecedentQuery:
     def __post_init__(self) -> None:
         """Validate query parameters."""
         if self.policy_version is not None and self.policy_id is None:
-            raise ValueError("policy_version requires policy_id")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "policy_version requires policy_id",
+            )
         if self.entity_id is not None and self.entity_type is None:
-            raise ValueError("entity_id requires entity_type")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "entity_id requires entity_type",
+            )
         if self.limit <= 0:
-            raise ValueError("limit must be positive")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "limit must be positive",
+            )
         if self.limit > 10000:
-            raise ValueError("limit must be <= 10000")
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "limit must be <= 10000",
+            )
 
 
 @dataclass(frozen=True)
@@ -75,22 +87,9 @@ class PrecedentHit:
     finished_at: str
 
 
-def _escape_like_wildcards(value: str) -> str:
-    """Escape SQL LIKE wildcards in a string.
-
-    Args:
-        value: String to escape
-
-    Returns:
-        Escaped string safe for LIKE patterns
-    """
-    # Escape backslash first, then % and _
-    return value.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
-
-
 def find_precedents(
     store: "EventStore",
-    projector: "SQLiteProjector",
+    projector: ProjectionBackend,
     query: PrecedentQuery,
 ) -> list[PrecedentHit]:
     """Find similar past decisions per SSOT 7.6.1.
@@ -130,12 +129,9 @@ def find_precedents(
             f"limit must be <= 10000, got {query.limit}",
         )
 
-    # Access the projector's connection
-    conn = projector.connection
-
     # Build query based on filters
     # We need to find finished traces that match the criteria
-    # by joining with policy edges if policy_id is specified
+    # by joining with policy index if policy_id is specified
 
     conditions = ["ts.outcome IS NOT NULL"]  # Only finished traces
     params: list[str | int] = []
@@ -157,17 +153,6 @@ def find_precedents(
 
     # Build the base query
     if query.policy_id:
-        # Join with edges to find traces that evaluated the policy
-        if query.policy_version:
-            # Exact match with version
-            policy_node_id = f"policy:{query.policy_id}:{query.policy_version}"
-            policy_condition = "e.to_node_id = ?"
-        else:
-            # Match any version of this policy - escape wildcards
-            escaped_policy = _escape_like_wildcards(query.policy_id)
-            policy_node_id = f"policy:{escaped_policy}%"
-            policy_condition = "e.to_node_id LIKE ? ESCAPE '\\'"
-
         sql = f"""
             SELECT DISTINCT
                 ts.trace_id,
@@ -175,18 +160,20 @@ def find_precedents(
                 ts.title,
                 ts.outcome,
                 ts.finished_at,
-                ts.last_log_seq
+                ts.last_log_seq,
+                pei.policy_id,
+                pei.policy_version
             FROM dg_trace_summary ts
-            JOIN dg_cg_edges e ON e.trace_id = ts.trace_id
+            JOIN dg_policy_eval_index pei ON pei.trace_id = ts.trace_id
             WHERE {' AND '.join(conditions)}
-                AND e.edge_type = 'trace_evaluated_policy'
-                AND {policy_condition}
-            ORDER BY ts.last_log_seq DESC
-            LIMIT ?
+                AND pei.policy_id = ?
         """
-        params.append(policy_node_id)
+        params.append(query.policy_id)
+        if query.policy_version:
+            sql += " AND pei.policy_version = ?"
+            params.append(query.policy_version)
+        sql += " ORDER BY ts.last_log_seq DESC LIMIT ?"
     else:
-        # No policy filter - query trace_summary directly
         sql = f"""
             SELECT
                 trace_id,
@@ -204,8 +191,7 @@ def find_precedents(
     params.append(query.limit)
 
     # Execute query
-    cursor = conn.execute(sql, params)
-    rows = cursor.fetchall()
+    rows = projector.execute_query(sql, params)
 
     # Convert to PrecedentHit objects
     precedents: list[PrecedentHit] = []
@@ -215,8 +201,8 @@ def find_precedents(
         policy_version = None
 
         if query.policy_id:
-            policy_id = query.policy_id
-            policy_version = query.policy_version
+            policy_id = row["policy_id"]
+            policy_version = row["policy_version"]
 
         precedents.append(
             PrecedentHit(

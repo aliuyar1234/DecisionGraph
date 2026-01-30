@@ -1,7 +1,7 @@
 """Projection engine for building read models from events.
 
 This module provides:
-- SQLiteProjector for transforming events into projections
+- SQLite/PostgreSQL projectors for transforming events into projections
 - Context graph (nodes/edges) for decision visualization
 - Trace summaries for precedent search
 - Precedent index for fast lookups
@@ -41,9 +41,21 @@ from decisiongraph.projections.interfaces import (
     NODE_TYPE_TRACE,
     Edge,
     Node,
-    Projector,
+    ProjectionBackend,
+    ProjectionBuilder,
+    ProjectionEngine,
 )
 from decisiongraph.projections.projector import SQLiteProjector
+from decisiongraph.projections.runner import Projector
+
+# Optional PostgreSQL projector
+try:
+    from decisiongraph.projections.postgres import PostgresProjector
+
+    HAS_POSTGRES = True
+except ImportError:  # pragma: no cover - optional dependency
+    PostgresProjector = None  # type: ignore[misc,assignment]
+    HAS_POSTGRES = False
 
 __all__ = [
     # Node types
@@ -71,9 +83,15 @@ __all__ = [
     "Edge",
     "GraphEmission",
     # Protocol
+    "ProjectionBuilder",
+    "ProjectionBackend",
+    "ProjectionEngine",
+    # Runner
     "Projector",
     # Implementation
     "SQLiteProjector",
+    "PostgresProjector",
+    "HAS_POSTGRES",
     "ContextGraphEmitter",
     # Helpers
     "make_node_id",

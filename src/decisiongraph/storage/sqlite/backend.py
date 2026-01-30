@@ -24,6 +24,7 @@ from decisiongraph.errors import (
 from decisiongraph.storage._shared import (
     prepare_event_for_insert,
     row_to_stored_event,
+    validate_idempotent_reuse,
     validate_trace_seq,
 )
 from decisiongraph.storage.migrations import MigrationEngine
@@ -47,23 +48,34 @@ class SQLiteEventStore:
         store = SQLiteEventStore("events.db")  # File-based for production
     """
 
-    def __init__(self, db_path: str | Path) -> None:
+    def __init__(self, db_path: str | Path, *, read_only: bool = False) -> None:
         """Initialize SQLite event store.
 
         Args:
             db_path: Path to SQLite database file, or ":memory:" for in-memory
         """
         self._db_path = str(db_path) if isinstance(db_path, Path) else db_path
-        self._conn = sqlite3.connect(self._db_path)
+        self._read_only = read_only
+
+        if read_only:
+            if self._db_path == ":memory:":
+                raise ValueError("read_only is not supported for in-memory databases")
+            uri = f"file:{self._db_path}?mode=ro"
+            self._conn = sqlite3.connect(uri, uri=True)
+        else:
+            self._conn = sqlite3.connect(self._db_path)
         self._conn.row_factory = sqlite3.Row
 
         # Enable foreign keys and WAL mode for better concurrency
         self._conn.execute("PRAGMA foreign_keys = ON")
-        if self._db_path != ":memory:":
+        if not read_only and self._db_path != ":memory:":
             self._conn.execute("PRAGMA journal_mode = WAL")
+        if read_only:
+            self._conn.execute("PRAGMA query_only = ON")
 
-        # Run migrations
-        self._migrate()
+        # Run migrations (skip for read-only)
+        if not read_only:
+            self._migrate()
 
     def _get_migrations_dir(self) -> Path:
         """Get the migrations directory path."""
@@ -77,6 +89,11 @@ class SQLiteEventStore:
     def close(self) -> None:
         """Close the database connection."""
         self._conn.close()
+
+    @property
+    def connection(self) -> sqlite3.Connection:
+        """Get the database connection (read-only for external usage)."""
+        return self._conn
 
     def __enter__(self) -> "SQLiteEventStore":
         """Context manager entry."""
@@ -182,6 +199,11 @@ class SQLiteEventStore:
         except sqlite3.IntegrityError as e:
             self._conn.rollback()
             error_str = str(e).lower()
+            if "trace_finished" in error_str:
+                raise DecisionGraphError(
+                    DG_ERR_CONFLICT,
+                    f"Trace '{envelope.trace_id}' is already finished",
+                ) from e
             if "idempotency" in error_str:
                 raise DecisionGraphError(
                     DG_ERR_IDEMPOTENCY_CONFLICT,
@@ -195,6 +217,12 @@ class SQLiteEventStore:
             raise DecisionGraphError(DG_ERR_STORAGE, f"Database error: {e}") from e
         except sqlite3.Error as e:
             self._conn.rollback()
+            error_str = str(e).lower()
+            if "trace_finished" in error_str:
+                raise DecisionGraphError(
+                    DG_ERR_CONFLICT,
+                    f"Trace '{envelope.trace_id}' is already finished",
+                ) from e
             raise DecisionGraphError(DG_ERR_STORAGE, f"Database error: {e}") from e
 
     def _check_idempotency(
@@ -224,17 +252,7 @@ class SQLiteEventStore:
         if row is None:
             return None
 
-        # Check if payload matches
-        if row["payload_hash"] == payload_hash:
-            # Idempotent retry - return existing event
-            return row_to_stored_event(row)
-        else:
-            # Different payload - conflict
-            raise DecisionGraphError(
-                DG_ERR_IDEMPOTENCY_CONFLICT,
-                f"Idempotency key '{envelope.idempotency_key}' already used "
-                f"with different payload",
-            )
+        return validate_idempotent_reuse(envelope, row, payload_hash)
 
     def get_trace_events(
         self,

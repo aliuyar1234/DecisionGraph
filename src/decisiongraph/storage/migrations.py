@@ -122,18 +122,19 @@ class MigrationEngine:
         Raises:
             sqlite3.Error: If migration SQL fails
         """
-        # Execute migration SQL
-        self._conn.executescript(migration.sql)
-
-        # Record as applied
-        self._conn.execute(
-            f"""
-            INSERT INTO {self.SCHEMA_MIGRATIONS_TABLE} (version, name)
-            VALUES (?, ?)
-            """,
-            (migration.version, migration.name),
+        # Execute migration SQL and record application atomically
+        escaped_name = migration.name.replace("'", "''")
+        script = (
+            f"{migration.sql}\n"
+            f"INSERT INTO {self.SCHEMA_MIGRATIONS_TABLE} (version, name)\n"
+            f"VALUES ({migration.version}, '{escaped_name}');\n"
         )
-        self._conn.commit()
+        try:
+            self._conn.executescript(script)
+            self._conn.commit()
+        except sqlite3.Error:
+            self._conn.rollback()
+            raise
 
     def migrate(self) -> list[Migration]:
         """Apply all pending migrations.
