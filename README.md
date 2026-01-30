@@ -5,6 +5,7 @@ Event-sourced decision audit trail for AI agents.
 [![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg?label=CI)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/aliuyar1234/DecisionGraph/branch/master/graph/badge.svg)](https://codecov.io/gh/aliuyar1234/DecisionGraph)
 [![Demo](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml/badge.svg?label=Demo)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml)
+[![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://aliuyar1234.github.io/DecisionGraph/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 
@@ -187,6 +188,19 @@ uv run pytest
 uv run mypy src/ --strict
 uv run ruff check src/
 uv run lint-imports
+```
+
+### Docs
+
+```bash
+uv sync --extra docs
+uv run mkdocs serve
+```
+
+### Pre-commit
+
+```bash
+uv run pre-commit install
 ```
 
 ## Test Coverage

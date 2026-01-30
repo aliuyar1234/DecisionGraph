@@ -1,0 +1,17 @@
+site_name: DecisionGraph
+site_description: Event-sourced decision audit trail for AI agents.
+site_url: https://aliuyar1234.github.io/DecisionGraph/
+repo_url: https://github.com/aliuyar1234/DecisionGraph
+repo_name: aliuyar1234/DecisionGraph
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - API: api.md

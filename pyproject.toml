@@ -34,12 +34,18 @@ dev = [
     "mypy>=1.8",
     "ruff>=0.1",
     "import-linter>=2.0",
+    "pre-commit>=3.7",
+    "build>=1.0",
+]
+docs = [
+    "mkdocs-material>=9.5",
 ]
 
 [project.urls]
-Homepage = "https://github.com/decisiongraph/decisiongraph"
-Documentation = "https://github.com/decisiongraph/decisiongraph"
-Repository = "https://github.com/decisiongraph/decisiongraph"
+Homepage = "https://github.com/aliuyar1234/DecisionGraph"
+Documentation = "https://aliuyar1234.github.io/DecisionGraph/"
+Repository = "https://github.com/aliuyar1234/DecisionGraph"
+Issues = "https://github.com/aliuyar1234/DecisionGraph/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
