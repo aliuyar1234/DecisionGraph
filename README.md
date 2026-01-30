@@ -2,6 +2,10 @@
 
 Event-sourced decision audit trail for AI agents.
 
+[![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
+
 ## Why?
 
 When AI agents make decisions (approving discounts, escalating tickets, routing requests) you need an immutable audit trail that answers:
