@@ -218,6 +218,10 @@ uv run mkdocs serve
 uv run pre-commit install
 ```
 
+## Contributing
+
+See `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`.
+
 ## Test Coverage
 
 **400+ tests** covering:
