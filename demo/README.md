@@ -12,6 +12,15 @@ uv run python demo/run_demo.py
 
 This writes `demo/output.md` and prints the same report to stdout.
 
+## LLM Demo (local models)
+
+```bash
+# Uses D:\models\qwen-1.5b if available, or pass a path explicitly
+uv run python demo/run_llm_demo.py --model-path D:\models\qwen-1.5b
+```
+
+This writes `demo/llm_output.md` and `demo/llm_demo.db` (both ignored by git).
+
 ## Keep the SQLite DB
 
 ```bash

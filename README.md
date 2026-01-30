@@ -74,6 +74,14 @@ uv run python demo/run_demo.py
 
 See `demo/output.md` for the generated report and `demo/README.md` for details.
 
+### LLM Demo (local models)
+
+```bash
+uv run python demo/run_llm_demo.py --model-path D:\models\qwen-1.5b
+```
+
+This runs a real local model and persists the trace to `demo/llm_demo.db`.
+
 ## Sample Database
 
 ```bash
