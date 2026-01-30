@@ -9,7 +9,14 @@ Event-sourced decision audit trail for AI agents.
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 
-## Why?
+## At a Glance
+
+- **Append-only audit log** of decision events
+- **Deterministic digests** to verify replays
+- **Local-first** (SQLite/PostgreSQL), no service required
+- **Strict validation + PII guard** built in
+
+## Why DecisionGraph?
 
 When AI agents make decisions (approving discounts, escalating tickets, routing requests) you need an immutable audit trail that answers:
 
@@ -19,7 +26,13 @@ When AI agents make decisions (approving discounts, escalating tickets, routing 
 
 DecisionGraph is a library, not a service. Embed it directly in your agent code.
 
-## Install
+### Use cases
+
+- Compliance/audit trails for agent decisions
+- Exception workflows with approvals and precedent tracking
+- Reproducible evaluations for safety and policy changes
+
+## Quickstart
 
 ```bash
 git clone https://github.com/aliuyar1234/DecisionGraph.git
@@ -29,15 +42,6 @@ uv sync
 # With PostgreSQL support
 uv sync --extra postgres
 ```
-
-## PostgreSQL (dev/CI)
-
-```bash
-docker compose up -d postgres
-export PG_CONNINFO="host=localhost port=5432 dbname=decisiongraph_test user=decisiongraph password=decisiongraph"
-```
-
-## Usage
 
 ```python
 from decisiongraph import DecisionGraph
@@ -67,6 +71,13 @@ events = dg.get_trace_events(trace_id)
 print(f"Recorded {len(events)} events")
 ```
 
+### PostgreSQL (dev/CI)
+
+```bash
+docker compose up -d postgres
+export PG_CONNINFO="host=localhost port=5432 dbname=decisiongraph_test user=decisiongraph password=decisiongraph"
+```
+
 ## Demo
 
 ```bash
@@ -90,6 +101,10 @@ uv run python demo/run_llm_demo.py --model-path D:\models\qwen-1.5b
 ```
 
 This runs a real local model and persists the trace to `demo/llm_demo.db`.
+
+## Documentation
+
+Full docs at https://aliuyar1234.github.io/DecisionGraph/
 
 ## Sample Database
 
@@ -205,7 +220,7 @@ uv run pre-commit install
 
 ## Test Coverage
 
-**460 tests** covering:
+**400+ tests** covering:
 
 | Category | Tests | Coverage |
 |----------|-------|----------|
