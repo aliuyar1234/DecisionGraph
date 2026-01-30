@@ -267,7 +267,8 @@ tests/
 
 ## Support
 
-For bugs or feature requests, open an issue: https://github.com/aliuyar1234/DecisionGraph/issues
+For bugs or feature requests, open an issue: https://github.com/aliuyar1234/DecisionGraph/issues  
+For questions, use Discussions: https://github.com/aliuyar1234/DecisionGraph/discussions
 
 ## License
 
