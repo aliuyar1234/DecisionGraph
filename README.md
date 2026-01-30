@@ -74,6 +74,14 @@ uv run python demo/run_demo.py
 
 See `demo/output.md` for the generated report and `demo/README.md` for details.
 
+### Golden E2E Check
+
+```bash
+uv run python demo/run_golden_e2e.py
+```
+
+This runs a deterministic end-to-end trace and asserts projection digests.
+
 ### LLM Demo (local models)
 
 ```bash

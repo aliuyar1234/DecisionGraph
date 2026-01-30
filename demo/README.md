@@ -21,6 +21,14 @@ uv run python demo/run_llm_demo.py --model-path D:\models\qwen-1.5b
 
 This writes `demo/llm_output.md` and `demo/llm_demo.db` (both ignored by git).
 
+## Golden E2E Check
+
+```bash
+uv run python demo/run_golden_e2e.py
+```
+
+This runs a deterministic end-to-end trace and asserts projection digests.
+
 ## Keep the SQLite DB
 
 ```bash
