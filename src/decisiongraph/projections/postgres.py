@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable
+from collections.abc import Sequence
 from typing import Any
 
 try:
-    from psycopg import Connection  # type: ignore[import-not-found]
-    from psycopg.rows import dict_row  # type: ignore[import-not-found]
+    from psycopg import Connection
+    from psycopg.rows import dict_row
 except ImportError as e:
     raise ImportError(
         "psycopg is required for PostgreSQL projection support. "
@@ -53,11 +53,11 @@ class PostgresProjector:
         return self._conn
 
     def execute_query(
-        self, sql: str, params: Iterable[Any] | None = None
+        self, sql: str, params: Sequence[Any] | None = None
     ) -> list[dict[str, Any]]:
         sql = sql.replace("?", "%s")
         with self._conn.cursor() as cur:
-            cur.execute(sql, params or [])
+            cur.execute(sql, params or ())
             rows = cur.fetchall()
         return [dict(row) for row in rows]
 

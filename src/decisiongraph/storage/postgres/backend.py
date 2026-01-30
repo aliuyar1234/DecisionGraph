@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Any
 
 try:
-    import psycopg  # type: ignore[import-not-found]
+    import psycopg
     from psycopg import Connection
-    from psycopg.rows import dict_row  # type: ignore[import-not-found]
+    from psycopg.rows import dict_row
 except ImportError as e:
     raise ImportError(
         "psycopg is required for PostgreSQL support. "
