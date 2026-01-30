@@ -265,6 +265,10 @@ tests/
     golden/             # Deterministic replay fixtures
 ```
 
+## Support
+
+For bugs or feature requests, open an issue: https://github.com/aliuyar1234/DecisionGraph/issues
+
 ## License
 
 Apache-2.0
