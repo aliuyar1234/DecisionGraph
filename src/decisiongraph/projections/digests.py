@@ -48,7 +48,7 @@ def compute_context_graph_digest(conn: Any) -> str:
     Returns:
         SHA-256 digest prefixed with "sha256:"
     """
-    if sqlite3 is not None and hasattr(conn, "row_factory"):
+    if sqlite3 is not None and isinstance(conn, sqlite3.Connection):
         conn.row_factory = sqlite3.Row
 
     # Get nodes in deterministic order
@@ -119,7 +119,7 @@ def compute_trace_summary_digest(conn: Any) -> str:
     Returns:
         SHA-256 digest prefixed with "sha256:"
     """
-    if sqlite3 is not None and hasattr(conn, "row_factory"):
+    if sqlite3 is not None and isinstance(conn, sqlite3.Connection):
         conn.row_factory = sqlite3.Row
 
     rows = _fetch_rows(
@@ -162,7 +162,7 @@ def compute_precedent_index_digest(conn: Any) -> str:
     Returns:
         SHA-256 digest prefixed with "sha256:"
     """
-    if sqlite3 is not None and hasattr(conn, "row_factory"):
+    if sqlite3 is not None and isinstance(conn, sqlite3.Connection):
         conn.row_factory = sqlite3.Row
 
     rows = _fetch_rows(

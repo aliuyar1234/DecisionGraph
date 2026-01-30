@@ -69,6 +69,7 @@ class TestMigration:
         """TC-P4-001: Migrations apply cleanly to a fresh database."""
         # Create store - this should apply migrations
         store = PostgresEventStore(pg_conninfo)
+        store.clear()
 
         # Verify migrations were applied by checking we can get last_log_seq
         assert store.get_last_log_seq() == 0
