@@ -58,7 +58,7 @@ Thumbs.db
 *.log
 
 # Local database
-decisions.db
+*.db
 
 # Windows null device
 nul

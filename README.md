@@ -23,6 +23,13 @@ uv sync
 uv sync --extra postgres
 ```
 
+## PostgreSQL (dev/CI)
+
+```bash
+docker compose up -d postgres
+export PG_CONNINFO="host=localhost port=5432 dbname=decisiongraph_test user=decisiongraph password=decisiongraph"
+```
+
 ## Usage
 
 ```python
@@ -51,6 +58,12 @@ dg.finish_trace(trace_id, outcome="success", source=source, actor=actor)
 # Query later
 events = dg.get_trace_events(trace_id)
 print(f"Recorded {len(events)} events")
+```
+
+## Sample Database
+
+```bash
+python scripts/generate_sample_db.py --output sample.db
 ```
 
 ## Architecture
@@ -106,10 +119,10 @@ subgraph = dg.get_context_subgraph(node_type="entity", node_id="acct-123", max_d
 
 ```bash
 # Rebuild projections, print digests
-python -m decisiongraph replay decisions.db
+python -m decisiongraph replay sample.db
 
 # Dump trace as JSON
-python -m decisiongraph dump-trace decisions.db trace-123
+python -m decisiongraph dump-trace sample.db trace-123
 ```
 
 ## Design Principles
@@ -143,11 +156,12 @@ uv sync
 uv run pytest
 uv run mypy src/ --strict
 uv run ruff check src/
+uv run import-linter
 ```
 
 ## Test Coverage
 
-**452 tests** covering:
+**460 tests** covering:
 
 | Category | Tests | Coverage |
 |----------|-------|----------|
