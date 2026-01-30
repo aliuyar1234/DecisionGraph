@@ -14,15 +14,19 @@ from decisiongraph.domain.events import (
     EVENT_TYPE_ENTITY_OBSERVED,
     EVENT_TYPE_TRACE_FINISHED,
     EVENT_TYPE_TRACE_STARTED,
+    EventEnvelope,
 )
+from decisiongraph.domain.types import ActorRef, SourceRef
 from decisiongraph.errors import (
     DG_ERR_CONFLICT,
     DG_ERR_EVENT_SEQUENCE_INVALID,
     DG_ERR_IDEMPOTENCY_CONFLICT,
+    DG_ERR_SCHEMA_VIOLATION,
     DecisionGraphError,
 )
 from decisiongraph.ids import generate_trace_id
 from decisiongraph.testing import InMemoryEventStore, create_test_envelope
+from decisiongraph.time import now_rfc3339
 
 
 class TestIdempotencyConflictDetection:
@@ -76,6 +80,39 @@ class TestIdempotencyConflictDetection:
 
         assert exc_info.value.code == DG_ERR_IDEMPOTENCY_CONFLICT
         assert "different payload" in str(exc_info.value)
+
+    def test_same_key_same_payload_different_metadata_conflict(self) -> None:
+        """Same idempotency key with different metadata raises conflict."""
+        store = InMemoryEventStore()
+        trace_id = generate_trace_id()
+        payload = {"workflow": "test", "title": "Original"}
+
+        env1 = create_test_envelope(
+            trace_id=trace_id,
+            trace_seq=0,
+            event_type=EVENT_TYPE_TRACE_STARTED,
+            payload=payload,
+            idempotency_key="meta-key",
+            actor_id="actor-1",
+            producer_id="producer-1",
+        )
+        store.append_event(env1)
+
+        env2 = create_test_envelope(
+            trace_id=trace_id,
+            trace_seq=0,
+            event_type=EVENT_TYPE_TRACE_STARTED,
+            payload=payload,
+            idempotency_key="meta-key",
+            actor_id="actor-2",
+            producer_id="producer-1",
+        )
+
+        with pytest.raises(DecisionGraphError) as exc_info:
+            store.append_event(env2)
+
+        assert exc_info.value.code == DG_ERR_IDEMPOTENCY_CONFLICT
+        assert "different metadata" in str(exc_info.value)
 
     def test_same_key_different_producer_allowed(self) -> None:
         """Same idempotency key from different producers is allowed."""
@@ -387,6 +424,32 @@ class TestEmptyStoreQueries:
         """get_next_trace_seq on empty store returns 0."""
         store = InMemoryEventStore()
         assert store.get_next_trace_seq("any-trace") == 0
+
+
+class TestSchemaValidation:
+    """Tests for payload schema validation."""
+
+    def test_missing_required_fields_rejected(self) -> None:
+        """Missing required payload fields raise schema violation."""
+        store = InMemoryEventStore()
+        trace_id = generate_trace_id()
+
+        env = EventEnvelope(
+            event_id="evt-missing",
+            trace_id=trace_id,
+            trace_seq=0,
+            event_type=EVENT_TYPE_TRACE_STARTED,
+            occurred_at=now_rfc3339(),
+            source=SourceRef(producer_id="producer", system="test"),
+            actor=ActorRef(actor_type="agent", actor_id="test"),
+            idempotency_key="missing-fields",
+            payload={"workflow": "test", "title": "Missing entity"},
+        )
+
+        with pytest.raises(DecisionGraphError) as exc_info:
+            store.append_event(env)
+
+        assert exc_info.value.code == DG_ERR_SCHEMA_VIOLATION
 
 
 class TestStoreQueries:

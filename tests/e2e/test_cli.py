@@ -29,7 +29,7 @@ class TestCLI:
         fixture = load_fixture(FIXTURES_DIR / "renewal")
 
         store = SQLiteEventStore(str(db_path))
-        conn = store._conn
+        conn = store.connection
         projector = SQLiteProjector(conn)
 
         for envelope in fixture.events:
@@ -139,3 +139,26 @@ class TestCLI:
             cmd_dump_trace(str(db_path), "nonexistent-trace-id")
 
         assert exc_info.value.code == 1
+
+    def test_cli_dump_trace_read_only_no_migrations(self, tmp_path: Path) -> None:
+        """dump-trace should not apply migrations or mutate DB."""
+        from decisiongraph.__main__ import cmd_dump_trace
+
+        db_path = tmp_path / "empty.db"
+        db_path.write_bytes(b"")
+
+        with pytest.raises(SystemExit):
+            cmd_dump_trace(str(db_path), "trace-does-not-exist")
+
+        import sqlite3
+
+        conn = sqlite3.connect(str(db_path))
+        tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        conn.close()
+
+        assert "schema_migrations" not in tables

@@ -2,7 +2,8 @@
 
 import pytest
 
-from decisiongraph.domain.events import EVENT_TYPE_TRACE_STARTED
+from decisiongraph.domain.events import EVENT_TYPE_TRACE_STARTED, EventEnvelope
+from decisiongraph.domain.types import ActorRef, SourceRef
 from decisiongraph.domain.validation import (
     FORBIDDEN_SUBSTRINGS,
     check_pii_guard,
@@ -15,6 +16,7 @@ from decisiongraph.errors import (
 )
 from decisiongraph.ids import generate_trace_id
 from decisiongraph.testing import InMemoryEventStore, create_test_envelope
+from decisiongraph.time import now_rfc3339
 
 
 class TestPIIGuard:
@@ -161,6 +163,33 @@ class TestPIIGuardInStore:
                 "title": "Test",
                 "token": "Bearer secret123",  # PII!
             },
+        )
+
+        with pytest.raises(DecisionGraphError) as exc_info:
+            store.append_event(env)
+
+        assert exc_info.value.code == DG_ERR_PII_POLICY_VIOLATION
+
+    def test_store_rejects_pii_in_metadata(self) -> None:
+        """Store rejects PII in actor/source/tags metadata."""
+        store = InMemoryEventStore()
+        trace_id = generate_trace_id()
+
+        env = EventEnvelope(
+            event_id="evt-1",
+            trace_id=trace_id,
+            trace_seq=0,
+            event_type=EVENT_TYPE_TRACE_STARTED,
+            occurred_at=now_rfc3339(),
+            source=SourceRef(producer_id="Bearer secret", system="test"),
+            actor=ActorRef(actor_type="agent", actor_id="safe"),
+            idempotency_key="meta-test",
+            payload={
+                "workflow": "test",
+                "title": "Test",
+                "primary_entity": {"entity_type": "Account", "entity_id": "acc-1"},
+            },
+            tags=["safe", "xoxb-secret"],
         )
 
         with pytest.raises(DecisionGraphError) as exc_info:

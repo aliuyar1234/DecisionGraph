@@ -267,7 +267,7 @@ class TestContextManager:
         import sqlite3
 
         with pytest.raises(sqlite3.ProgrammingError):
-            dg._store._conn.execute("SELECT 1")
+            dg._store.connection.execute("SELECT 1")
 
     def test_context_manager_closes_on_exception(
         self, db_path: str, source: SourceRef, actor: ActorRef, entity: EntityRef
@@ -292,7 +292,7 @@ class TestContextManager:
         import sqlite3
 
         with pytest.raises(sqlite3.ProgrammingError):
-            dg._store._conn.execute("SELECT 1")
+            dg._store.connection.execute("SELECT 1")
 
 
 class TestPersistence:

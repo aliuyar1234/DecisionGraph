@@ -155,7 +155,7 @@ def replay_fixture(fixture: GoldenFixture) -> dict[str, str]:
     """
     # Create in-memory store and projector
     store = SQLiteEventStore(":memory:")
-    conn = store._conn
+    conn = store.connection
     projector = SQLiteProjector(conn)
 
     # Append all events to store

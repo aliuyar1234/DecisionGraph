@@ -159,7 +159,7 @@ class TestEventQueries:
     def test_trace_summary_unfinished(self) -> None:
         """TC-P5-004: get_trace_summary for unfinished trace returns null outcome."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             env = create_test_envelope(
@@ -184,7 +184,7 @@ class TestEventQueries:
     def test_trace_summary_finished(self) -> None:
         """TC-P5-005: get_trace_summary for finished trace returns outcome."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Start trace
@@ -261,7 +261,7 @@ class TestEventQueries:
     def test_trace_not_found(self) -> None:
         """Test that querying non-existent trace raises DG_ERR_NOT_FOUND."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             with pytest.raises(DecisionGraphError) as exc_info:
                 get_trace_summary(store, projector, "non-existent-trace")
@@ -291,7 +291,7 @@ class TestGraphQueries:
     def test_subgraph_depth_0_center_only(self) -> None:
         """TC-P5-007: get_context_subgraph with depth=0 returns only center node."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Create a trace with entities
@@ -333,7 +333,7 @@ class TestGraphQueries:
     def test_subgraph_filter_edge_node_type(self) -> None:
         """TC-P5-008: get_context_subgraph filters by edge_types and node_types."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Create trace with entity and policy
@@ -375,7 +375,7 @@ class TestGraphQueries:
     def test_node_edges_pagination_cursor(self) -> None:
         """TC-P5-009: list_node_edges supports cursor-based pagination."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Create trace with multiple entities
@@ -424,7 +424,7 @@ class TestStalenessChecks:
     def test_projection_out_of_date_error(self) -> None:
         """TC-P5-012: Projection-backed queries raise error when projections are stale."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Create and project an event
@@ -471,7 +471,7 @@ class TestStalenessChecks:
     def test_event_queries_bypass_staleness_check(self) -> None:
         """Test that event-log-only queries work even when projections are stale."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Create and project an event

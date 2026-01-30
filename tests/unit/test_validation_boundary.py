@@ -27,19 +27,15 @@ from decisiongraph.errors import (
 class TestPIIGuardEdgeCases:
     """Tests for PII guard edge cases."""
 
-    def test_case_sensitive_detection(self) -> None:
-        """PII detection is case-sensitive."""
-        # Exact case should be detected
+    def test_case_insensitive_detection(self) -> None:
+        """PII detection is case-insensitive."""
         with pytest.raises(DecisionGraphError) as exc_info:
             check_pii_guard({"token": "Bearer secret"})
         assert exc_info.value.code == DG_ERR_PII_POLICY_VIOLATION
 
-        # Different case might not be detected (depends on pattern)
-        # This tests that "bearer " (lowercase) is NOT in FORBIDDEN_SUBSTRINGS
-        import contextlib
-
-        with contextlib.suppress(DecisionGraphError):
+        with pytest.raises(DecisionGraphError) as exc_info2:
             check_pii_guard({"token": "bearer secret"})
+        assert exc_info2.value.code == DG_ERR_PII_POLICY_VIOLATION
 
     def test_partial_match_detected(self) -> None:
         """Partial match within string is detected."""

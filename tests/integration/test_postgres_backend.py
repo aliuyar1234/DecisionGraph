@@ -24,6 +24,7 @@ from decisiongraph.errors import (  # noqa: E402
     DecisionGraphError,
 )
 from decisiongraph.ids import generate_trace_id  # noqa: E402
+from decisiongraph.projections.postgres import PostgresProjector  # noqa: E402
 from decisiongraph.storage.postgres import PostgresEventStore  # noqa: E402
 from decisiongraph.testing import create_test_envelope  # noqa: E402
 
@@ -73,7 +74,7 @@ class TestMigration:
         assert store.get_last_log_seq() == 0
 
         # Verify tables exist
-        with store._conn.cursor() as cur:
+        with store.connection.cursor() as cur:
             cur.execute(
                 """
                 SELECT table_name FROM information_schema.tables
@@ -113,6 +114,37 @@ class TestPersistence:
         assert len(events) == 1
         assert events[0].log_seq == stored.log_seq
         assert events[0].payload["title"] == "Persistence test"
+
+    def test_pg_projector_trace_summary(self, pg_store: PostgresEventStore) -> None:
+        """Postgres projector builds trace summary."""
+        projector = PostgresProjector(pg_store.connection)
+        trace_id = generate_trace_id()
+
+        env0 = create_test_envelope(
+            trace_id=trace_id,
+            trace_seq=0,
+            event_type=EVENT_TYPE_TRACE_STARTED,
+            payload={
+                "workflow": "test",
+                "title": "Summary test",
+                "primary_entity": {"entity_type": "Account", "entity_id": "acc-1"},
+            },
+        )
+        event0 = pg_store.append_event(env0)
+        projector.project_event(event0)
+
+        env1 = create_test_envelope(
+            trace_id=trace_id,
+            trace_seq=1,
+            event_type=EVENT_TYPE_TRACE_FINISHED,
+            payload={"outcome": "success"},
+        )
+        event1 = pg_store.append_event(env1)
+        projector.project_event(event1)
+
+        summary = projector.get_trace_summary(trace_id)
+        assert summary is not None
+        assert summary["outcome"] == "success"
 
 
 class TestIdempotency:

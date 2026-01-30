@@ -23,6 +23,7 @@ from decisiongraph.domain.types import ActorRef, SourceRef
 from decisiongraph.errors import (
     DG_ERR_CONFLICT,
     DG_ERR_EVENT_SEQUENCE_INVALID,
+    DG_ERR_SCHEMA_VIOLATION,
     DecisionGraphError,
 )
 from decisiongraph.ids import generate_event_id, generate_trace_id
@@ -66,7 +67,7 @@ class TestPayloadHashVerification:
     def test_mismatched_hash_raises_error(self) -> None:
         """Projection fails if payload_hash doesn't match payload."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
             payload = {"workflow": "test", "title": "Test"}
 
@@ -99,7 +100,7 @@ class TestPayloadHashVerification:
     def test_correct_hash_passes(self) -> None:
         """Projection succeeds with correct payload hash."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
             payload = {"workflow": "test", "title": "Test"}
 
@@ -121,7 +122,7 @@ class TestTraceSeqGapDetection:
     def test_projection_detects_trace_seq_gap(self) -> None:
         """Projection fails if trace_seq has gaps."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Project first event
@@ -152,7 +153,7 @@ class TestTraceSeqGapDetection:
     def test_multiple_traces_independent_tracking(self) -> None:
         """Each trace has independent trace_seq tracking in projector."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id1 = generate_trace_id()
             trace_id2 = generate_trace_id()
 
@@ -203,7 +204,7 @@ class TestContextGraphEmission:
     def test_trace_started_creates_trace_node(self) -> None:
         """TraceStarted creates trace node in context graph."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             event = create_stored_event(
@@ -225,7 +226,7 @@ class TestContextGraphEmission:
     def test_entity_observed_creates_entity_node(self) -> None:
         """EntityObserved creates entity node in context graph."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Start trace
@@ -261,7 +262,7 @@ class TestContextGraphEmission:
     def test_policy_evaluated_creates_policy_node(self) -> None:
         """PolicyEvaluated creates policy node in context graph."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Start trace
@@ -296,10 +297,10 @@ class TestContextGraphEmission:
             policy_nodes = [n for n in nodes if n["node_type"] == "policy"]
             assert len(policy_nodes) == 1
 
-    def test_missing_policy_id_uses_fallback(self) -> None:
-        """PolicyEvaluated without policy_id uses event_id as fallback."""
+    def test_missing_policy_id_rejected(self) -> None:
+        """PolicyEvaluated without policy_id is rejected."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Start trace
@@ -325,13 +326,10 @@ class TestContextGraphEmission:
                 },
                 log_seq=2,
             )
-            projector.project_event(event1)
+            with pytest.raises(DecisionGraphError) as exc_info:
+                projector.project_event(event1)
 
-            nodes = projector.get_nodes(trace_id)
-            policy_nodes = [n for n in nodes if n["node_type"] == "policy"]
-            assert len(policy_nodes) == 1
-            # Should use event_id as fallback
-            assert "unknown:" in policy_nodes[0]["node_id"]
+            assert exc_info.value.code == DG_ERR_SCHEMA_VIOLATION
 
 
 class TestProjectionRebuild:
@@ -340,7 +338,7 @@ class TestProjectionRebuild:
     def test_rebuild_clears_all_projections(self) -> None:
         """rebuild() clears all projection tables."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Project some events
@@ -367,7 +365,7 @@ class TestProjectionRebuild:
     def test_rebuild_resets_trace_seq_tracker(self) -> None:
         """rebuild() resets trace_seq tracker."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Project event
@@ -400,7 +398,7 @@ class TestCursorTracking:
     def test_cursor_updates_after_projection(self) -> None:
         """Cursor updates after each projected event."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             assert projector.get_cursor() == 0
@@ -427,7 +425,7 @@ class TestCursorTracking:
         try:
             # First session - project events
             with SQLiteEventStore(db_path) as store:
-                projector = SQLiteProjector(store._conn)
+                projector = SQLiteProjector(store.connection)
                 trace_id = generate_trace_id()
 
                 event = create_stored_event(
@@ -442,7 +440,7 @@ class TestCursorTracking:
 
             # Second session - cursor should be loaded
             with SQLiteEventStore(db_path) as store:
-                projector2 = SQLiteProjector(store._conn)
+                projector2 = SQLiteProjector(store.connection)
                 assert projector2.get_cursor() == 10
 
         finally:
@@ -455,7 +453,7 @@ class TestTraceSummary:
     def test_trace_started_creates_summary(self) -> None:
         """TraceStarted creates trace summary entry."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             event = create_stored_event(
@@ -485,7 +483,7 @@ class TestTraceSummary:
     def test_trace_finished_updates_summary(self) -> None:
         """TraceFinished updates trace summary with outcome."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
 
             # Start
@@ -515,7 +513,7 @@ class TestTraceSummary:
     def test_nonexistent_trace_returns_none(self) -> None:
         """get_trace_summary returns None for nonexistent trace."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             summary = projector.get_trace_summary("nonexistent")
             assert summary is None
 
@@ -526,7 +524,7 @@ class TestPrecedentIndex:
     def test_precedent_cited_indexed_on_finish(self) -> None:
         """PrecedentCited events indexed when trace finishes."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
             cited_trace_id = generate_trace_id()
 
@@ -561,7 +559,7 @@ class TestPrecedentIndex:
 
             # Store events in SQLite for precedent index query
             for event in [event0, event1, event2]:
-                store._conn.execute(
+                store.connection.execute(
                     """
                     INSERT INTO dg_event_log (
                         log_seq, event_id, trace_id, trace_seq, event_type,
@@ -590,7 +588,7 @@ class TestPrecedentIndex:
                         "[]",
                     ),
                 )
-            store._conn.commit()
+            store.connection.commit()
 
             # Project events
             projector.project_event(event0)
@@ -598,7 +596,7 @@ class TestPrecedentIndex:
             projector.project_event(event2)
 
             # Check precedent index
-            cursor = store._conn.execute(
+            cursor = store.connection.execute(
                 "SELECT * FROM dg_precedent_index WHERE trace_id = ?",
                 (trace_id,),
             )

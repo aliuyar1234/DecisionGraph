@@ -7,14 +7,24 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from decisiongraph.domain.events import (
+    EVENT_TYPE_ACTION_COMMITTED,
+    EVENT_TYPE_ACTION_PROPOSED,
+    EVENT_TYPE_APPROVAL_RECORDED,
+    EVENT_TYPE_ENTITY_OBSERVED,
+    EVENT_TYPE_EXCEPTION_REQUESTED,
+    EVENT_TYPE_INPUT_OBSERVED,
+    EVENT_TYPE_POLICY_EVALUATED,
+    EVENT_TYPE_PRECEDENT_CITED,
     EVENT_TYPE_TRACE_FINISHED,
     EVENT_TYPE_TRACE_STARTED,
     EventEnvelope,
     StoredEvent,
 )
 from decisiongraph.domain.validation import (
-    check_pii_guard,
+    check_event_pii,
     validate_idempotency_key,
+    validate_payload_json_safe,
+    validate_payload_schema,
 )
 from decisiongraph.errors import (
     DG_ERR_CONFLICT,
@@ -64,26 +74,53 @@ class InMemoryEventStore:
         # Validate idempotency key
         validate_idempotency_key(envelope.idempotency_key)
 
+        # Validate payload schema and JSON safety
+        validate_payload_json_safe(envelope.payload)
+        validate_payload_schema(envelope.event_type, envelope.payload)
+
         # Check PII guard
-        check_pii_guard(envelope.payload)
+        check_event_pii(envelope)
 
         # Check idempotency - use producer_id from source
         idem_key = (envelope.source.producer_id, envelope.idempotency_key)
         if idem_key in self._idempotency_index:
             existing = self._idempotency_index[idem_key]
-            # Same idempotency key - return existing if payload matches
-            existing_hash = existing.payload_hash
             new_hash = compute_payload_hash(envelope.payload)
-            if existing_hash == new_hash:
-                # Idempotent retry - return existing event
-                return existing
-            else:
-                # Different payload - conflict
+            if existing.payload_hash != new_hash:
                 raise DecisionGraphError(
                     DG_ERR_IDEMPOTENCY_CONFLICT,
                     f"Idempotency key '{envelope.idempotency_key}' already used "
                     f"with different payload",
                 )
+
+            mismatches: list[str] = []
+            if existing.trace_id != envelope.trace_id:
+                mismatches.append("trace_id")
+            if existing.trace_seq != envelope.trace_seq:
+                mismatches.append("trace_seq")
+            if existing.event_type != envelope.event_type:
+                mismatches.append("event_type")
+            if existing.source != envelope.source:
+                mismatches.append("source")
+            if existing.actor != envelope.actor:
+                mismatches.append("actor")
+            if existing.correlation_id != envelope.correlation_id:
+                mismatches.append("correlation_id")
+            if existing.causation_event_id != envelope.causation_event_id:
+                mismatches.append("causation_event_id")
+            if existing.schema_version != envelope.schema_version:
+                mismatches.append("schema_version")
+            if list(existing.tags) != list(envelope.tags):
+                mismatches.append("tags")
+
+            if mismatches:
+                raise DecisionGraphError(
+                    DG_ERR_IDEMPOTENCY_CONFLICT,
+                    f"Idempotency key '{envelope.idempotency_key}' already used "
+                    f"with different metadata: {', '.join(mismatches)}",
+                )
+
+            return existing
 
         # Check if trace is finished
         if envelope.trace_id in self._finished_traces:
@@ -298,6 +335,66 @@ def create_test_envelope(
     from decisiongraph.domain.types import ActorRef, SourceRef
     from decisiongraph.ids import generate_event_id
     from decisiongraph.time import now_rfc3339
+
+    payload = dict(payload)
+    if event_type == EVENT_TYPE_TRACE_STARTED:
+        payload.setdefault("workflow", "test")
+        payload.setdefault("title", "Test")
+        payload.setdefault(
+            "primary_entity",
+            {"entity_type": "TestEntity", "entity_id": "test-entity"},
+        )
+    elif event_type == EVENT_TYPE_INPUT_OBSERVED:
+        payload.setdefault("input_id", f"input-{trace_seq}")
+        payload.setdefault(
+            "source",
+            {"system": "test", "object_type": "object", "object_id": "obj-1"},
+        )
+        payload.setdefault("facts", [])
+    elif event_type == EVENT_TYPE_ENTITY_OBSERVED:
+        payload.setdefault(
+            "entity", {"entity_type": "Entity", "entity_id": f"entity-{trace_seq}"}
+        )
+        payload.setdefault("role", "primary")
+        payload.setdefault("facts", [])
+    elif event_type == EVENT_TYPE_POLICY_EVALUATED:
+        payload.setdefault(
+            "policy", {"policy_id": "policy-test", "policy_version": "1.0"}
+        )
+        payload.setdefault("inputs", [])
+        payload.setdefault("decision", "allow")
+    elif event_type == EVENT_TYPE_EXCEPTION_REQUESTED:
+        payload.setdefault("exception_id", f"exception-{trace_seq}")
+        payload.setdefault(
+            "policy", {"policy_id": "policy-test", "policy_version": "1.0"}
+        )
+        payload.setdefault("reason", "test")
+    elif event_type == EVENT_TYPE_APPROVAL_RECORDED:
+        payload.setdefault("approval_id", f"approval-{trace_seq}")
+        payload.setdefault(
+            "subject", {"subject_type": "exception", "subject_id": "exception-1"}
+        )
+        payload.setdefault(
+            "approver", {"actor_type": "person", "actor_id": "approver-1"}
+        )
+        payload.setdefault("decision", "approved")
+    elif event_type == EVENT_TYPE_PRECEDENT_CITED:
+        payload.setdefault("cited_trace_id", "trace-precedent")
+        payload.setdefault("reason", "test")
+    elif event_type == EVENT_TYPE_ACTION_PROPOSED:
+        payload.setdefault("action_id", f"action-{trace_seq}")
+        payload.setdefault("action_type", "update")
+        payload.setdefault(
+            "target_entity",
+            {"entity_type": "Entity", "entity_id": f"entity-{trace_seq}"},
+        )
+        payload.setdefault("target_system", "test")
+        payload.setdefault("changes", [])
+    elif event_type == EVENT_TYPE_ACTION_COMMITTED:
+        payload.setdefault("action_id", f"action-{trace_seq}")
+        payload.setdefault("status", "success")
+    elif event_type == EVENT_TYPE_TRACE_FINISHED:
+        payload.setdefault("outcome", "success")
 
     return EventEnvelope(
         event_id=event_id or generate_event_id(),

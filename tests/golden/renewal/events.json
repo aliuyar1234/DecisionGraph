@@ -223,6 +223,7 @@
         "approval_id": "appr:finance-001",
         "subject": {
           "subject_type": "exception",
+          "subject_id": "exc:renewal_discount_over_cap",
           "exception_id": "exc:renewal_discount_over_cap",
           "action_id": null
         },

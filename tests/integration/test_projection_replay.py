@@ -31,7 +31,7 @@ class TestFullReplay:
     def test_projector_full_replay_builds_graph(self) -> None:
         """TC-P3-001: Full replay creates correct graph."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -146,7 +146,7 @@ class TestFullReplay:
     def test_projector_resume_cursor(self) -> None:
         """TC-P3-003: Resume from last_applied_log_seq."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -180,7 +180,7 @@ class TestFullReplay:
             assert projector.get_cursor() == 2
 
             # Create new projector - should resume from cursor
-            projector2 = SQLiteProjector(store._conn)
+            projector2 = SQLiteProjector(store.connection)
             assert projector2.get_cursor() == 2
 
 
@@ -190,7 +190,7 @@ class TestPayloadHashValidation:
     def test_projector_reject_bad_payload_hash(self) -> None:
         """TC-P3-004: Invalid hash rejected."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -237,7 +237,7 @@ class TestTraceSeqValidation:
     def test_projector_reject_trace_seq_gap(self) -> None:
         """TC-P3-005: Sequence gaps rejected."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -291,6 +291,52 @@ class TestTraceSeqValidation:
 
             assert exc_info.value.code == DG_ERR_EVENT_SEQUENCE_INVALID
 
+    def test_projector_resume_trace_seq_after_restart(self) -> None:
+        """Projector resumes trace_seq tracking after restart."""
+        with SQLiteEventStore(":memory:") as store:
+            projector = SQLiteProjector(store.connection)
+            trace_id = generate_trace_id()
+
+            env0 = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=0,
+                event_type=EVENT_TYPE_TRACE_STARTED,
+                payload={"workflow": "test", "title": "Test"},
+            )
+            event0 = store.append_event(env0)
+            projector.project_event(event0)
+
+            env1 = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=1,
+                event_type=EVENT_TYPE_ENTITY_OBSERVED,
+                payload={
+                    "entity": {"entity_type": "Test", "entity_id": "t1"},
+                    "role": "primary",
+                    "facts": [],
+                },
+            )
+            event1 = store.append_event(env1)
+            projector.project_event(event1)
+
+            # New projector simulates process restart
+            projector2 = SQLiteProjector(store.connection)
+
+            env2 = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=2,
+                event_type=EVENT_TYPE_ENTITY_OBSERVED,
+                payload={
+                    "entity": {"entity_type": "Test", "entity_id": "t2"},
+                    "role": "primary",
+                    "facts": [],
+                },
+            )
+            event2 = store.append_event(env2)
+
+            # Should not raise gap error
+            projector2.project_event(event2)
+
 
 class TestTraceSummary:
     """Tests for trace summary projection."""
@@ -298,7 +344,7 @@ class TestTraceSummary:
     def test_trace_summary_created_on_start(self) -> None:
         """Trace summary created on TraceStarted."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -324,7 +370,7 @@ class TestTraceSummary:
     def test_trace_summary_updated_on_finish(self) -> None:
         """Trace summary updated on TraceFinished."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -358,7 +404,7 @@ class TestPrecedentIndex:
     def test_precedent_index_on_cite(self) -> None:
         """Precedent index created for PrecedentCited events."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             # Create cited trace first
             cited_trace_id = generate_trace_id()
@@ -405,7 +451,7 @@ class TestPrecedentIndex:
             projector.project_event(event2)
 
             # Check precedent index
-            cursor = store._conn.execute(
+            cursor = store.connection.execute(
                 "SELECT * FROM dg_precedent_index WHERE trace_id = ?",
                 (trace_id,),
             )
@@ -420,7 +466,7 @@ class TestSubgraphOrdering:
     def test_subgraph_ordering(self) -> None:
         """TC-P3-010: Nodes/edges ordered correctly."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -468,7 +514,7 @@ class TestRebuild:
     def test_rebuild_clears_and_replays(self) -> None:
         """Rebuild clears existing projections."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -491,7 +537,7 @@ class TestRebuild:
     def test_digest_stable_after_rebuild(self) -> None:
         """Digest is stable after rebuild."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -515,12 +561,12 @@ class TestRebuild:
             # Project
             for event in events:
                 projector.project_event(event)
-            digest1 = compute_context_graph_digest(store._conn)
+            digest1 = compute_context_graph_digest(store.connection)
 
             # Rebuild and re-project
             projector.rebuild()
             for event in events:
                 projector.project_event(event)
-            digest2 = compute_context_graph_digest(store._conn)
+            digest2 = compute_context_graph_digest(store.connection)
 
             assert digest1 == digest2

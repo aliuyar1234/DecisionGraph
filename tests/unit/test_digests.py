@@ -22,7 +22,7 @@ class TestDigestComputation:
     def test_context_graph_digest_format(self) -> None:
         """Digest has sha256: prefix."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
             env = create_test_envelope(
@@ -34,14 +34,14 @@ class TestDigestComputation:
             event = store.append_event(env)
             projector.project_event(event)
 
-            digest = compute_context_graph_digest(store._conn)
+            digest = compute_context_graph_digest(store.connection)
             assert digest.startswith("sha256:")
             assert len(digest) == 7 + 64  # "sha256:" + 64 hex chars
 
     def test_digest_stable_across_rebuilds(self) -> None:
         """TC-P3-002: Digest identical across rebuilds."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             # Create some events
             trace_id = generate_trace_id()
@@ -71,14 +71,14 @@ class TestDigestComputation:
             for event in events:
                 projector.project_event(event)
 
-            digest1 = compute_context_graph_digest(store._conn)
+            digest1 = compute_context_graph_digest(store.connection)
 
             # Rebuild
             projector.rebuild()
             for event in events:
                 projector.project_event(event)
 
-            digest2 = compute_context_graph_digest(store._conn)
+            digest2 = compute_context_graph_digest(store.connection)
 
             assert digest1 == digest2
 
@@ -89,8 +89,8 @@ class TestDigestComputation:
             SQLiteEventStore(":memory:") as store1,
             SQLiteEventStore(":memory:") as store2,
         ):
-            projector1 = SQLiteProjector(store1._conn)
-            projector2 = SQLiteProjector(store2._conn)
+            projector1 = SQLiteProjector(store1.connection)
+            projector2 = SQLiteProjector(store2.connection)
 
             trace_id = generate_trace_id()
 
@@ -108,8 +108,8 @@ class TestDigestComputation:
             projector1.project_event(event1)
             projector2.project_event(event2)
 
-            digest1 = compute_context_graph_digest(store1._conn)
-            digest2 = compute_context_graph_digest(store2._conn)
+            digest1 = compute_context_graph_digest(store1.connection)
+            digest2 = compute_context_graph_digest(store2.connection)
 
             # Digests should be identical because we use occurred_at not recorded_at
             assert digest1 == digest2
@@ -120,8 +120,8 @@ class TestDigestComputation:
             SQLiteEventStore(":memory:") as store1,
             SQLiteEventStore(":memory:") as store2,
         ):
-            projector1 = SQLiteProjector(store1._conn)
-            projector2 = SQLiteProjector(store2._conn)
+            projector1 = SQLiteProjector(store1.connection)
+            projector2 = SQLiteProjector(store2.connection)
 
             trace_id1 = generate_trace_id()
             trace_id2 = generate_trace_id()
@@ -145,15 +145,15 @@ class TestDigestComputation:
             projector1.project_event(event1)
             projector2.project_event(event2)
 
-            digest1 = compute_context_graph_digest(store1._conn)
-            digest2 = compute_context_graph_digest(store2._conn)
+            digest1 = compute_context_graph_digest(store1.connection)
+            digest2 = compute_context_graph_digest(store2.connection)
 
             assert digest1 != digest2
 
     def test_trace_summary_digest(self) -> None:
         """Trace summary digest works."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -166,13 +166,13 @@ class TestDigestComputation:
             event0 = store.append_event(env0)
             projector.project_event(event0)
 
-            digest = compute_trace_summary_digest(store._conn)
+            digest = compute_trace_summary_digest(store.connection)
             assert digest.startswith("sha256:")
 
     def test_full_projection_digest(self) -> None:
         """Full projection digest combines all projections."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 
@@ -185,7 +185,7 @@ class TestDigestComputation:
             event = store.append_event(env)
             projector.project_event(event)
 
-            digest = compute_full_projection_digest(store._conn)
+            digest = compute_full_projection_digest(store.connection)
             assert digest.startswith("sha256:")
 
 
@@ -195,7 +195,7 @@ class TestProjectionAttrsEmpty:
     def test_node_attrs_are_empty_in_db(self) -> None:
         """TC-P3-013: projection attrs are empty."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
             env = create_test_envelope(
@@ -214,7 +214,7 @@ class TestProjectionAttrsEmpty:
     def test_edge_attrs_are_empty_in_db(self) -> None:
         """TC-P3-013: projection attrs are empty."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             trace_id = generate_trace_id()
 

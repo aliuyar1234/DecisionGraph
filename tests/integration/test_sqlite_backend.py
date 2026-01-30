@@ -1,5 +1,6 @@
 """Integration tests for SQLite storage backend - TC-P2-001 through TC-P2-010."""
 
+import sqlite3
 import tempfile
 from pathlib import Path
 
@@ -30,13 +31,13 @@ class TestMigration:
         """TC-P2-001: Migrations apply to fresh database."""
         with SQLiteEventStore(":memory:") as store:
             # Check that the event log table exists
-            cursor = store._conn.execute(
+            cursor = store.connection.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='dg_event_log'"
             )
             assert cursor.fetchone() is not None
 
             # Check that migrations table exists
-            cursor = store._conn.execute(
+            cursor = store.connection.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'"
             )
             assert cursor.fetchone() is not None
@@ -49,14 +50,14 @@ class TestMigration:
         try:
             # First open - creates and migrates
             with SQLiteEventStore(db_path) as store:
-                version1 = store._conn.execute(
+                version1 = store.connection.execute(
                     "SELECT MAX(version) FROM schema_migrations"
                 ).fetchone()[0]
                 assert version1 >= 1
 
             # Second open - no new migrations needed
             with SQLiteEventStore(db_path) as store:
-                version2 = store._conn.execute(
+                version2 = store.connection.execute(
                     "SELECT MAX(version) FROM schema_migrations"
                 ).fetchone()[0]
                 assert version1 == version2
@@ -67,13 +68,13 @@ class TestMigration:
         """No migrations run when schema is current."""
         with SQLiteEventStore(":memory:") as store:
             # Get initial count
-            cursor = store._conn.execute("SELECT COUNT(*) FROM schema_migrations")
+            cursor = store.connection.execute("SELECT COUNT(*) FROM schema_migrations")
             initial_count = cursor.fetchone()[0]
 
             # Re-migrate - should do nothing
             store._migrate()
 
-            cursor = store._conn.execute("SELECT COUNT(*) FROM schema_migrations")
+            cursor = store.connection.execute("SELECT COUNT(*) FROM schema_migrations")
             final_count = cursor.fetchone()[0]
             assert initial_count == final_count
 
@@ -106,6 +107,76 @@ class TestPersistence:
                 assert len(events) == 1
                 assert events[0].log_seq == log_seq
                 assert events[0].payload["title"] == "Persistence test"
+        finally:
+            Path(db_path).unlink(missing_ok=True)
+
+    def test_trace_finished_trigger_blocks_inserts(self) -> None:
+        """TraceFinished lock enforced at DB level."""
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+            db_path = f.name
+
+        try:
+            trace_id = generate_trace_id()
+            with SQLiteEventStore(db_path) as store:
+                env0 = create_test_envelope(
+                    trace_id=trace_id,
+                    trace_seq=0,
+                    event_type=EVENT_TYPE_TRACE_STARTED,
+                    payload={"workflow": "test", "title": "Lock test"},
+                )
+                store.append_event(env0)
+
+                env1 = create_test_envelope(
+                    trace_id=trace_id,
+                    trace_seq=1,
+                    event_type=EVENT_TYPE_TRACE_FINISHED,
+                    payload={"outcome": "success"},
+                )
+                store.append_event(env1)
+
+                payload = {
+                    "entity": {"entity_type": "Test", "entity_id": "t1"},
+                    "role": "primary",
+                    "facts": [],
+                }
+                payload_hash = compute_payload_hash(payload)
+                payload_json = '{"entity":{"entity_id":"t1","entity_type":"Test"},"facts":[],"role":"primary"}'
+                tags_json = "[]"
+
+                with pytest.raises(sqlite3.Error):
+                    store.connection.execute(
+                        """
+                        INSERT INTO dg_event_log (
+                            event_id, trace_id, trace_seq, event_type,
+                            occurred_at, recorded_at,
+                            producer_id, system, subsystem,
+                            actor_type, actor_id,
+                            correlation_id, causation_event_id,
+                            idempotency_key, schema_version,
+                            payload_json, payload_hash, tags_json
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            "evt-manual",
+                            trace_id,
+                            2,
+                            EVENT_TYPE_ENTITY_OBSERVED,
+                            "2026-01-01T00:00:00Z",
+                            "2026-01-01T00:00:00Z",
+                            "producer",
+                            "system",
+                            None,
+                            "agent",
+                            "actor",
+                            None,
+                            None,
+                            "manual-insert",
+                            1,
+                            payload_json,
+                            payload_hash,
+                            tags_json,
+                        ),
+                    )
         finally:
             Path(db_path).unlink(missing_ok=True)
 
@@ -189,6 +260,36 @@ class TestIdempotency:
                 event_type=EVENT_TYPE_TRACE_STARTED,
                 payload={"workflow": "test", "title": "Modified"},
                 idempotency_key="conflict-key",
+            )
+
+            with pytest.raises(DecisionGraphError) as exc_info:
+                store.append_event(env2)
+
+            assert exc_info.value.code == DG_ERR_IDEMPOTENCY_CONFLICT
+
+    def test_idempotency_conflict_different_metadata(self) -> None:
+        """Same idempotency key with different metadata raises error."""
+        with SQLiteEventStore(":memory:") as store:
+            trace_id = generate_trace_id()
+            payload = {"workflow": "test", "title": "Original"}
+
+            env1 = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=0,
+                event_type=EVENT_TYPE_TRACE_STARTED,
+                payload=payload,
+                idempotency_key="meta-key",
+                actor_id="actor-1",
+            )
+            store.append_event(env1)
+
+            env2 = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=0,
+                event_type=EVENT_TYPE_TRACE_STARTED,
+                payload=payload,
+                idempotency_key="meta-key",
+                actor_id="actor-2",
             )
 
             with pytest.raises(DecisionGraphError) as exc_info:
@@ -330,7 +431,7 @@ class TestPayloadHash:
             stored = store.append_event(env)
 
             # Verify hash matches
-            expected_hash = compute_payload_hash(payload)
+            expected_hash = compute_payload_hash(env.payload)
             assert stored.payload_hash == expected_hash
 
             # Retrieve and verify

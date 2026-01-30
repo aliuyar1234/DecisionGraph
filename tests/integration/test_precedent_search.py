@@ -25,7 +25,7 @@ class TestPrecedentSearch:
     def test_precedent_search_by_policy(self) -> None:
         """TC-P5-010: find_precedents filters by policy_id correctly."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             # Create multiple finished traces with different policies
             for i in range(3):
@@ -86,7 +86,7 @@ class TestPrecedentSearch:
     def test_precedent_search_dedup_order(self) -> None:
         """TC-P5-011: find_precedents deduplicates by trace_id and orders by recency."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             # Create 3 finished traces
             trace_ids = []
@@ -139,7 +139,7 @@ class TestPrecedentSearch:
     def test_precedent_search_by_entity(self) -> None:
         """Test find_precedents filters by entity_type and entity_id."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             # Create traces with different entities
             for i in range(2):
@@ -181,7 +181,7 @@ class TestPrecedentSearch:
     def test_unfinished_traces_excluded(self) -> None:
         """Test that find_precedents only returns finished traces."""
         with SQLiteEventStore(":memory:") as store:
-            projector = SQLiteProjector(store._conn)
+            projector = SQLiteProjector(store.connection)
 
             # Create finished trace
             trace1 = generate_trace_id()

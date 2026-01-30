@@ -33,7 +33,7 @@ class TestRenewalFixture:
 
         # Create in-memory database and replay
         store = SQLiteEventStore(":memory:")
-        conn = store._conn
+        conn = store.connection
         projector = SQLiteProjector(conn)
 
         for envelope in fixture.events:
@@ -101,7 +101,7 @@ class TestSupportFixture:
 
         # Create in-memory database and replay
         store = SQLiteEventStore(":memory:")
-        conn = store._conn
+        conn = store.connection
         projector = SQLiteProjector(conn)
 
         for envelope in fixture.events:
@@ -144,7 +144,7 @@ class TestDealdeskFixture:
 
         # Create in-memory database and replay
         store = SQLiteEventStore(":memory:")
-        conn = store._conn
+        conn = store.connection
         projector = SQLiteProjector(conn)
 
         for envelope in fixture.events:
