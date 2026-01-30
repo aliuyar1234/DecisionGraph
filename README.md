@@ -4,6 +4,7 @@ Event-sourced decision audit trail for AI agents.
 
 [![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg?label=CI)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/aliuyar1234/DecisionGraph/branch/master/graph/badge.svg)](https://codecov.io/gh/aliuyar1234/DecisionGraph)
+[![Demo](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml/badge.svg?label=Demo)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 
@@ -64,6 +65,14 @@ dg.finish_trace(trace_id, outcome="success", source=source, actor=actor)
 events = dg.get_trace_events(trace_id)
 print(f"Recorded {len(events)} events")
 ```
+
+## Demo
+
+```bash
+uv run python demo/run_demo.py
+```
+
+See `demo/output.md` for the generated report and `demo/README.md` for details.
 
 ## Sample Database
 
