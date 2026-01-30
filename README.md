@@ -161,7 +161,7 @@ uv sync
 uv run pytest
 uv run mypy src/ --strict
 uv run ruff check src/
-uv run import-linter
+uv run lint-imports
 ```
 
 ## Test Coverage
