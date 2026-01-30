@@ -72,6 +72,7 @@ def compute_context_graph_digest(conn: Any) -> str:
             "created_at": row["created_at"],
             "attrs": json.loads(row["metadata_json"]),
         })
+    nodes_data.sort(key=lambda item: item["node_id"])
 
     # Get edges in deterministic order
     edges_rows = _fetch_rows(
@@ -95,6 +96,7 @@ def compute_context_graph_digest(conn: Any) -> str:
             "created_at": row["created_at"],
             "attrs": json.loads(row["metadata_json"]),
         })
+    edges_data.sort(key=lambda item: item["edge_id"])
 
     # Build canonical representation
     digest_input = {
@@ -147,6 +149,7 @@ def compute_trace_summary_digest(conn: Any) -> str:
             "event_count": row["event_count"],
             "last_log_seq": row["last_log_seq"],
         })
+    summaries.sort(key=lambda item: item["trace_id"])
 
     canonical = json.dumps(summaries, sort_keys=True, separators=(",", ":"))
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -186,6 +189,7 @@ def compute_precedent_index_digest(conn: Any) -> str:
             "log_seq": row["log_seq"],
             "created_at": row["created_at"],
         })
+    entries.sort(key=lambda item: item["index_id"])
 
     canonical = json.dumps(entries, sort_keys=True, separators=(",", ":"))
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()

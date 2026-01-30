@@ -31,6 +31,15 @@ def test_pg_optional_extra_import() -> None:
 
 def test_import_without_psycopg() -> None:
     """Test graceful handling when psycopg is not installed."""
+    try:
+        import psycopg  # noqa: F401
+
+        import pytest
+
+        pytest.skip("psycopg installed")
+    except ImportError:
+        pass
+
     # Save original psycopg module if it exists
     original_psycopg = sys.modules.get("psycopg")
 
