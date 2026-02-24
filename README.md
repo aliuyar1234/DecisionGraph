@@ -1,47 +1,102 @@
 # DecisionGraph
 
-Event-sourced decision audit trail for AI agents.
+Deterministic, append-only decision audit trails for AI agents and automation systems.
 
 [![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg?label=CI)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codecov.io%2Fapi%2Fv2%2Fgithub%2Faliuyar1234%2Frepos%2Fdecisiongraph&query=%24.totals.coverage&label=coverage&suffix=%25)](https://app.codecov.io/github/aliuyar1234/decisiongraph)
 [![Demo](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml/badge.svg?label=Demo)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml)
+[![Security](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/security.yml/badge.svg?label=Security)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/security.yml)
+[![Performance](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/performance.yml/badge.svg?label=Performance)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/performance.yml)
+[![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codecov.io%2Fapi%2Fv2%2Fgithub%2Faliuyar1234%2Frepos%2Fdecisiongraph&query=%24.totals.coverage&label=coverage&suffix=%25)](https://app.codecov.io/github/aliuyar1234/decisiongraph)
 [![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://aliuyar1234.github.io/DecisionGraph/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 
-## At a Glance
+## Why DecisionGraph
 
-- **Append-only audit log** of decision events
-- **Deterministic digests** to verify replays
-- **Local-first** (SQLite/PostgreSQL), no service required
-- **Strict validation + PII guard** built in
+When an agent makes a decision, teams need three things:
 
-## Why DecisionGraph?
+- A complete, immutable record of what happened.
+- A clear explanation path (inputs, policy outcomes, approvals, actions).
+- Reproducibility guarantees that hold across replays and environments.
 
-When AI agents make decisions (approving discounts, escalating tickets, routing requests) you need an immutable audit trail that answers:
+DecisionGraph is a local-first library that provides exactly this with deterministic event storage, projection rebuilds, and query surfaces for trace, graph, and precedent retrieval.
 
-- **What happened?** Complete trace of observations, evaluations, and actions
-- **Why?** Policy citations, precedent references, approval chains
-- **Can we reproduce it?** Deterministic projection digests for verification
+## V1 Scope
 
-DecisionGraph is a library, not a service. Embed it directly in your agent code.
+DecisionGraph v1 is intentionally limited to:
 
-### Use cases
+- Append-only decision event log.
+- Deterministic projections and replay digests.
+- Query APIs for traces, context graph, and precedents.
+- Local backends: SQLite and PostgreSQL.
+- Read-only inspection CLI.
 
-- Compliance/audit trails for agent decisions
-- Exception workflows with approvals and precedent tracking
-- Reproducible evaluations for safety and policy changes
+Not in scope: workflow orchestration, policy execution engines, hosted SaaS control plane.
+
+## Architecture
+
+### System Topology
+
+```mermaid
+flowchart LR
+    subgraph APP["Your Application / Agent Runtime"]
+        API["DecisionGraph API"]
+    end
+
+    API -->|append/start/finish| STORE["Event Store<br/>dg_event_log (append-only)"]
+    STORE -->|log_seq stream| PROJECTOR["Projector<br/>deterministic materialization"]
+
+    PROJECTOR --> TS["dg_trace_summary"]
+    PROJECTOR --> CG["dg_cg_nodes / dg_cg_edges"]
+    PROJECTOR --> PI["dg_precedent_index / dg_policy_eval_index"]
+
+    API --> QUERY["Query layer"]
+    QUERY --> TS
+    QUERY --> CG
+    QUERY --> PI
+
+    CLI["CLI: replay, dump-trace"] --> STORE
+    CLI --> PROJECTOR
+```
+
+### Replay and Query Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as DecisionGraph API
+    participant Store as Event Store
+    participant Projector
+    participant Query
+
+    Client->>API: append_event(...) / start_trace(...)
+    API->>Store: validate + insert event
+    Store-->>API: log_seq
+    API->>Projector: project through log_seq
+    Projector->>Projector: update projection tables + cursor
+
+    Client->>API: replay_projections()
+    API->>Projector: rebuild + replay from event log
+    Projector-->>API: projection digests
+
+    Client->>Query: get_trace_events(...) / find_precedents(...)
+    Query-->>Client: deterministic ordered results
+```
 
 ## Quickstart
+
+### Installation
 
 ```bash
 git clone https://github.com/aliuyar1234/DecisionGraph.git
 cd DecisionGraph
 uv sync
 
-# With PostgreSQL support
+# Optional PostgreSQL backend support
 uv sync --extra postgres
 ```
+
+### Minimal Example
 
 ```python
 from decisiongraph import DecisionGraph
@@ -49,261 +104,116 @@ from decisiongraph.domain.types import ActorRef, EntityRef, SourceRef
 
 dg = DecisionGraph(":memory:")
 
-# Define context
 source = SourceRef(producer_id="renewal-agent", system="agent-platform")
 actor = ActorRef(actor_type="agent", actor_id="renewal-v1")
-customer = EntityRef(entity_type="account", entity_id="acct-123", system="salesforce")
+primary = EntityRef(entity_type="account", entity_id="acct-123", system="crm")
 
-# Record a decision trace
 trace_id = dg.start_trace(
     workflow="renewal",
-    title="15% discount request for Acme Corp",
-    primary_entity=customer,
+    title="Discount review for acct-123",
+    primary_entity=primary,
     source=source,
     actor=actor,
 )
 
-# Finish the trace
 dg.finish_trace(trace_id, outcome="success", source=source, actor=actor)
-
-# Query later
 events = dg.get_trace_events(trace_id)
-print(f"Recorded {len(events)} events")
-```
+print(f"trace={trace_id} events={len(events)}")
 
-## 2-Minute Showcase
-
-Want to see what users will experience before integrating?
-
-```bash
-uv run python demo/run_demo.py --db demo/showcase.db --output demo/showcase_output.md --force
-uv run python -m decisiongraph replay demo/showcase.db
-uv run python -m decisiongraph dump-trace demo/showcase.db aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
-# Include payload + extended metadata only when explicitly needed:
-uv run python -m decisiongraph dump-trace demo/showcase.db aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa --include-payload
-```
-
-See the full walkthrough in [demo/SHOWCASE.md](demo/SHOWCASE.md).
-
-### PostgreSQL (dev/CI)
-
-```bash
-docker compose up -d postgres
-export PG_CONNINFO="host=localhost port=5432 dbname=decisiongraph_test user=decisiongraph password=decisiongraph"
-```
-
-## Demo
-
-```bash
-uv run python demo/run_demo.py
-```
-
-See `demo/output.md` for the generated report and `demo/README.md` for details.
-
-```bash
-# CI/local smoke: deterministic output + CLI replay/dump checks
-uv run python scripts/demo_smoke_check.py --artifact-dir .tmp/demo-smoke
-```
-
-### Golden E2E Check
-
-```bash
-uv run python demo/run_golden_e2e.py
-```
-
-This runs a deterministic end-to-end trace and asserts projection digests.
-
-### LLM Demo (local models)
-
-```bash
-uv run python demo/run_llm_demo.py --model-path D:\models\qwen-1.5b
-# For models that require custom code, opt in explicitly:
-uv run python demo/run_llm_demo.py --model-path D:\models\qwen-1.5b --allow-remote-code
-# Raw LLM output is hidden by default; opt in to persist/show it:
-uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b --preserve-raw-output
-# Optional profile check (CI-safe): writes a skip report instead of failing if Ollama/model is unavailable.
-uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b --skip-if-unavailable
-```
-
-This runs a real local model and persists the trace to `demo/llm_demo.db`.
-Demo scripts only write to paths inside this repository.
-
-## Documentation
-
-Full docs at https://aliuyar1234.github.io/DecisionGraph/
-
-V1 governance docs:
-
-- `docs/v1-contracts.md` (scope, semver rules, API/CLI/schema compatibility)
-- `docs/release.md` (release checklist, deprecation policy, migration template)
-- `docs/operations.md` (backup/restore, rollback, reproducibility workflow)
-
-## Sample Database
-
-```bash
-python scripts/generate_sample_db.py --output sample.db
-```
-
-## Architecture
-
-```
-+-------------------------------------------------------------+
-|                      DecisionGraph API                       |
-+-------------------------------------------------------------+
-                              |
-         +--------------------+--------------------+
-         v                    v                    v
-+-----------------+  +-----------------+  +-----------------+
-|   Event Store   |  |   Projector     |  |   Query Layer   |
-|  append-only    |  |  deterministic  |  |  trace, graph,  |
-|  log_seq order  |  |  replay         |  |  precedents     |
-+-----------------+  +-----------------+  +-----------------+
-                              |
-              +---------------+---------------+
-              v                               v
-      +-------------+                 +-------------+
-      |   SQLite    |                 |  PostgreSQL |
-      +-------------+                 +-------------+
-```
-
-### Concepts
-
-| Concept | Description |
-|---------|-------------|
-| **Trace** | Decision workflow from start to finish |
-| **Event** | Immutable record: observation, evaluation, approval, action |
-| **Projection** | Derived view: context graph, trace summaries, precedent index |
-| **Digest** | SHA-256 hash for reproducibility verification |
-
-### Event Flow
-
-```
-TraceStarted -> EntityObserved -> PolicyEvaluated -> ApprovalRecorded -> ActionCommitted -> TraceFinished
-```
-
-## Queries
-
-Find precedents and explore context:
-
-```python
-# Find similar past decisions
-precedents = dg.find_precedents(policy_id="discount_cap", outcome="success")
-
-# Explore context graph around an entity
-subgraph = dg.get_context_subgraph(node_type="entity", node_id="acct-123", max_depth=2)
+dg.close()
 ```
 
 ## CLI
 
 ```bash
-# Rebuild projections, print digests
+# Rebuild projections and print deterministic digests
 python -m decisiongraph replay sample.db
 
-# Dump trace as JSON (payload hidden by default)
+# Dump trace events as JSON (safe output mode)
 python -m decisiongraph dump-trace sample.db trace-123
-# Include payload + extended metadata when needed
+
+# Include payload + full metadata explicitly
 python -m decisiongraph dump-trace sample.db trace-123 --include-payload
 ```
 
-## Design Principles
+## Demo and Smoke Checks
 
-1. **Append-only**: Events are immutable. No updates, no deletes.
-2. **Deterministic**: Same events = same projection digest. Always.
-3. **Library-first**: No background processes, no network calls.
-4. **Explicit**: IDs are passed, not inferred.
-5. **Fail fast**: Invalid payloads, PII patterns -> immediate error.
+```bash
+# End-to-end showcase artifact
+uv run python demo/run_demo.py --db demo/showcase.db --output demo/showcase_output.md --force
 
-## Non-Goals
+# Deterministic demo + CLI smoke checks
+uv run python scripts/demo_smoke_check.py --artifact-dir .tmp/demo-smoke
 
-- Not a workflow engine (records decisions, doesn't orchestrate)
-- Not a policy engine (evaluate elsewhere, record here)
-- Not real-time (optimized for audit, not streaming)
+# Validate README/demo CLI snippets
+uv run python scripts/docs_snippets_check.py --artifact-dir .tmp/docs-snippets
+```
 
-## Performance
+### Local LLM Profile (Ollama)
 
-| Operation | Target |
-|-----------|--------|
-| Append event | < 5ms |
-| Query trace (100 events) | < 10ms |
-| Subgraph (depth=2) | < 50ms |
-| Precedent search (1K traces) | < 100ms |
-| Full rebuild (10K events) | < 5s |
+```bash
+# CI-safe profile: gracefully writes a skip report if Ollama/model is unavailable
+uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b --skip-if-unavailable
+```
+
+## Guarantees
+
+- Append-only event log ordering (`log_seq`, `trace_seq`).
+- Idempotency enforcement with metadata consistency checks.
+- Deterministic projection digests for replay verification.
+- Crash-recovery coverage for append/projection boundaries.
+- Contract tests for stable public API and CLI surface.
+
+## Performance and Quality Gates
+
+- Coverage gate enforced in CI (`--cov-fail-under=75`).
+- Security CI: dependency audit + secret scan baseline policy.
+- Performance CI:
+  - Quick guardrails on push/PR.
+  - Full 1k/10k/100k scaling run on schedule/manual trigger.
+- Flaky-rate guard: repeated-run stability checks in CI.
+
+## Documentation
+
+- Full docs: https://aliuyar1234.github.io/DecisionGraph/
+- V1 contracts: [docs/v1-contracts.md](docs/v1-contracts.md)
+- Release checklist: [docs/release.md](docs/release.md)
+- Operations runbook: [docs/operations.md](docs/operations.md)
 
 ## Development
 
 ```bash
-uv sync
-uv run pytest
-uv run mypy src/ --strict
-uv run ruff check src/
+uv sync --extra dev
+uv run ruff check src demo scripts tests
+uv run mypy src
 uv run lint-imports
+uv run pytest -q
 ```
 
-### Docs
+## Repository Layout
 
-```bash
-uv sync --extra docs
-uv run mkdocs serve
-```
-
-### Pre-commit
-
-```bash
-uv run pre-commit install
-```
-
-## Contributing
-
-See `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`.
-
-## Test Coverage
-
-**400+ tests** covering:
-
-| Category | Tests | Coverage |
-|----------|-------|----------|
-| Unit tests | 300+ | Domain types, events, validation, serialization, projections |
-| Integration tests | 80+ | SQLite/PostgreSQL backends, projection replay, queries |
-| E2E tests | 50+ | API workflows, CLI commands, golden fixtures |
-
-Key areas tested:
-- **Storage**: Idempotency conflicts, trace sequence validation, transaction rollback
-- **Projections**: Hash verification, gap detection, cursor tracking, rebuild
-- **Queries**: Staleness detection, pagination, filtering, graph traversal
-- **Validation**: PII guard patterns, idempotency key limits, JSON safety
-- **Serialization**: Unicode handling, deep nesting, hash stability
-
-```bash
-# Run all tests
-uv run pytest
-
-# Run with coverage
-uv run pytest --cov=decisiongraph
-```
-
-## Structure
-
-```
+```text
 src/decisiongraph/
-    api.py              # High-level facade
-    domain/             # Event types, validation
-    storage/            # SQLite + PostgreSQL
-    projections/        # Context graph, digests
-    query/              # Trace, graph, precedent queries
-    testing/            # Golden fixtures
+  api.py              # public facade
+  domain/             # event and validation models
+  storage/            # SQLite and PostgreSQL backends
+  projections/        # deterministic materialized views + digests
+  query/              # trace/graph/precedent query APIs
 
 tests/
-    unit/
-    integration/
-    e2e/
-    golden/             # Deterministic replay fixtures
+  unit/
+  integration/
+  e2e/
+  golden/
 ```
 
-## Support
+## Contributing and Security
 
-For bugs or feature requests, open an issue: https://github.com/aliuyar1234/DecisionGraph/issues  
-For questions, use Discussions: https://github.com/aliuyar1234/DecisionGraph/discussions
-For responsible vulnerability disclosure, see `SECURITY.md`.
+- Contributing guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- Security policy: [SECURITY.md](SECURITY.md)
+- Issues: https://github.com/aliuyar1234/DecisionGraph/issues
+- Discussions: https://github.com/aliuyar1234/DecisionGraph/discussions
 
 ## License
 
