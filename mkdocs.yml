@@ -16,3 +16,6 @@ nav:
   - Showcase: showcase.md
   - Quickstart: quickstart.md
   - API: api.md
+  - V1 Contracts: v1-contracts.md
+  - Release: release.md
+  - Operations: operations.md

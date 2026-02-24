@@ -100,6 +100,11 @@ uv run python demo/run_demo.py
 
 See `demo/output.md` for the generated report and `demo/README.md` for details.
 
+```bash
+# CI/local smoke: deterministic output + CLI replay/dump checks
+uv run python scripts/demo_smoke_check.py --artifact-dir .tmp/demo-smoke
+```
+
 ### Golden E2E Check
 
 ```bash
@@ -116,6 +121,8 @@ uv run python demo/run_llm_demo.py --model-path D:\models\qwen-1.5b
 uv run python demo/run_llm_demo.py --model-path D:\models\qwen-1.5b --allow-remote-code
 # Raw LLM output is hidden by default; opt in to persist/show it:
 uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b --preserve-raw-output
+# Optional profile check (CI-safe): writes a skip report instead of failing if Ollama/model is unavailable.
+uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b --skip-if-unavailable
 ```
 
 This runs a real local model and persists the trace to `demo/llm_demo.db`.
@@ -124,6 +131,12 @@ Demo scripts only write to paths inside this repository.
 ## Documentation
 
 Full docs at https://aliuyar1234.github.io/DecisionGraph/
+
+V1 governance docs:
+
+- `docs/v1-contracts.md` (scope, semver rules, API/CLI/schema compatibility)
+- `docs/release.md` (release checklist, deprecation policy, migration template)
+- `docs/operations.md` (backup/restore, rollback, reproducibility workflow)
 
 ## Sample Database
 
@@ -290,6 +303,7 @@ tests/
 
 For bugs or feature requests, open an issue: https://github.com/aliuyar1234/DecisionGraph/issues  
 For questions, use Discussions: https://github.com/aliuyar1234/DecisionGraph/discussions
+For responsible vulnerability disclosure, see `SECURITY.md`.
 
 ## License
 

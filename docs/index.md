@@ -25,3 +25,6 @@ Event Log -> Projector -> Query Layer
 - [Showcase](showcase.md)
 - [Quickstart](quickstart.md)
 - [API Reference](api.md)
+- [V1.0 Scope and Contracts](v1-contracts.md)
+- [Release Checklist](release.md)
+- [Operations Runbook](operations.md)

@@ -40,3 +40,47 @@
 - [x] (P2) Add concurrency tests around TraceFinished locking (multi-writer).
 - [x] (P2) Add tests for CLI read-only behavior and for PostgreSQL projection support once implemented.
 - [x] (P3) Add tests for pagination cursor direction mismatch.
+
+## V1.0 Hardening (Scope-Locked)
+
+### Scope and Contracts
+- [x] (P0) Lock v1 scope in docs: library-only event audit log + projections + queries (no orchestration/policy engine/SaaS features).
+- [x] (P0) Freeze public API surface and define semver compatibility rules for `decisiongraph` imports and CLI flags.
+- [x] (P1) Freeze event envelope schema and projection table contracts; document allowed additive vs breaking changes.
+- [x] (P1) Add API compatibility tests that fail on accidental public-surface changes.
+
+### Determinism and Correctness
+- [x] (P0) Add migration compatibility test matrix: replay from every historical migration version to latest and verify digests.
+- [x] (P0) Add crash-recovery tests for append/projection boundaries (simulate interruption and restart).
+- [x] (P1) Add high-contention multi-writer tests (SQLite + PostgreSQL) for idempotency, trace sequence, and finished-trace locking.
+- [x] (P1) Add property/fuzz tests for serialization, validation boundaries, and graph traversal invariants.
+- [x] (P1) Add deterministic ordering contract tests for all query endpoints and CLI JSON output modes.
+
+### Performance and Regression Gates
+- [x] (P1) Add benchmark suite for core operations (append, trace query, subgraph query, replay).
+- [x] (P1) Add CI performance guardrails with fixed budgets and variance thresholds.
+- [x] (P2) Add storage-size and replay-time scaling tests (1k, 10k, 100k event fixtures).
+- [x] (P0) Enforce coverage thresholds in CI and fail builds when coverage upload/reporting is missing.
+- [x] (P1) Add a badge health check so README coverage status cannot degrade to unknown without CI failure.
+
+### Security and Supply Chain
+- [x] (P0) Add automated dependency and vulnerability scanning in CI (pip advisory + GitHub alerts review gate).
+- [x] (P1) Add static secret scanning and baseline policy for false positives.
+- [x] (P1) Add negative tests for path handling, payload redaction defaults, and CLI safe-output behavior.
+- [x] (P2) Publish security policy (`SECURITY.md`) with disclosure workflow and supported versions.
+
+### Release and Operations
+- [x] (P0) Create release checklist for v1.0: test matrix, docs sync, changelog, signed tag, artifact integrity.
+- [x] (P1) Add deprecation policy and migration notes template for future minor/major changes.
+- [x] (P1) Add operational runbook: backup/restore, migration rollback strategy, corruption recovery steps.
+- [x] (P2) Add reproducibility guide: deterministic digest verification workflow for auditors.
+- [x] (P0) Add end-to-end demo smoke tests in CI (CLI demo + deterministic expected output + artifact upload).
+- [x] (P1) Add optional local-LLM demo profile docs/checks (Ollama) with graceful skip when model is unavailable.
+
+### V1.0 Exit Criteria (Release Blockers)
+- [x] (P0) CI green on Linux/Windows/macOS and Python 3.12/3.13.
+- [x] (P0) Zero open critical/high security findings at release cut.
+- [x] (P0) Migration compatibility + replay determinism suites pass 100%.
+- [x] (P0) Core module coverage target met and enforced in CI.
+- [x] (P0) Flaky test rate at or near 0 across repeated CI runs.
+- [x] (P0) Demo, CLI examples, and docs snippets execute successfully in CI.
