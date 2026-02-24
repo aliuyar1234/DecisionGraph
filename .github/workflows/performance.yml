@@ -20,7 +20,7 @@ jobs:
       - uses: astral-sh/setup-uv@v3
       - run: uv sync --extra dev
       - run: uv run python scripts/perf_guardrails.py --mode quick --enforce --output .tmp/perf/report-quick.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: perf-quick
           path: .tmp/perf/report-quick.json
@@ -38,7 +38,7 @@ jobs:
       - uses: astral-sh/setup-uv@v3
       - run: uv sync --extra dev
       - run: uv run python scripts/perf_guardrails.py --mode full --enforce --output .tmp/perf/report-full.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: perf-full
           path: .tmp/perf/report-full.json
