@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v7
       - run: uv sync --extra dev
       - run: uv run python scripts/perf_guardrails.py --mode quick --enforce --output .tmp/perf/report-quick.json
       - uses: actions/upload-artifact@v6
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v7
       - run: uv sync --extra dev
       - run: uv run python scripts/perf_guardrails.py --mode full --enforce --output .tmp/perf/report-full.json
       - uses: actions/upload-artifact@v6

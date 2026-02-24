@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v7
       - run: mkdir -p .tmp
       - run: uv export --no-hashes --all-extras --format requirements-txt > .tmp/audit-requirements.txt
       - run: grep -v "^-e \.$" .tmp/audit-requirements.txt > .tmp/audit-requirements-no-local.txt
@@ -82,5 +82,5 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v7
       - run: uv run --with detect-secrets detect-secrets-hook --baseline .secrets.baseline $(git ls-files)
