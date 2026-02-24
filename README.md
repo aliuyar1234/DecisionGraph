@@ -2,10 +2,10 @@
 
 Deterministic, append-only decision audit trails for AI agents and automation systems.
 
-[![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg?label=CI)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
-[![Demo](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml/badge.svg?label=Demo)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml)
-[![Security](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/security.yml/badge.svg?label=Security)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/security.yml)
-[![Performance](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/performance.yml/badge.svg?label=Performance)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/performance.yml)
+[![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg?branch=master&event=push&label=CI)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
+[![Demo](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml/badge.svg?branch=master&event=push&label=Demo)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml)
+[![Security](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/security.yml/badge.svg?branch=master&event=push&label=Security)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/security.yml)
+[![Performance](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/performance.yml/badge.svg?branch=master&event=push&label=Performance)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/performance.yml)
 [![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codecov.io%2Fapi%2Fv2%2Fgithub%2Faliuyar1234%2Frepos%2Fdecisiongraph&query=%24.totals.coverage&label=coverage&suffix=%25)](https://app.codecov.io/github/aliuyar1234/decisiongraph)
 [![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://aliuyar1234.github.io/DecisionGraph/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
