@@ -23,6 +23,37 @@ from decisiongraph.query import get_trace_events
 from decisiongraph.storage.sqlite import SQLiteEventStore
 
 
+def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser.
+
+    This function is intentionally public to support CLI contract tests.
+    """
+    parser = argparse.ArgumentParser(
+        description="DecisionGraph CLI - Read-only inspection tools",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+
+    # replay command
+    replay_parser = subparsers.add_parser(
+        "replay", help="Rebuild projections and print digest"
+    )
+    replay_parser.add_argument("db", help="Path to SQLite database")
+
+    # dump-trace command
+    dump_parser = subparsers.add_parser("dump-trace", help="Dump trace events as JSON")
+    dump_parser.add_argument("db", help="Path to SQLite database")
+    dump_parser.add_argument("trace_id", help="Trace ID to dump")
+    dump_parser.add_argument(
+        "--include-payload",
+        action="store_true",
+        help="Include payload and extended metadata fields",
+    )
+
+    return parser
+
+
 def _validate_db_path(db_path: str) -> Path:
     """Validate database path for security.
 
@@ -163,29 +194,7 @@ def cmd_dump_trace(db_path: str, trace_id: str, *, include_payload: bool = False
 
 def main() -> None:
     """Main CLI entry point."""
-    parser = argparse.ArgumentParser(
-        description="DecisionGraph CLI - Read-only inspection tools",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
-
-    # replay command
-    replay_parser = subparsers.add_parser(
-        "replay", help="Rebuild projections and print digest"
-    )
-    replay_parser.add_argument("db", help="Path to SQLite database")
-
-    # dump-trace command
-    dump_parser = subparsers.add_parser("dump-trace", help="Dump trace events as JSON")
-    dump_parser.add_argument("db", help="Path to SQLite database")
-    dump_parser.add_argument("trace_id", help="Trace ID to dump")
-    dump_parser.add_argument(
-        "--include-payload",
-        action="store_true",
-        help="Include payload and extended metadata fields",
-    )
-
+    parser = build_parser()
     args = parser.parse_args()
 
     if args.command == "replay":

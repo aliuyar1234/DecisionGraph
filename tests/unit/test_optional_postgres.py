@@ -7,6 +7,8 @@ when psycopg is installed.
 
 import sys
 
+import pytest
+
 
 def test_pg_optional_extra_import() -> None:
     """TC-P4-010: PostgreSQL is optional without breaking core imports."""
@@ -33,8 +35,6 @@ def test_import_without_psycopg() -> None:
     """Test graceful handling when psycopg is not installed."""
     try:
         import psycopg  # noqa: F401
-
-        import pytest
 
         pytest.skip("psycopg installed")
     except ImportError:
@@ -94,8 +94,6 @@ def test_import_with_psycopg() -> None:
 
     except ImportError:
         # If psycopg is not installed, skip this test
-        import pytest
-
         pytest.skip("psycopg not installed")
 
 
