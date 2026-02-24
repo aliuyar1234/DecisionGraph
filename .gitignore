@@ -57,6 +57,9 @@ Thumbs.db
 # Logs
 *.log
 
+# Local CI/demo artifacts
+.tmp/
+
 # Local database
 *.db
 

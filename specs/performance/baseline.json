@@ -1,0 +1,27 @@
+{
+  "variance_threshold": 1.0,
+  "core_budgets_ms": {
+    "append_mean_ms": 0.25,
+    "append_p95_ms": 0.4,
+    "trace_query_100_ms": 3.0,
+    "subgraph_depth2_ms": 8.0,
+    "replay_10000_ms": 2000.0
+  },
+  "core_baseline_ms": {
+    "append_mean_ms": 0.08,
+    "append_p95_ms": 0.12,
+    "trace_query_100_ms": 0.9,
+    "subgraph_depth2_ms": 2.0,
+    "replay_10000_ms": 700.0
+  },
+  "scaling_budgets_ms": {
+    "1000": 250.0,
+    "10000": 2500.0,
+    "100000": 25000.0
+  },
+  "scaling_baseline_ms": {
+    "1000": 60.0,
+    "10000": 700.0,
+    "100000": 9000.0
+  }
+}

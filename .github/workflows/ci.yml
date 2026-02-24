@@ -5,7 +5,28 @@ on:
   pull_request:
 
 jobs:
-  test:
+  core-matrix:
+    name: Core (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --extra dev
+      - run: uv run ruff check src demo scripts tests
+      - run: uv run mypy src
+      - run: uv run lint-imports
+      - run: uv run pytest -q
+
+  postgres-coverage:
+    name: Postgres + Coverage Gate
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -30,11 +51,36 @@ jobs:
           python-version: "3.12"
       - uses: astral-sh/setup-uv@v3
       - run: uv sync --extra dev --extra postgres
-      - run: uv run ruff check src
+      - run: uv run ruff check src demo scripts tests
       - run: uv run mypy src
       - run: uv run lint-imports
-      - run: uv run pytest --cov=decisiongraph --cov-branch --cov-report=xml
+      - run: uv run pytest --cov=decisiongraph --cov-branch --cov-report=xml --cov-fail-under=75
+      - run: python -c "import os; assert os.path.exists('coverage.xml') and os.path.getsize('coverage.xml') > 0, 'coverage.xml missing or empty'"
       - uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
-          fail_ci_if_error: false
+          disable_search: true
+          fail_ci_if_error: true
+      - run: uv run python scripts/check_coverage_badge.py
+
+  stability-repeated-runs:
+    name: Stability Repeated Runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --extra dev
+      - run: >
+          uv run python scripts/flaky_guard.py
+          --runs 5
+          --max-failure-rate 0.0
+          --
+          uv run pytest -q
+          tests/integration/test_determinism_recovery.py
+          tests/integration/test_high_contention.py
+          tests/e2e/test_ordering_contracts.py
+          tests/unit/test_public_api_contract.py
+          tests/unit/test_llm_demo_safety.py

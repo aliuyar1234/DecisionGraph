@@ -61,6 +61,29 @@ def sanitize_text(value: str) -> str:
     return value.strip()
 
 
+def emit_skip_report(
+    output_path: Path,
+    *,
+    backend: str,
+    model_label: str,
+    reason: str,
+) -> None:
+    report = [
+        "# LLM Demo Output",
+        "",
+        "- Status: skipped",
+        f"- Backend: {backend}",
+        f"- Model: {model_label}",
+        f"- Reason: {reason}",
+        "",
+        "## Raw LLM Output",
+        "[skipped]",
+    ]
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("\n".join(report), encoding="utf-8")
+    print("\n".join(report))
+
+
 def resolve_demo_path(path: Path, label: str) -> Path:
     """Resolve demo outputs and prevent writes outside repository root."""
     resolved = path.expanduser().resolve()
@@ -85,15 +108,42 @@ def decide_from_text(text: str) -> str:
 
 
 def run_ollama(model: str, prompt: str) -> str:
-    result = subprocess.run(
-        ["ollama", "run", model, prompt],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=True,
-    )
+    try:
+        result = subprocess.run(
+            ["ollama", "run", model, prompt],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+        )
+    except FileNotFoundError as exc:
+        raise SystemExit("ollama CLI not found on PATH.") from exc
+    except subprocess.CalledProcessError as exc:
+        detail = (exc.stderr or exc.stdout or str(exc)).strip()
+        raise SystemExit(f"ollama run failed for model '{model}': {detail}") from exc
     return result.stdout.strip()
+
+
+def ollama_model_available(model: str) -> tuple[bool, str]:
+    try:
+        result = subprocess.run(
+            ["ollama", "show", model],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except FileNotFoundError:
+        return False, "ollama CLI not found on PATH."
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()
+        if not detail:
+            detail = f"Ollama model '{model}' is unavailable."
+        return False, detail
+
+    return True, ""
 
 
 def run_transformers(
@@ -179,6 +229,11 @@ def main() -> None:
         action="store_true",
         help="Include raw LLM output in report and console output",
     )
+    parser.add_argument(
+        "--skip-if-unavailable",
+        action="store_true",
+        help="Write a skipped report instead of failing when local model runtime is unavailable",
+    )
     args = parser.parse_args()
     db_path = resolve_demo_path(args.db, "Database")
     output_path = resolve_demo_path(args.output, "Output")
@@ -191,6 +246,14 @@ def main() -> None:
             backend = "ollama"
         elif model_path:
             backend = "transformers"
+        elif args.skip_if_unavailable:
+            emit_skip_report(
+                output_path,
+                backend="auto",
+                model_label="none",
+                reason="No local model found. Provide --model-path or --ollama-model.",
+            )
+            return
         else:
             raise SystemExit("No model found. Provide --model-path or --ollama-model.")
 
@@ -210,10 +273,37 @@ def main() -> None:
     prompt = build_prompt(instruction, user_case)
     if backend == "ollama":
         if not args.ollama_model:
+            if args.skip_if_unavailable:
+                emit_skip_report(
+                    output_path,
+                    backend=backend,
+                    model_label="none",
+                    reason="--ollama-model is required for ollama backend.",
+                )
+                return
             raise SystemExit("--ollama-model is required for ollama backend.")
+        available, reason = ollama_model_available(args.ollama_model)
+        if not available:
+            if args.skip_if_unavailable:
+                emit_skip_report(
+                    output_path,
+                    backend=backend,
+                    model_label=args.ollama_model,
+                    reason=reason,
+                )
+                return
+            raise SystemExit(reason)
         raw_response = run_ollama(args.ollama_model, prompt)
     else:
         if not model_path:
+            if args.skip_if_unavailable:
+                emit_skip_report(
+                    output_path,
+                    backend=backend,
+                    model_label="none",
+                    reason="Model path not found. Provide --model-path.",
+                )
+                return
             raise SystemExit("Model path not found. Provide --model-path.")
         raw_response = run_transformers(
             model_path,

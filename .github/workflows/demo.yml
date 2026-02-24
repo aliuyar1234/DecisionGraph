@@ -16,8 +16,12 @@ jobs:
           python-version: "3.12"
       - uses: astral-sh/setup-uv@v3
       - run: uv sync
-      - run: uv run python demo/run_demo.py --output demo-output.md
+      - run: uv run python scripts/demo_smoke_check.py --artifact-dir .tmp/demo-smoke
+      - run: uv run python scripts/docs_snippets_check.py --artifact-dir .tmp/docs-snippets
+      - run: uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b --skip-if-unavailable --db .tmp/demo-smoke/llm_demo.db --output .tmp/demo-smoke/llm_output.md
       - uses: actions/upload-artifact@v4
         with:
           name: demo-output
-          path: demo-output.md
+          path: |
+            .tmp/demo-smoke
+            .tmp/docs-snippets

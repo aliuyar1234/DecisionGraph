@@ -1,0 +1,44 @@
+name: Performance
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+jobs:
+  quick-guardrails:
+    name: Quick Perf Guardrails
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --extra dev
+      - run: uv run python scripts/perf_guardrails.py --mode quick --enforce --output .tmp/perf/report-quick.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: perf-quick
+          path: .tmp/perf/report-quick.json
+
+  full-scaling:
+    name: Full Perf Scaling (1k/10k/100k)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --extra dev
+      - run: uv run python scripts/perf_guardrails.py --mode full --enforce --output .tmp/perf/report-full.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: perf-full
+          path: .tmp/perf/report-full.json
