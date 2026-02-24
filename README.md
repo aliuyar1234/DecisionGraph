@@ -9,7 +9,7 @@ Deterministic, append-only decision audit trails for AI agents and automation sy
 [![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codecov.io%2Fapi%2Fv2%2Fgithub%2Faliuyar1234%2Frepos%2Fdecisiongraph&query=%24.totals.coverage&label=coverage&suffix=%25)](https://app.codecov.io/github/aliuyar1234/decisiongraph)
 [![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://aliuyar1234.github.io/DecisionGraph/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 
 ## Why DecisionGraph
 
