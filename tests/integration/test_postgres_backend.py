@@ -9,8 +9,8 @@ import os
 
 import pytest
 
-# Skip all tests if psycopg is not installed
-pytest.importorskip("psycopg")
+# Skip all tests if psycopg isn't usable in this environment (e.g. missing libpq)
+pytest.importorskip("psycopg", exc_type=ImportError)
 
 from decisiongraph.domain.events import (  # noqa: E402
     EVENT_TYPE_ENTITY_OBSERVED,

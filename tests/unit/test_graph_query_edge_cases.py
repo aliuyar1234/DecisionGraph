@@ -392,10 +392,8 @@ class TestTruncationBehavior:
                 store, projector, center, filter_opts=filter_opts
             )
 
-            # Should be truncated if we have more than 2 nodes
-            if len(result.nodes) > 0:
-                # Truncation happens during traversal
-                pass  # May or may not be truncated depending on graph structure
+            assert len(result.nodes) <= 2
+            assert result.truncated is True
 
     def test_max_edges_causes_truncation(self) -> None:
         """Exceeding max_edges sets truncated flag."""
@@ -412,10 +410,8 @@ class TestTruncationBehavior:
                 store, projector, center, filter_opts=filter_opts
             )
 
-            # With max_edges=1, should truncate if there are multiple edges
-            edges = projector.get_edges(trace_id)
-            if len(edges) > 1:
-                assert result.truncated is True
+            assert len(result.edges) <= 1
+            assert result.truncated is True
 
 
 class TestGraphFilterDefaults:

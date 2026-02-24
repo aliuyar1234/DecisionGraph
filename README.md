@@ -79,6 +79,8 @@ Want to see what users will experience before integrating?
 uv run python demo/run_demo.py --db demo/showcase.db --output demo/showcase_output.md --force
 uv run python -m decisiongraph replay demo/showcase.db
 uv run python -m decisiongraph dump-trace demo/showcase.db aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+# Include payload + extended metadata only when explicitly needed:
+uv run python -m decisiongraph dump-trace demo/showcase.db aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa --include-payload
 ```
 
 See the full walkthrough in [demo/SHOWCASE.md](demo/SHOWCASE.md).
@@ -110,9 +112,14 @@ This runs a deterministic end-to-end trace and asserts projection digests.
 
 ```bash
 uv run python demo/run_llm_demo.py --model-path D:\models\qwen-1.5b
+# For models that require custom code, opt in explicitly:
+uv run python demo/run_llm_demo.py --model-path D:\models\qwen-1.5b --allow-remote-code
+# Raw LLM output is hidden by default; opt in to persist/show it:
+uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b --preserve-raw-output
 ```
 
 This runs a real local model and persists the trace to `demo/llm_demo.db`.
+Demo scripts only write to paths inside the `demo/` directory.
 
 ## Documentation
 
@@ -179,8 +186,10 @@ subgraph = dg.get_context_subgraph(node_type="entity", node_id="acct-123", max_d
 # Rebuild projections, print digests
 python -m decisiongraph replay sample.db
 
-# Dump trace as JSON
+# Dump trace as JSON (payload hidden by default)
 python -m decisiongraph dump-trace sample.db trace-123
+# Include payload + extended metadata when needed
+python -m decisiongraph dump-trace sample.db trace-123 --include-payload
 ```
 
 ## Design Principles

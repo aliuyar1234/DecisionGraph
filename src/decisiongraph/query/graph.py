@@ -174,11 +174,11 @@ def get_context_subgraph(
             if edge_id in visited_edges:
                 continue
 
-            visited_edges.add(edge_id)
-
-            if len(visited_edges) > filter_opts.max_edges:
+            if len(visited_edges) >= filter_opts.max_edges:
                 truncated = True
                 break
+
+            visited_edges.add(edge_id)
 
             from_node = row["from_node_id"]
             to_node = row["to_node_id"]
@@ -191,12 +191,11 @@ def get_context_subgraph(
                     if node_type not in filter_opts.node_types:
                         continue
 
-                visited_nodes.add(neighbor)
-                next_frontier.add(neighbor)
-
-                if len(visited_nodes) > filter_opts.max_nodes:
+                if len(visited_nodes) >= filter_opts.max_nodes:
                     truncated = True
                     break
+                visited_nodes.add(neighbor)
+                next_frontier.add(neighbor)
             if truncated:
                 break
 

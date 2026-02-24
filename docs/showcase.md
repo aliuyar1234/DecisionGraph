@@ -34,6 +34,8 @@ Projection digests after replay:
 
 ```bash
 uv run python -m decisiongraph dump-trace demo/showcase.db aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+# Optional: include payload and extended metadata
+uv run python -m decisiongraph dump-trace demo/showcase.db aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa --include-payload
 ```
 
 Users can immediately inspect:
@@ -45,6 +47,8 @@ Users can immediately inspect:
 
 ```bash
 uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b
+# Optional: persist/show raw model output in the report
+uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b --preserve-raw-output
 ```
 
 This creates:

@@ -2,7 +2,7 @@
 
 Usage:
     python -m decisiongraph replay <db>
-    python -m decisiongraph dump-trace <db> <trace_id>
+    python -m decisiongraph dump-trace <db> <trace_id> [--include-payload]
 
 All CLI operations are read-only and do not modify the database.
 """
@@ -97,7 +97,7 @@ def cmd_replay(db_path: str) -> None:
     store.close()
 
 
-def cmd_dump_trace(db_path: str, trace_id: str) -> None:
+def cmd_dump_trace(db_path: str, trace_id: str, *, include_payload: bool = False) -> None:
     """Dump trace events to stdout.
 
     Args:
@@ -121,7 +121,7 @@ def cmd_dump_trace(db_path: str, trace_id: str) -> None:
         store.close()
         sys.exit(1)
 
-    # Print events as JSON
+    # Print events as JSON (safe defaults omit payload and verbose metadata)
     events_data = []
     for event in events:
         event_dict = {
@@ -132,23 +132,28 @@ def cmd_dump_trace(db_path: str, trace_id: str) -> None:
             "event_type": event.event_type,
             "occurred_at": event.occurred_at,
             "recorded_at": event.recorded_at,
-            "source": {
-                "producer_id": event.source.producer_id,
-                "system": event.source.system,
-                "subsystem": event.source.subsystem,
-            },
-            "actor": {
-                "actor_type": event.actor.actor_type,
-                "actor_id": event.actor.actor_id,
-            },
-            "correlation_id": event.correlation_id,
-            "causation_event_id": event.causation_event_id,
-            "idempotency_key": event.idempotency_key,
-            "schema_version": event.schema_version,
-            "payload": event.payload,
-            "payload_hash": event.payload_hash,
-            "tags": event.tags,
         }
+        if include_payload:
+            event_dict.update(
+                {
+                    "source": {
+                        "producer_id": event.source.producer_id,
+                        "system": event.source.system,
+                        "subsystem": event.source.subsystem,
+                    },
+                    "actor": {
+                        "actor_type": event.actor.actor_type,
+                        "actor_id": event.actor.actor_id,
+                    },
+                    "correlation_id": event.correlation_id,
+                    "causation_event_id": event.causation_event_id,
+                    "idempotency_key": event.idempotency_key,
+                    "schema_version": event.schema_version,
+                    "payload": event.payload,
+                    "payload_hash": event.payload_hash,
+                    "tags": event.tags,
+                }
+            )
         events_data.append(event_dict)
 
     print(json.dumps(events_data, indent=2, sort_keys=True))
@@ -175,13 +180,18 @@ def main() -> None:
     dump_parser = subparsers.add_parser("dump-trace", help="Dump trace events as JSON")
     dump_parser.add_argument("db", help="Path to SQLite database")
     dump_parser.add_argument("trace_id", help="Trace ID to dump")
+    dump_parser.add_argument(
+        "--include-payload",
+        action="store_true",
+        help="Include payload and extended metadata fields",
+    )
 
     args = parser.parse_args()
 
     if args.command == "replay":
         cmd_replay(args.db)
     elif args.command == "dump-trace":
-        cmd_dump_trace(args.db, args.trace_id)
+        cmd_dump_trace(args.db, args.trace_id, include_payload=args.include_payload)
     else:
         parser.print_help()
         sys.exit(1)

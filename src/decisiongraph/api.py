@@ -69,6 +69,19 @@ class DecisionGraph:
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
 
+    def _project_through_log_seq(self, target_log_seq: int) -> None:
+        """Catch projections up through target_log_seq (inclusive)."""
+        cursor = self._projector.get_cursor()
+        if target_log_seq <= cursor:
+            return
+
+        pending = self._store.list_events(
+            since_log_seq=cursor,
+            until_log_seq=target_log_seq,
+        )
+        if pending:
+            self._projector.project_events(pending)
+
     def _append_event(
         self,
         trace_id: str,
@@ -106,10 +119,7 @@ class DecisionGraph:
         )
 
         stored = self._store.append_event(envelope)
-        # Skip projection when this is an idempotent replay of an already
-        # projected event.
-        if stored.log_seq > self._projector.get_cursor():
-            self._projector.project_event(stored)
+        self._project_through_log_seq(stored.log_seq)
         return stored
 
     def append_event(

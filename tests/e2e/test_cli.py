@@ -97,6 +97,9 @@ class TestCLI:
         # Verify event order (trace_seq)
         for i, event in enumerate(events_data):
             assert event["trace_seq"] == i, f"Event {i} has wrong trace_seq"
+            assert "payload" not in event
+            assert "source" not in event
+            assert "actor" not in event
 
         # Verify all events have the same trace_id
         for event in events_data:
@@ -108,6 +111,27 @@ class TestCLI:
             output2 = mock_stdout2.getvalue()
 
         assert output == output2, "CLI dump-trace output is not deterministic"
+
+    def test_cli_dump_trace_include_payload_opt_in(self, tmp_path: Path) -> None:
+        """dump-trace includes payload only when explicitly requested."""
+        from decisiongraph.__main__ import cmd_dump_trace
+
+        db_path = tmp_path / "test.db"
+        fixture = load_fixture(FIXTURES_DIR / "renewal")
+        store = SQLiteEventStore(str(db_path))
+        for envelope in fixture.events:
+            store.append_event(envelope)
+        store.close()
+
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            cmd_dump_trace(str(db_path), fixture.trace_id, include_payload=True)
+            events_data = json.loads(mock_stdout.getvalue())
+
+        assert len(events_data) == 9
+        for event in events_data:
+            assert "payload" in event
+            assert "source" in event
+            assert "actor" in event
 
     def test_cli_replay_missing_db(self) -> None:
         """Test CLI replay with missing database."""

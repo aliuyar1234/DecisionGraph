@@ -25,6 +25,7 @@ DEFAULT_MODEL_CANDIDATES = [
 ]
 
 ALLOWED_DECISIONS = {"approve", "deny", "require_exception"}
+DEMO_ROOT = Path(__file__).resolve().parent
 
 
 def resolve_default_model() -> Path | None:
@@ -59,6 +60,18 @@ def sanitize_text(value: str) -> str:
     return value.strip()
 
 
+def resolve_demo_path(path: Path, label: str) -> Path:
+    """Resolve demo outputs and prevent writes outside demo/."""
+    resolved = path.expanduser().resolve()
+    try:
+        resolved.relative_to(DEMO_ROOT)
+    except ValueError as exc:
+        raise SystemExit(
+            f"{label} path must be inside '{DEMO_ROOT}', got '{resolved}'"
+        ) from exc
+    return resolved
+
+
 def decide_from_text(text: str) -> str:
     lowered = text.lower()
     if "cap" in lowered and "20" in lowered and "10" in lowered:
@@ -88,18 +101,31 @@ def run_transformers(
     user_case: str,
     max_new_tokens: int,
     temperature: float,
+    allow_remote_code: bool,
 ) -> str:
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            trust_remote_code=allow_remote_code,
+        )
+    except ValueError as exc:
+        if not allow_remote_code and "trust_remote_code" in str(exc):
+            raise SystemExit(
+                "Model requires custom remote code. Re-run with "
+                "--allow-remote-code only for trusted models."
+            ) from exc
+        raise
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
 
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
         torch_dtype=dtype,
-        trust_remote_code=True,
+        trust_remote_code=allow_remote_code,
         device_map="auto" if device == "cuda" else None,
     )
     if device != "cuda":
@@ -142,7 +168,19 @@ def main() -> None:
     parser.add_argument("--temperature", type=float, default=0.2)
     parser.add_argument("--db", type=Path, default=Path("demo") / "llm_demo.db")
     parser.add_argument("--output", type=Path, default=Path("demo") / "llm_output.md")
+    parser.add_argument(
+        "--allow-remote-code",
+        action="store_true",
+        help="Allow transformers to execute model-provided custom code",
+    )
+    parser.add_argument(
+        "--preserve-raw-output",
+        action="store_true",
+        help="Include raw LLM output in report and console output",
+    )
     args = parser.parse_args()
+    db_path = resolve_demo_path(args.db, "Database")
+    output_path = resolve_demo_path(args.output, "Output")
 
     model_path = args.model_path or resolve_default_model()
     backend = args.backend
@@ -182,6 +220,7 @@ def main() -> None:
             user_case,
             max_new_tokens=args.max_new_tokens,
             temperature=args.temperature,
+            allow_remote_code=args.allow_remote_code,
         )
 
     data = extract_json(raw_response) or {}
@@ -202,8 +241,8 @@ def main() -> None:
         summary = " ".join(summary.split()[:30])
 
     # Persist trace
-    args.db.parent.mkdir(parents=True, exist_ok=True)
-    dg = DecisionGraph(str(args.db))
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    dg = DecisionGraph(str(db_path))
 
     source = SourceRef(producer_id="llm-demo", system="local")
     actor = ActorRef(actor_type="agent", actor_id=f"llm-{backend}")
@@ -306,15 +345,28 @@ def main() -> None:
         f"- Outcome: {outcome}",
         f"- Events: {len(events)}",
         f"- Summary: {summary}",
-        "",
-        "## Raw LLM Output",
-        "```",
-        raw_response.strip(),
-        "```",
     ]
+    if args.preserve_raw_output:
+        report.extend(
+            [
+                "",
+                "## Raw LLM Output",
+                "```",
+                raw_response.strip(),
+                "```",
+            ]
+        )
+    else:
+        report.extend(
+            [
+                "",
+                "## Raw LLM Output",
+                "[omitted by default; use --preserve-raw-output to include]",
+            ]
+        )
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text("\n".join(report), encoding="utf-8")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("\n".join(report), encoding="utf-8")
     print("\n".join(report))
 
 

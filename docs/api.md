@@ -20,4 +20,5 @@ from decisiongraph import DecisionGraph
 ```bash
 python -m decisiongraph replay <db>
 python -m decisiongraph dump-trace <db> <trace_id>
+python -m decisiongraph dump-trace <db> <trace_id> --include-payload
 ```

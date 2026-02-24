@@ -1,7 +1,10 @@
 """Integration tests for projection replay - TC-P3-001 through TC-P3-005."""
 
+from pathlib import Path
+
 import pytest
 
+from decisiongraph import DecisionGraph
 from decisiongraph.domain.events import (
     EVENT_TYPE_ACTION_PROPOSED,
     EVENT_TYPE_ENTITY_OBSERVED,
@@ -11,6 +14,7 @@ from decisiongraph.domain.events import (
     EVENT_TYPE_TRACE_FINISHED,
     EVENT_TYPE_TRACE_STARTED,
 )
+from decisiongraph.domain.types import ActorRef, EntityRef, SourceRef
 from decisiongraph.errors import (
     DG_ERR_CONFLICT,
     DG_ERR_EVENT_SEQUENCE_INVALID,
@@ -27,6 +31,41 @@ from decisiongraph.testing import create_test_envelope
 
 class TestFullReplay:
     """Tests for full event replay."""
+
+    def test_api_append_catches_up_unprojected_events(self, tmp_path: Path) -> None:
+        """API append catches up events inserted without projection."""
+        db_path = tmp_path / "catch-up.db"
+        source = SourceRef(producer_id="test", system="tests")
+        actor = ActorRef(actor_type="agent", actor_id="integration")
+        entity = EntityRef(entity_type="Account", entity_id="acc-local", system="crm")
+        external_trace_id = generate_trace_id()
+
+        with DecisionGraph(str(db_path)) as dg:
+            with SQLiteEventStore(str(db_path)) as external_store:
+                env = create_test_envelope(
+                    trace_id=external_trace_id,
+                    trace_seq=0,
+                    event_type=EVENT_TYPE_TRACE_STARTED,
+                    payload={"workflow": "external", "title": "external"},
+                )
+                external_store.append_event(env)
+
+            dg.start_trace(
+                workflow="local",
+                title="local",
+                primary_entity=entity,
+                source=source,
+                actor=actor,
+            )
+
+            subgraph = dg.get_context_subgraph(
+                node_type="trace",
+                node_id=external_trace_id,
+                max_depth=0,
+            )
+
+            assert any(node.node_id == f"trace:{external_trace_id}" for node in subgraph.nodes)
+            assert dg._projector.get_cursor() == dg._store.get_last_log_seq()
 
     def test_projector_full_replay_builds_graph(self) -> None:
         """TC-P3-001: Full replay creates correct graph."""

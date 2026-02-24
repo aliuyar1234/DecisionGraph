@@ -22,6 +22,20 @@ from decisiongraph.query import (
 from decisiongraph.storage.sqlite import SQLiteEventStore
 from decisiongraph.testing.golden import GoldenFixture, load_fixture
 
+DEMO_ROOT = Path(__file__).resolve().parent
+
+
+def resolve_demo_path(path: Path, label: str) -> Path:
+    """Resolve demo paths and prevent writes outside demo/."""
+    resolved = path.expanduser().resolve()
+    try:
+        resolved.relative_to(DEMO_ROOT)
+    except ValueError as exc:
+        raise SystemExit(
+            f"{label} path must be inside '{DEMO_ROOT}', got '{resolved}'"
+        ) from exc
+    return resolved
+
 
 def load_fixtures(fixtures_dir: Path) -> list[GoldenFixture]:
     if not fixtures_dir.exists():
@@ -209,17 +223,19 @@ def main() -> None:
 
     args = parser.parse_args()
     fixtures = load_fixtures(args.fixtures)
+    output_path = resolve_demo_path(args.output, "Output")
 
     db_label = ":memory:"
     db_path = ":memory:"
     if args.db is not None:
-        db_label = str(args.db)
-        db_path = str(args.db)
-        if args.db.exists():
+        db_file = resolve_demo_path(args.db, "Database")
+        db_label = str(db_file)
+        db_path = str(db_file)
+        if db_file.exists():
             if not args.force:
-                raise SystemExit(f"Output DB exists: {args.db} (use --force)")
-            args.db.unlink()
-        args.db.parent.mkdir(parents=True, exist_ok=True)
+                raise SystemExit(f"Output DB exists: {db_file} (use --force)")
+            db_file.unlink()
+        db_file.parent.mkdir(parents=True, exist_ok=True)
 
     store = build_db(db_path, fixtures)
     projector = SQLiteProjector(store.connection)
@@ -277,8 +293,8 @@ def main() -> None:
         db_label=db_label,
     )
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(output, encoding="utf-8")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(output, encoding="utf-8")
     print(output)
 
     store.close()
