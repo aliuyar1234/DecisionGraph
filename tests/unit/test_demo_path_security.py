@@ -25,13 +25,13 @@ def test_run_demo_resolve_path_accepts_demo_directory_targets() -> None:
 
 def test_run_demo_resolve_path_rejects_outside_paths() -> None:
     resolver, demo_root = _load_resolver("run_demo.py")
-    outside = demo_root.parent / "tmp-security.db"
+    outside = demo_root.parent.parent / "tmp-security.db"
     with pytest.raises(SystemExit):
         resolver(outside, "Database")
 
 
 def test_run_llm_demo_resolve_path_rejects_outside_paths() -> None:
     resolver, demo_root = _load_resolver("run_llm_demo.py")
-    outside = demo_root.parent / "tmp-security.md"
+    outside = demo_root.parent.parent / "tmp-security.md"
     with pytest.raises(SystemExit):
         resolver(outside, "Output")

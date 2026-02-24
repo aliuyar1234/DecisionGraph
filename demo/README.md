@@ -26,7 +26,7 @@ uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b 
 ```
 
 This writes `demo/llm_output.md` and `demo/llm_demo.db` (both ignored by git).
-`run_demo.py` and `run_llm_demo.py` only write to paths inside `demo/`.
+`run_demo.py` and `run_llm_demo.py` only write to paths inside this repository.
 
 ## Golden E2E Check
 

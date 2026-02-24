@@ -26,6 +26,7 @@ DEFAULT_MODEL_CANDIDATES = [
 
 ALLOWED_DECISIONS = {"approve", "deny", "require_exception"}
 DEMO_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = DEMO_ROOT.parent
 
 
 def resolve_default_model() -> Path | None:
@@ -61,13 +62,13 @@ def sanitize_text(value: str) -> str:
 
 
 def resolve_demo_path(path: Path, label: str) -> Path:
-    """Resolve demo outputs and prevent writes outside demo/."""
+    """Resolve demo outputs and prevent writes outside repository root."""
     resolved = path.expanduser().resolve()
     try:
-        resolved.relative_to(DEMO_ROOT)
+        resolved.relative_to(REPO_ROOT)
     except ValueError as exc:
         raise SystemExit(
-            f"{label} path must be inside '{DEMO_ROOT}', got '{resolved}'"
+            f"{label} path must be inside '{REPO_ROOT}', got '{resolved}'"
         ) from exc
     return resolved
 

@@ -3,7 +3,7 @@
 Event-sourced decision audit trail for AI agents.
 
 [![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg?label=CI)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/aliuyar1234/DecisionGraph/branch/master/graph/badge.svg)](https://codecov.io/gh/aliuyar1234/DecisionGraph)
+[![Coverage](https://codecov.io/gh/aliuyar1234/decisiongraph/branch/master/graph/badge.svg)](https://app.codecov.io/github/aliuyar1234/decisiongraph)
 [![Demo](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml/badge.svg?label=Demo)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml)
 [![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://aliuyar1234.github.io/DecisionGraph/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
@@ -119,7 +119,7 @@ uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b 
 ```
 
 This runs a real local model and persists the trace to `demo/llm_demo.db`.
-Demo scripts only write to paths inside the `demo/` directory.
+Demo scripts only write to paths inside this repository.
 
 ## Documentation
 
