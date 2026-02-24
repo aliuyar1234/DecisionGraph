@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: astral-sh/setup-uv@v3
-      - run: uv sync --extra dev
+      - run: uv sync --extra dev --extra postgres
       - run: uv run ruff check src demo scripts tests
       - run: uv run mypy src
       - run: uv run lint-imports

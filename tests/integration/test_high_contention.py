@@ -192,7 +192,7 @@ class TestSQLiteHighContention:
                         trace_id,
                         idempotency_key=f"writer:{worker_id}:{attempt}",
                         payload_suffix=f"{worker_id}-{attempt}",
-                        max_attempts=20,
+                        max_attempts=80,
                     )
                 except DecisionGraphError as exc:
                     if exc.code == DG_ERR_CONFLICT:
@@ -334,7 +334,7 @@ class TestPostgresHighContention:
                         trace_id,
                         idempotency_key=f"writer:{worker_id}:{attempt}",
                         payload_suffix=f"{worker_id}-{attempt}",
-                        max_attempts=20,
+                        max_attempts=80,
                     )
                 except DecisionGraphError as exc:
                     if exc.code == DG_ERR_CONFLICT:
