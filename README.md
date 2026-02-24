@@ -3,7 +3,7 @@
 Event-sourced decision audit trail for AI agents.
 
 [![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg?label=CI)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/aliuyar1234/decisiongraph/branch/master/graph/badge.svg)](https://app.codecov.io/github/aliuyar1234/decisiongraph)
+[![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codecov.io%2Fapi%2Fv2%2Fgithub%2Faliuyar1234%2Frepos%2Fdecisiongraph&query=%24.totals.coverage&label=coverage&suffix=%25)](https://app.codecov.io/github/aliuyar1234/decisiongraph)
 [![Demo](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml/badge.svg?label=Demo)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml)
 [![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://aliuyar1234.github.io/DecisionGraph/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
