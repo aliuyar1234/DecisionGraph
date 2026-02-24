@@ -106,7 +106,10 @@ class DecisionGraph:
         )
 
         stored = self._store.append_event(envelope)
-        self._projector.project_event(stored)
+        # Skip projection when this is an idempotent replay of an already
+        # projected event.
+        if stored.log_seq > self._projector.get_cursor():
+            self._projector.project_event(stored)
         return stored
 
     def append_event(

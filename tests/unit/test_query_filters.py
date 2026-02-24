@@ -97,6 +97,16 @@ class TestGraphEdgeCursor:
         cursor = GraphEdgeCursor(edge_key="edge-123", direction="outgoing")
         assert cursor.edge_key == "edge-123"
         assert cursor.direction == "outgoing"
+        assert cursor.log_seq is None
+
+    def test_valid_cursor_with_log_seq(self) -> None:
+        """Cursor can include log_seq for stable ordering."""
+        cursor = GraphEdgeCursor(
+            edge_key="edge-123",
+            direction="outgoing",
+            log_seq=42,
+        )
+        assert cursor.log_seq == 42
 
     def test_empty_edge_key_raises(self) -> None:
         """Test that empty edge_key raises ValueError."""
@@ -113,4 +123,12 @@ class TestGraphEdgeCursor:
             match='direction must be "outgoing", "incoming", or "both"',
         ) as exc_info:
             GraphEdgeCursor(edge_key="edge-123", direction="invalid")  # type: ignore
+        assert exc_info.value.code == DG_ERR_INVALID_ARGUMENT
+
+    def test_non_positive_log_seq_raises(self) -> None:
+        """Test that non-positive log_seq raises ValueError."""
+        with pytest.raises(
+            DecisionGraphError, match="log_seq must be positive when provided"
+        ) as exc_info:
+            GraphEdgeCursor(edge_key="edge-123", direction="both", log_seq=0)
         assert exc_info.value.code == DG_ERR_INVALID_ARGUMENT

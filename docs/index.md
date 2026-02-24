@@ -22,5 +22,6 @@ Event Log -> Projector -> Query Layer
 
 ## Next steps
 
+- [Showcase](showcase.md)
 - [Quickstart](quickstart.md)
 - [API Reference](api.md)

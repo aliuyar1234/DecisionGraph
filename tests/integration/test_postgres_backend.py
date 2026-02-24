@@ -199,6 +199,54 @@ class TestIdempotency:
 
         assert exc_info.value.code == DG_ERR_IDEMPOTENCY_CONFLICT
 
+    def test_idempotency_unique_violation_recovers_existing(
+        self, pg_store: PostgresEventStore, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Race on unique idempotency key should return existing event."""
+        trace_id = generate_trace_id()
+        start = create_test_envelope(
+            trace_id=trace_id,
+            trace_seq=0,
+            event_type=EVENT_TYPE_TRACE_STARTED,
+            payload={"workflow": "test", "title": "Race"},
+        )
+        pg_store.append_event(start)
+
+        payload = {
+            "entity": {"entity_type": "Contact", "entity_id": "cnt-race"},
+            "role": "related",
+            "facts": [],
+        }
+        env = create_test_envelope(
+            trace_id=trace_id,
+            trace_seq=1,
+            event_type=EVENT_TYPE_ENTITY_OBSERVED,
+            payload=payload,
+            idempotency_key="pg-race-key",
+        )
+        original = pg_store.append_event(env)
+        retry = create_test_envelope(
+            trace_id=trace_id,
+            trace_seq=2,
+            event_type=EVENT_TYPE_ENTITY_OBSERVED,
+            payload=payload,
+            idempotency_key="pg-race-key",
+        )
+        original_check = pg_store._check_idempotency
+        first_call = True
+
+        def bypass_once(*args: object, **kwargs: object) -> object:
+            nonlocal first_call
+            if first_call:
+                first_call = False
+                return None
+            return original_check(*args, **kwargs)
+
+        monkeypatch.setattr(pg_store, "_check_idempotency", bypass_once)
+
+        recovered = pg_store.append_event(retry)
+        assert recovered.log_seq == original.log_seq
+
 
 class TestTraceSequence:
     """Tests for trace_seq enforcement."""

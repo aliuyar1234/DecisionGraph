@@ -71,6 +71,18 @@ events = dg.get_trace_events(trace_id)
 print(f"Recorded {len(events)} events")
 ```
 
+## 2-Minute Showcase
+
+Want to see what users will experience before integrating?
+
+```bash
+uv run python demo/run_demo.py --db demo/showcase.db --output demo/showcase_output.md --force
+uv run python -m decisiongraph replay demo/showcase.db
+uv run python -m decisiongraph dump-trace demo/showcase.db aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+```
+
+See the full walkthrough in [demo/SHOWCASE.md](demo/SHOWCASE.md).
+
 ### PostgreSQL (dev/CI)
 
 ```bash

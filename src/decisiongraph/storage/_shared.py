@@ -118,8 +118,9 @@ def validate_idempotent_reuse(
     mismatches: list[str] = []
     if stored.trace_id != envelope.trace_id:
         mismatches.append("trace_id")
-    if stored.trace_seq != envelope.trace_seq:
-        mismatches.append("trace_seq")
+    # trace_seq is intentionally excluded from idempotency metadata matching.
+    # API-level retries can compute a later expected sequence before the store
+    # recognizes an existing idempotency key.
     if stored.event_type != envelope.event_type:
         mismatches.append("event_type")
     if stored.source != envelope.source:

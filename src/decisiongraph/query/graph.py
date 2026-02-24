@@ -67,7 +67,7 @@ class GraphEdgePage:
     """Paginated edge result per SSOT 7.4.0.
 
     Attributes:
-        edges: List of edges for this page (sorted by edge_id)
+        edges: List of edges for this page (sorted by log_seq, edge_id)
         next_cursor: Cursor for next page, or None if this is the last page
     """
 
@@ -305,12 +305,32 @@ def list_node_edges(
     else:  # both
         where_clause = "(from_node_id = ? OR to_node_id = ?)"
 
+    # Resolve cursor sequence for stable ordering.
+    cursor_log_seq: int | None = None
+    if cursor:
+        if cursor.log_seq is not None:
+            cursor_log_seq = cursor.log_seq
+        else:
+            cursor_rows = projector.execute_query(
+                "SELECT log_seq FROM dg_cg_edges WHERE edge_id = ? LIMIT 1",
+                [cursor.edge_key],
+            )
+            if not cursor_rows:
+                raise DecisionGraphError(
+                    DG_ERR_INVALID_ARGUMENT,
+                    f"cursor.edge_key not found: {cursor.edge_key}",
+                )
+            cursor_log_seq = int(cursor_rows[0]["log_seq"])
+
     # Add cursor condition if provided
     if cursor:
-        where_clause += " AND edge_id > ?"
+        where_clause += " AND (log_seq > ? OR (log_seq = ? AND edge_id > ?))"
 
     # Build query
-    query = f"SELECT * FROM dg_cg_edges WHERE {where_clause} ORDER BY edge_id LIMIT ?"
+    query = (
+        f"SELECT * FROM dg_cg_edges WHERE {where_clause} "
+        "ORDER BY log_seq ASC, edge_id ASC LIMIT ?"
+    )
 
     # Execute query
     params: list[str | int] = []
@@ -320,7 +340,12 @@ def list_node_edges(
         params.append(node_key)
 
     if cursor:
-        params.append(cursor.edge_key)
+        if cursor_log_seq is None:
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "cursor.log_seq could not be resolved",
+            )
+        params.extend([cursor_log_seq, cursor_log_seq, cursor.edge_key])
 
     params.append(limit + 1)  # Fetch one extra to check if there's a next page
 
@@ -347,7 +372,11 @@ def list_node_edges(
     if len(rows) > limit:
         # There's a next page
         last_edge = edges[-1]
-        next_cursor = GraphEdgeCursor(edge_key=last_edge.edge_id, direction=direction)
+        next_cursor = GraphEdgeCursor(
+            edge_key=last_edge.edge_id,
+            direction=direction,
+            log_seq=last_edge.log_seq,
+        )
 
     return GraphEdgePage(
         edges=edges,

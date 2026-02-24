@@ -12,6 +12,7 @@ import pytest
 from decisiongraph.domain.events import (
     EVENT_TYPE_ENTITY_OBSERVED,
     EVENT_TYPE_POLICY_EVALUATED,
+    EVENT_TYPE_PRECEDENT_CITED,
     EVENT_TYPE_TRACE_FINISHED,
     EVENT_TYPE_TRACE_STARTED,
 )
@@ -416,6 +417,59 @@ class TestGraphQueries:
             # Get next page
             page2 = list_node_edges(store, projector, center, cursor=page1.next_cursor, limit=3)
             assert len(page2.edges) >= 1
+
+    def test_node_edges_cursor_handles_new_edges_with_earlier_edge_id(self) -> None:
+        """Cursor pagination should not skip later edges with earlier lexicographic IDs."""
+        with SQLiteEventStore(":memory:") as store:
+            projector = SQLiteProjector(store.connection)
+            trace_id = generate_trace_id()
+
+            env1 = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=0,
+                event_type=EVENT_TYPE_TRACE_STARTED,
+                payload={
+                    "workflow": "test",
+                    "title": "Test",
+                    "primary_entity": {"entity_type": "Account", "entity_id": "acc-1"},
+                },
+            )
+            event1 = store.append_event(env1)
+            projector.project_event(event1)
+
+            env2 = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=1,
+                event_type=EVENT_TYPE_ENTITY_OBSERVED,
+                payload={
+                    "entity": {"entity_type": "Contact", "entity_id": "cnt-1"},
+                    "role": "related",
+                    "facts": [],
+                },
+            )
+            event2 = store.append_event(env2)
+            projector.project_event(event2)
+
+            center = NodeRef(node_type="trace", node_id=trace_id)
+            page1 = list_node_edges(store, projector, center, limit=1)
+            assert len(page1.edges) == 1
+            assert page1.next_cursor is not None
+
+            env3 = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=2,
+                event_type=EVENT_TYPE_PRECEDENT_CITED,
+                payload={
+                    "cited_trace_id": "trace-reference",
+                    "reason": "historical precedent",
+                },
+            )
+            event3 = store.append_event(env3)
+            projector.project_event(event3)
+
+            page2 = list_node_edges(store, projector, center, cursor=page1.next_cursor)
+            edge_types = {edge.edge_type for edge in page2.edges}
+            assert "trace_cited_precedent" in edge_types
 
 
 class TestStalenessChecks:

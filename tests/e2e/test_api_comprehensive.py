@@ -196,6 +196,65 @@ class TestIdempotency:
             assert len(events) == 1
             assert events[0].trace_seq == 0
 
+    def test_start_trace_retry_is_idempotent(
+        self, db_path: str, source: SourceRef, actor: ActorRef, entity: EntityRef
+    ) -> None:
+        """Retrying start_trace with same trace_id returns same stored event."""
+        with DecisionGraph(db_path) as dg:
+            trace_id = "trace-idem-start"
+            first = dg.start_trace(
+                workflow="test",
+                title="Idempotent start",
+                primary_entity=entity,
+                source=source,
+                actor=actor,
+                trace_id=trace_id,
+            )
+            second = dg.start_trace(
+                workflow="test",
+                title="Idempotent start",
+                primary_entity=entity,
+                source=source,
+                actor=actor,
+                trace_id=trace_id,
+            )
+
+            assert first == second
+            events = dg.get_trace_events(trace_id)
+            assert len(events) == 1
+            assert events[0].trace_seq == 0
+
+    def test_finish_trace_retry_is_idempotent(
+        self, db_path: str, source: SourceRef, actor: ActorRef, entity: EntityRef
+    ) -> None:
+        """Retrying finish_trace with same outcome returns existing event."""
+        with DecisionGraph(db_path) as dg:
+            trace_id = dg.start_trace(
+                workflow="test",
+                title="Idempotent finish",
+                primary_entity=entity,
+                source=source,
+                actor=actor,
+            )
+            first = dg.finish_trace(
+                trace_id=trace_id,
+                outcome="success",
+                source=source,
+                actor=actor,
+                summary="done",
+            )
+            second = dg.finish_trace(
+                trace_id=trace_id,
+                outcome="success",
+                source=source,
+                actor=actor,
+                summary="done",
+            )
+
+            assert first.log_seq == second.log_seq
+            events = dg.get_trace_events(trace_id)
+            assert len(events) == 2
+
 
 class TestErrorHandling:
     """Tests for error handling scenarios."""

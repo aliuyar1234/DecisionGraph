@@ -3,6 +3,8 @@
 This demo builds a deterministic SQLite dataset from the golden fixtures and runs
 core queries (trace retrieval, context subgraph, and precedent search).
 
+For a quick user-facing preview, see `demo/SHOWCASE.md`.
+
 ## Run
 
 ```bash

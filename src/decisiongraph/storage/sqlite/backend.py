@@ -205,6 +205,11 @@ class SQLiteEventStore:
                     f"Trace '{envelope.trace_id}' is already finished",
                 ) from e
             if "idempotency" in error_str:
+                # Handle races where another writer inserted the same
+                # idempotency key after our pre-check.
+                existing = self._check_idempotency(envelope, prepared.payload_hash)
+                if existing is not None:
+                    return existing
                 raise DecisionGraphError(
                     DG_ERR_IDEMPOTENCY_CONFLICT,
                     f"Idempotency key '{envelope.idempotency_key}' already used",

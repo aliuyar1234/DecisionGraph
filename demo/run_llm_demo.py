@@ -18,7 +18,6 @@ from decisiongraph.domain.events import (
 )
 from decisiongraph.domain.types import ActorRef, EntityRef, SourceRef
 from decisiongraph.domain.validation import FORBIDDEN_SUBSTRINGS
-from decisiongraph.query import get_trace_events
 
 DEFAULT_MODEL_CANDIDATES = [
     Path("D:/models/qwen-1.5b"),
@@ -76,6 +75,8 @@ def run_ollama(model: str, prompt: str) -> str:
         ["ollama", "run", model, prompt],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
     )
     return result.stdout.strip()

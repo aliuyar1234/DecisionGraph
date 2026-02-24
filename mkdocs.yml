@@ -13,5 +13,6 @@ theme:
 
 nav:
   - Home: index.md
+  - Showcase: showcase.md
   - Quickstart: quickstart.md
   - API: api.md

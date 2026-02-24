@@ -130,10 +130,12 @@ class GraphEdgeCursor:
     Attributes:
         edge_key: Edge ID to resume from (exclusive - next page starts after this)
         direction: Direction of edges being queried
+        log_seq: Optional edge log sequence for stable pagination ordering
     """
 
     edge_key: str
     direction: Literal["outgoing", "incoming", "both"]
+    log_seq: int | None = None
 
     def __post_init__(self) -> None:
         """Validate cursor parameters."""
@@ -146,6 +148,11 @@ class GraphEdgeCursor:
             raise DecisionGraphError(
                 DG_ERR_INVALID_ARGUMENT,
                 'direction must be "outgoing", "incoming", or "both"',
+            )
+        if self.log_seq is not None and self.log_seq <= 0:
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "log_seq must be positive when provided",
             )
 
 
