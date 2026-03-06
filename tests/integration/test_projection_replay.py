@@ -10,7 +10,6 @@ from decisiongraph.domain.events import (
     EVENT_TYPE_ENTITY_OBSERVED,
     EVENT_TYPE_EXCEPTION_REQUESTED,
     EVENT_TYPE_POLICY_EVALUATED,
-    EVENT_TYPE_PRECEDENT_CITED,
     EVENT_TYPE_TRACE_FINISHED,
     EVENT_TYPE_TRACE_STARTED,
 )
@@ -441,19 +440,9 @@ class TestPrecedentIndex:
     """Tests for precedent index projection."""
 
     def test_precedent_index_on_cite(self) -> None:
-        """Precedent index created for PrecedentCited events."""
+        """Precedent index created for policy and exception events on finish."""
         with SQLiteEventStore(":memory:") as store:
             projector = SQLiteProjector(store.connection)
-
-            # Create cited trace first
-            cited_trace_id = generate_trace_id()
-            env_cited = create_test_envelope(
-                trace_id=cited_trace_id,
-                trace_seq=0,
-                event_type=EVENT_TYPE_TRACE_STARTED,
-                payload={"workflow": "test", "title": "Previous Decision"},
-            )
-            store.append_event(env_cited)
 
             # Create current trace
             trace_id = generate_trace_id()
@@ -470,11 +459,11 @@ class TestPrecedentIndex:
             env1 = create_test_envelope(
                 trace_id=trace_id,
                 trace_seq=1,
-                event_type=EVENT_TYPE_PRECEDENT_CITED,
+                event_type=EVENT_TYPE_POLICY_EVALUATED,
                 payload={
-                    "cited_trace_id": cited_trace_id,
-                    "reason": "Similar customer situation",
-                    "similarity_score": "0.95",
+                    "policy": {"policy_id": "discount-policy", "policy_version": "1.0"},
+                    "inputs": [],
+                    "decision": "require_exception",
                 },
             )
             event1 = store.append_event(env1)
@@ -483,20 +472,42 @@ class TestPrecedentIndex:
             env2 = create_test_envelope(
                 trace_id=trace_id,
                 trace_seq=2,
-                event_type=EVENT_TYPE_TRACE_FINISHED,
-                payload={"outcome": "success"},
+                event_type=EVENT_TYPE_EXCEPTION_REQUESTED,
+                payload={
+                    "exception_id": "exc-789",
+                    "policy": {"policy_id": "discount-policy", "policy_version": "1.0"},
+                    "reason": "Strategic customer",
+                },
             )
             event2 = store.append_event(env2)
             projector.project_event(event2)
 
+            env3 = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=3,
+                event_type=EVENT_TYPE_TRACE_FINISHED,
+                payload={"outcome": "success"},
+            )
+            event3 = store.append_event(env3)
+            projector.project_event(event3)
+
             # Check precedent index
             cursor = store.connection.execute(
-                "SELECT * FROM dg_precedent_index WHERE trace_id = ?",
+                """
+                SELECT log_seq, policy_id, policy_version, exception_id
+                FROM dg_precedent_index
+                WHERE trace_id = ?
+                ORDER BY log_seq
+                """,
                 (trace_id,),
             )
             rows = cursor.fetchall()
-            assert len(rows) == 1
-            assert rows[0]["cited_trace_id"] == cited_trace_id
+            assert len(rows) == 2
+            assert rows[0]["log_seq"] < rows[1]["log_seq"]
+            assert rows[0]["policy_id"] == "discount-policy"
+            assert rows[0]["policy_version"] == "1.0"
+            assert rows[0]["exception_id"] is None
+            assert rows[1]["exception_id"] == "exc-789"
 
 
 class TestSubgraphOrdering:

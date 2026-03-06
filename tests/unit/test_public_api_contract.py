@@ -43,6 +43,135 @@ EXPECTED_DECISIONGRAPH_METHOD_PARAMS: dict[str, list[str]] = {
         "tags",
         "occurred_at",
     ],
+    "observe_input": [
+        "self",
+        "trace_id",
+        "input_id",
+        "input_source",
+        "facts",
+        "source",
+        "actor",
+        "idempotency_key",
+        "correlation_id",
+        "causation_event_id",
+        "schema_version",
+        "tags",
+        "occurred_at",
+    ],
+    "observe_entity": [
+        "self",
+        "trace_id",
+        "entity",
+        "role",
+        "facts",
+        "source",
+        "actor",
+        "idempotency_key",
+        "correlation_id",
+        "causation_event_id",
+        "schema_version",
+        "tags",
+        "occurred_at",
+    ],
+    "evaluate_policy": [
+        "self",
+        "trace_id",
+        "policy",
+        "inputs",
+        "decision",
+        "source",
+        "actor",
+        "violations",
+        "explanation",
+        "idempotency_key",
+        "correlation_id",
+        "causation_event_id",
+        "schema_version",
+        "tags",
+        "occurred_at",
+    ],
+    "request_exception": [
+        "self",
+        "trace_id",
+        "exception_id",
+        "policy",
+        "reason",
+        "source",
+        "actor",
+        "evidence",
+        "idempotency_key",
+        "correlation_id",
+        "causation_event_id",
+        "schema_version",
+        "tags",
+        "occurred_at",
+    ],
+    "record_approval": [
+        "self",
+        "trace_id",
+        "approval_id",
+        "subject",
+        "approver",
+        "decision",
+        "source",
+        "actor",
+        "reason",
+        "evidence",
+        "idempotency_key",
+        "correlation_id",
+        "causation_event_id",
+        "schema_version",
+        "tags",
+        "occurred_at",
+    ],
+    "cite_precedent": [
+        "self",
+        "trace_id",
+        "cited_trace_id",
+        "reason",
+        "source",
+        "actor",
+        "similarity_score",
+        "idempotency_key",
+        "correlation_id",
+        "causation_event_id",
+        "schema_version",
+        "tags",
+        "occurred_at",
+    ],
+    "propose_action": [
+        "self",
+        "trace_id",
+        "action_id",
+        "action_type",
+        "target_entity",
+        "target_system",
+        "changes",
+        "source",
+        "actor",
+        "idempotency_key",
+        "correlation_id",
+        "causation_event_id",
+        "schema_version",
+        "tags",
+        "occurred_at",
+    ],
+    "commit_action": [
+        "self",
+        "trace_id",
+        "action_id",
+        "status",
+        "source",
+        "actor",
+        "external_reference",
+        "error",
+        "idempotency_key",
+        "correlation_id",
+        "causation_event_id",
+        "schema_version",
+        "tags",
+        "occurred_at",
+    ],
     "start_trace": [
         "self",
         "workflow",
@@ -63,6 +192,7 @@ EXPECTED_DECISIONGRAPH_METHOD_PARAMS: dict[str, list[str]] = {
     ],
     "get_trace_events": ["self", "trace_id"],
     "get_context_subgraph": ["self", "node_type", "node_id", "max_depth"],
+    "get_projection_health": ["self", "include_digests"],
     "find_precedents": [
         "self",
         "policy_id",
@@ -120,7 +250,7 @@ def test_cli_command_and_flag_contract() -> None:
     parser = build_parser()
     subparsers = _extract_subparsers_action(parser).choices
 
-    assert set(subparsers) == {"replay", "dump-trace"}
+    assert set(subparsers) == {"replay", "projection-status", "dump-trace"}
 
     replay = subparsers["replay"]
     replay_positionals = [
@@ -129,6 +259,21 @@ def test_cli_command_and_flag_contract() -> None:
         if not action.option_strings and action.dest != "help"
     ]
     assert replay_positionals == ["db"]
+
+    projection_status = subparsers["projection-status"]
+    projection_status_positionals = [
+        action.dest
+        for action in projection_status._actions
+        if not action.option_strings and action.dest != "help"
+    ]
+    assert projection_status_positionals == ["db"]
+
+    projection_status_flags = {
+        option
+        for action in projection_status._actions
+        for option in action.option_strings
+    }
+    assert "--include-digests" in projection_status_flags
 
     dump_trace = subparsers["dump-trace"]
     dump_positionals = [

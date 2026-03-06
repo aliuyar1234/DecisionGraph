@@ -26,6 +26,32 @@ DecisionGraph uses a conservative deprecation lifecycle:
 
 For v1, removals are not allowed in `PATCH`/`MINOR` releases.
 
+## Migration Notes: Unreleased
+
+### Summary
+- Added typed `DecisionGraph` helper methods for common event writes.
+- Added projection health inspection via `DecisionGraph.get_projection_health()` and `python -m decisiongraph projection-status`.
+- Made `python -m decisiongraph replay` fully read-only while improving projection replay/sync batching and precedent indexing.
+
+### Impact
+- Existing `append_event()` workflows remain supported; the new write helpers are convenience APIs.
+- Projection-backed operators now have a stable health surface for lag and digest inspection.
+- Existing writable databases pick up the structured precedent index through migration `0005`.
+
+### Required Actions
+1. Apply the current migrations before relying on the structured precedent index on existing databases.
+2. Optionally adopt the typed helper methods in application code for stronger payload ergonomics.
+3. Optionally add `projection-status` or `get_projection_health(include_digests=True)` to recovery and monitoring workflows.
+
+### Verification
+- `python -m decisiongraph projection-status <db>`
+- `python -m decisiongraph projection-status <db> --include-digests`
+- `python -m decisiongraph replay <db>`
+
+### Rollback
+- Continue using `append_event()` if you do not want to adopt the new helper APIs yet.
+- Restore the previous release if you need the old precedent index schema or the old `replay` behavior.
+
 ## Migration Notes Template
 
 Use this template for every change that affects operators or integrators:

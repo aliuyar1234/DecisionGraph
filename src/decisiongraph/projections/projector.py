@@ -11,8 +11,8 @@ from collections.abc import Iterable
 from typing import Any
 
 from decisiongraph.domain.events import (
+    EVENT_TYPE_EXCEPTION_REQUESTED,
     EVENT_TYPE_POLICY_EVALUATED,
-    EVENT_TYPE_PRECEDENT_CITED,
     EVENT_TYPE_TRACE_FINISHED,
     EVENT_TYPE_TRACE_STARTED,
     StoredEvent,
@@ -36,7 +36,7 @@ class SQLiteProjector:
     Transforms events into:
     - Context graph (dg_cg_nodes, dg_cg_edges)
     - Trace summary (dg_trace_summary)
-    - Precedent index (dg_precedent_index)
+    - Precedent index (policy/exception lookup rows)
     - Cursor tracking (dg_projection_meta)
 
     Usage:
@@ -400,49 +400,97 @@ class SQLiteProjector:
     def _build_precedent_index(self, trace_id: str, _finished_log_seq: int) -> None:
         """Build precedent index entries for a finished trace.
 
-        Indexes PrecedentCited events for fast precedent lookup.
+        Indexes finished trace policy and exception events for precedent lookup.
 
         Args:
             trace_id: Trace ID that finished
             finished_log_seq: log_seq of TraceFinished event
         """
-        # Find all PrecedentCited events for this trace
-        cursor = self._conn.execute(
+        rows = self._conn.execute(
             """
-            SELECT log_seq, event_id, payload_json, occurred_at FROM dg_event_log
-            WHERE trace_id = ? AND event_type = ?
+            SELECT trace_seq, log_seq, event_id, event_type, payload_json
+            FROM dg_event_log
+            WHERE trace_id = ?
+            ORDER BY trace_seq ASC
             """,
-            (trace_id, EVENT_TYPE_PRECEDENT_CITED),
-        )
+            (trace_id,),
+        ).fetchall()
 
-        entries: list[tuple[str, str, str, str, str | None, int, str]] = []
-        for row in cursor.fetchall():
+        primary_entity_type: str | None = None
+        primary_entity_system: str | None = None
+        primary_entity_id: str | None = None
+        entries: list[tuple[str, int, str, str, str, str | None, str | None, str | None, str | None]] = []
+
+        for row in rows:
             payload = json.loads(row["payload_json"])
-            cited_trace_id = payload.get("cited_trace_id", "")
-            reason = payload.get("reason", "")
-            similarity_score = payload.get("similarity_score")
+            if row["event_type"] == EVENT_TYPE_TRACE_STARTED and primary_entity_type is None:
+                primary_entity = payload.get("primary_entity", {})
+                if isinstance(primary_entity, dict):
+                    primary_entity_type = primary_entity.get("entity_type")
+                    primary_entity_system = primary_entity.get("system")
+                    primary_entity_id = primary_entity.get("entity_id")
+                continue
 
-            if cited_trace_id:
-                index_id = f"{trace_id}:{cited_trace_id}:{row['event_id']}"
+            if row["event_type"] == EVENT_TYPE_POLICY_EVALUATED:
+                policy = payload.get("policy", {})
+                policy_id = policy.get("policy_id")
+                policy_version = policy.get("policy_version")
+                if not policy_id or not policy_version:
+                    raise DecisionGraphError(
+                        DG_ERR_SCHEMA_VIOLATION,
+                        "PolicyEvaluated requires policy_id and policy_version",
+                    )
                 entries.append(
                     (
-                        index_id,
-                        trace_id,
-                        cited_trace_id,
-                        reason,
-                        similarity_score,
+                        row["event_id"],
                         row["log_seq"],
-                        row["occurred_at"],
+                        trace_id,
+                        policy_id,
+                        policy_version,
+                        None,
+                        primary_entity_type,
+                        primary_entity_system,
+                        primary_entity_id,
                     )
                 )
+                continue
+
+            if row["event_type"] == EVENT_TYPE_EXCEPTION_REQUESTED:
+                policy = payload.get("policy", {})
+                policy_id = policy.get("policy_id")
+                policy_version = policy.get("policy_version")
+                exception_id = payload.get("exception_id")
+                if not policy_id or not policy_version or not exception_id:
+                    raise DecisionGraphError(
+                        DG_ERR_SCHEMA_VIOLATION,
+                        "ExceptionRequested requires policy and exception_id",
+                    )
+                entries.append(
+                    (
+                        row["event_id"],
+                        row["log_seq"],
+                        trace_id,
+                        policy_id,
+                        policy_version,
+                        exception_id,
+                        primary_entity_type,
+                        primary_entity_system,
+                        primary_entity_id,
+                    )
+                )
+
+        self._conn.execute(
+            "DELETE FROM dg_precedent_index WHERE trace_id = ?",
+            (trace_id,),
+        )
 
         if entries:
             self._conn.executemany(
                 """
-                INSERT OR IGNORE INTO dg_precedent_index
-                    (index_id, trace_id, cited_trace_id, reason, similarity_score,
-                     log_seq, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO dg_precedent_index
+                    (source_event_id, log_seq, trace_id, policy_id, policy_version,
+                     exception_id, primary_entity_type, primary_entity_system, primary_entity_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 entries,
             )

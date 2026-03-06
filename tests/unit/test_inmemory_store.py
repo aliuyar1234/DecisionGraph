@@ -1,5 +1,7 @@
 """Tests for InMemoryEventStore - TC-P1-005 through TC-P1-010."""
 
+from collections.abc import Callable
+
 import pytest
 
 from decisiongraph.domain.events import (
@@ -14,6 +16,7 @@ from decisiongraph.errors import (
     DecisionGraphError,
 )
 from decisiongraph.ids import generate_trace_id
+from decisiongraph.storage.sqlite import SQLiteEventStore
 from decisiongraph.testing import InMemoryEventStore, create_test_envelope
 
 
@@ -121,6 +124,47 @@ class TestIdempotency:
             store.append_event(env2)
 
         assert exc_info.value.code == DG_ERR_IDEMPOTENCY_CONFLICT
+
+    @pytest.mark.parametrize(
+        "store_factory",
+        [
+            lambda: InMemoryEventStore(),
+            lambda: SQLiteEventStore(":memory:"),
+        ],
+    )
+    def test_idempotent_retry_ignores_updated_trace_seq(
+        self,
+        store_factory: Callable[[], InMemoryEventStore | SQLiteEventStore],
+    ) -> None:
+        """Idempotent retries may reuse a later trace_seq and still return the original."""
+        store = store_factory()
+        try:
+            trace_id = generate_trace_id()
+            payload = {"workflow": "test", "title": "Retry"}
+
+            initial = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=0,
+                event_type=EVENT_TYPE_TRACE_STARTED,
+                payload=payload,
+                idempotency_key="retry-key",
+            )
+            retry = create_test_envelope(
+                trace_id=trace_id,
+                trace_seq=1,
+                event_type=EVENT_TYPE_TRACE_STARTED,
+                payload=payload,
+                idempotency_key="retry-key",
+            )
+
+            stored_initial = store.append_event(initial)
+            stored_retry = store.append_event(retry)
+
+            assert stored_retry.log_seq == stored_initial.log_seq
+            assert stored_retry.event_id == stored_initial.event_id
+        finally:
+            if hasattr(store, "close"):
+                store.close()
 
 
 class TestTraceSequence:

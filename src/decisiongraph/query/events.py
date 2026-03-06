@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from decisiongraph.errors import (
     DG_ERR_INVALID_ARGUMENT,
     DG_ERR_NOT_FOUND,
+    DG_ERR_PROJECTION_OUT_OF_DATE,
     DecisionGraphError,
 )
 from decisiongraph.projections.interfaces import ProjectionBackend
@@ -21,6 +22,21 @@ from decisiongraph.query.constants import MAX_QUERY_LIMIT
 if TYPE_CHECKING:
     from decisiongraph.domain.events import StoredEvent
     from decisiongraph.storage.interface import EventStore
+
+
+def _check_projection_staleness(
+    store: "EventStore",
+    projector: ProjectionBackend,
+) -> None:
+    """Reject projection-backed reads when the projector is behind the event log."""
+    projector_seq = projector.get_cursor()
+    event_seq = store.get_last_log_seq()
+
+    if projector_seq < event_seq:
+        raise DecisionGraphError(
+            DG_ERR_PROJECTION_OUT_OF_DATE,
+            f"Projections at log_seq={projector_seq}, events at {event_seq}",
+        )
 
 
 @dataclass(frozen=True)
@@ -49,7 +65,7 @@ class TraceSummary:
 
 
 def get_trace_summary(
-    _store: "EventStore",
+    store: "EventStore",
     projector: ProjectionBackend,
     trace_id: str,
 ) -> TraceSummary:
@@ -58,7 +74,7 @@ def get_trace_summary(
     This query returns metadata for a trace from the trace summary projection.
 
     Args:
-        _store: Event store (for staleness check, not used for event-log queries)
+        store: Event store for staleness check
         projector: Projector with trace summary data
         trace_id: Trace ID to get summary for
 
@@ -66,9 +82,10 @@ def get_trace_summary(
         TraceSummary with trace metadata
 
     Raises:
-        DecisionGraphError: If trace not found (DG_ERR_NOT_FOUND)
+        DecisionGraphError: If trace not found or projections are stale
     """
-    # Use the projector's get_trace_summary method
+    _check_projection_staleness(store, projector)
+
     row = projector.get_trace_summary(trace_id)
 
     if row is None:

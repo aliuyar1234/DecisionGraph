@@ -15,11 +15,25 @@ from pathlib import Path
 import pytest
 
 from decisiongraph.api import DecisionGraph
-from decisiongraph.domain.types import ActorRef, EntityRef, SourceRef
+from decisiongraph.domain.events import EVENT_TYPE_ENTITY_OBSERVED
+from decisiongraph.domain.types import (
+    ActorRef,
+    ApprovalSubject,
+    Change,
+    EntityRef,
+    Fact,
+    PolicyRef,
+    SourceObjectRef,
+    SourceRef,
+    Value,
+)
 from decisiongraph.errors import (
+    DG_ERR_INVALID_ARGUMENT,
     DG_ERR_PII_POLICY_VIOLATION,
     DecisionGraphError,
 )
+from decisiongraph.storage.sqlite import SQLiteEventStore
+from decisiongraph.testing import create_test_envelope
 
 
 @pytest.fixture
@@ -137,6 +151,118 @@ class TestBasicWorkflow:
             events = dg.get_trace_events(trace_id)
             finish_event = [e for e in events if "outcome" in e.payload][0]
             assert finish_event.payload["summary"] == "Completed successfully with no issues"
+
+    def test_typed_helper_methods_append_expected_events(
+        self, db_path: str, source: SourceRef, actor: ActorRef, entity: EntityRef
+    ) -> None:
+        """Structured helper APIs should append the expected event types and payloads."""
+        with DecisionGraph(db_path) as dg:
+            trace_id = dg.start_trace(
+                workflow="typed",
+                title="Typed helper test",
+                primary_entity=entity,
+                source=source,
+                actor=actor,
+            )
+
+            fact = Fact(key="segment", value=Value(type="string", value="strategic"))
+            policy = PolicyRef(policy_id="discount-cap", policy_version="1.0")
+
+            dg.observe_input(
+                trace_id=trace_id,
+                input_id="input-1",
+                input_source=SourceObjectRef(
+                    system="crm",
+                    object_type="ticket",
+                    object_id="t-1",
+                ),
+                facts=[fact],
+                source=source,
+                actor=actor,
+            )
+            dg.observe_entity(
+                trace_id=trace_id,
+                entity=EntityRef(entity_type="Account", entity_id="A-1", system="crm"),
+                role="related",
+                facts=[fact],
+                source=source,
+                actor=actor,
+            )
+            dg.evaluate_policy(
+                trace_id=trace_id,
+                policy=policy,
+                inputs=["input-1"],
+                decision="require_exception",
+                source=source,
+                actor=actor,
+            )
+            dg.request_exception(
+                trace_id=trace_id,
+                exception_id="exc-1",
+                policy=policy,
+                reason="Strategic account",
+                source=source,
+                actor=actor,
+            )
+            dg.record_approval(
+                trace_id=trace_id,
+                approval_id="appr-1",
+                subject=ApprovalSubject(subject_type="exception", subject_id="exc-1"),
+                approver=ActorRef(actor_type="person", actor_id="approver-1"),
+                decision="approved",
+                source=source,
+                actor=actor,
+                reason="Approved by policy owner",
+            )
+            dg.cite_precedent(
+                trace_id=trace_id,
+                cited_trace_id="trace-old-1",
+                reason="Matched prior strategic exception",
+                source=source,
+                actor=actor,
+                similarity_score="0.91",
+            )
+            dg.propose_action(
+                trace_id=trace_id,
+                action_id="act-1",
+                action_type="update",
+                target_entity=entity,
+                target_system="crm",
+                changes=[
+                    Change(
+                        path="discount",
+                        old_value=Value(type="decimal", value="0.05"),
+                        new_value=Value(type="decimal", value="0.07"),
+                    )
+                ],
+                source=source,
+                actor=actor,
+            )
+            dg.commit_action(
+                trace_id=trace_id,
+                action_id="act-1",
+                status="success",
+                source=source,
+                actor=actor,
+                external_reference="crm-change-1",
+            )
+
+            events = dg.get_trace_events(trace_id)
+            event_types = [event.event_type for event in events]
+            assert event_types == [
+                "TraceStarted",
+                "InputObserved",
+                "EntityObserved",
+                "PolicyEvaluated",
+                "ExceptionRequested",
+                "ApprovalRecorded",
+                "PrecedentCited",
+                "ActionProposed",
+                "ActionCommitted",
+            ]
+            assert events[1].payload["source"]["system"] == "crm"
+            assert events[3].payload["policy"]["policy_id"] == "discount-cap"
+            assert events[8].payload["external_reference"] == "crm-change-1"
 
 
 class TestOutcomeTypes:
@@ -455,6 +581,240 @@ class TestQueryIntegration:
             # No precedent citations exist
             hits = dg.find_precedents(policy_id="nonexistent")
             assert hits == []
+
+
+class TestProjectionMaintenance:
+    """Tests for projection sync/replay behavior."""
+
+    def test_sync_projections_processes_all_pending_events_in_batches(
+        self,
+        db_path: str,
+        source: SourceRef,
+        actor: ActorRef,
+        entity: EntityRef,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        with DecisionGraph(db_path) as dg:
+            trace_id = dg.start_trace(
+                workflow="sync-batches",
+                title="sync batches",
+                primary_entity=entity,
+                source=source,
+                actor=actor,
+            )
+
+            with SQLiteEventStore(db_path) as external_store:
+                for idx in range(1, 6):
+                    env = create_test_envelope(
+                        trace_id=trace_id,
+                        trace_seq=idx,
+                        event_type=EVENT_TYPE_ENTITY_OBSERVED,
+                        payload={
+                            "entity": {
+                                "entity_type": "Contract",
+                                "entity_id": f"C-{idx}",
+                            },
+                            "role": "related",
+                            "facts": [],
+                        },
+                        producer_id=source.producer_id,
+                    )
+                    external_store.append_event(env)
+
+            original_list_events = dg._store.list_events
+            requested_limits: list[int | None] = []
+
+            def tracked_list_events(
+                since_log_seq: int | None = None,
+                until_log_seq: int | None = None,
+                event_type: str | None = None,
+                trace_id: str | None = None,
+                limit: int | None = None,
+            ):
+                requested_limits.append(limit)
+                return original_list_events(
+                    since_log_seq=since_log_seq,
+                    until_log_seq=until_log_seq,
+                    event_type=event_type,
+                    trace_id=trace_id,
+                    limit=limit,
+                )
+
+            monkeypatch.setattr(dg._store, "list_events", tracked_list_events)
+
+            processed = dg.sync_projections(batch_size=2)
+
+            assert processed == 5
+            assert requested_limits.count(2) >= 3
+            assert dg._projector.get_cursor() == dg._store.get_last_log_seq()
+
+    def test_replay_projections_reads_event_log_in_batches(
+        self,
+        db_path: str,
+        source: SourceRef,
+        actor: ActorRef,
+        entity: EntityRef,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        with DecisionGraph(db_path) as dg:
+            trace_id = dg.start_trace(
+                workflow="replay-batches",
+                title="replay batches",
+                primary_entity=entity,
+                source=source,
+                actor=actor,
+            )
+            for _ in range(3):
+                dg.append_event(
+                    trace_id=trace_id,
+                    event_type=EVENT_TYPE_ENTITY_OBSERVED,
+                    payload={
+                        "entity": {
+                            "entity_type": "Contract",
+                            "entity_id": f"C-{dg._store.get_next_trace_seq(trace_id)}",
+                        },
+                        "role": "related",
+                        "facts": [],
+                    },
+                    source=source,
+                    actor=actor,
+                )
+
+            original_list_events = dg._store.list_events
+            requested_limits: list[int | None] = []
+
+            def tracked_list_events(
+                since_log_seq: int | None = None,
+                until_log_seq: int | None = None,
+                event_type: str | None = None,
+                trace_id: str | None = None,
+                limit: int | None = None,
+            ):
+                requested_limits.append(limit)
+                return original_list_events(
+                    since_log_seq=since_log_seq,
+                    until_log_seq=until_log_seq,
+                    event_type=event_type,
+                    trace_id=trace_id,
+                    limit=limit,
+                )
+
+            monkeypatch.setattr(dg._store, "list_events", tracked_list_events)
+
+            dg.replay_projections(batch_size=2)
+
+            assert requested_limits.count(2) >= 2
+            assert dg._projector.get_cursor() == dg._store.get_last_log_seq()
+
+    @pytest.mark.parametrize(
+        "method_name",
+        ["sync_projections", "replay_projections"],
+    )
+    def test_projection_maintenance_rejects_non_positive_batch_size(
+        self,
+        db_path: str,
+        method_name: str,
+    ) -> None:
+        with DecisionGraph(db_path) as dg:
+            method = getattr(dg, method_name)
+            with pytest.raises(DecisionGraphError) as exc_info:
+                method(batch_size=0)
+
+            assert exc_info.value.code == DG_ERR_INVALID_ARGUMENT
+
+    def test_replay_projections_handles_larger_logs_in_batches(
+        self,
+        db_path: str,
+        source: SourceRef,
+        actor: ActorRef,
+        entity: EntityRef,
+    ) -> None:
+        with DecisionGraph(db_path) as dg:
+            trace_id = dg.start_trace(
+                workflow="large-replay",
+                title="large replay",
+                primary_entity=entity,
+                source=source,
+                actor=actor,
+            )
+            for idx in range(1, 251):
+                dg.append_event(
+                    trace_id=trace_id,
+                    event_type=EVENT_TYPE_ENTITY_OBSERVED,
+                    payload={
+                        "entity": {
+                            "entity_type": "Contract",
+                            "entity_id": f"C-{idx}",
+                        },
+                        "role": "related",
+                        "facts": [],
+                    },
+                    source=source,
+                    actor=actor,
+                )
+
+            dg.finish_trace(
+                trace_id=trace_id,
+                outcome="success",
+                source=source,
+                actor=actor,
+            )
+
+            dg.replay_projections(batch_size=32)
+
+            assert dg._projector.get_cursor() == dg._store.get_last_log_seq()
+            assert len(dg.get_trace_events(trace_id)) == 252
+
+    def test_get_projection_health_reports_cursor_lag_and_digests(
+        self,
+        db_path: str,
+        source: SourceRef,
+        actor: ActorRef,
+        entity: EntityRef,
+    ) -> None:
+        with DecisionGraph(db_path) as dg:
+            trace_id = dg.start_trace(
+                workflow="health",
+                title="health check",
+                primary_entity=entity,
+                source=source,
+                actor=actor,
+            )
+
+            with SQLiteEventStore(db_path) as external_store:
+                env = create_test_envelope(
+                    trace_id=trace_id,
+                    trace_seq=1,
+                    event_type=EVENT_TYPE_ENTITY_OBSERVED,
+                    payload={
+                        "entity": {
+                            "entity_type": "Contract",
+                            "entity_id": "C-health",
+                        },
+                        "role": "related",
+                        "facts": [],
+                    },
+                    producer_id=source.producer_id,
+                )
+                external_store.append_event(env)
+
+            stale = dg.get_projection_health()
+            assert stale.is_stale is True
+            assert stale.pending_events == 1
+            assert stale.event_count == 2
+            assert stale.digests is None
+
+            dg.sync_projections()
+            healthy = dg.get_projection_health(include_digests=True)
+            assert healthy.is_stale is False
+            assert healthy.pending_events == 0
+            assert healthy.digests is not None
+            assert set(healthy.digests) == {
+                "context_graph",
+                "trace_summary",
+                "precedent_index",
+                "full_projection",
+            }
 
 
 class TestIsTraceFinished:

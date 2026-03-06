@@ -14,6 +14,7 @@ def get_trace_summary(trace_id: str) -> TraceSummary
 
 **Errors**:
 - `DG_ERR_NOT_FOUND`: Trace doesn't exist
+- `DG_ERR_PROJECTION_OUT_OF_DATE`: Projections behind event log
 
 ## get_trace_events
 
@@ -140,11 +141,11 @@ if projector_seq < event_seq:
 ```
 
 **Applies to**:
+- get_trace_summary
 - get_context_subgraph
 - list_node_edges
 - find_precedents
 
 **Does NOT apply to**:
-- get_trace_summary (reads from dg_trace_summary, but still checks)
 - get_trace_events (event log only)
 - list_events (event log only)

@@ -13,8 +13,8 @@ import pytest
 
 from decisiongraph.domain.events import (
     EVENT_TYPE_ENTITY_OBSERVED,
+    EVENT_TYPE_EXCEPTION_REQUESTED,
     EVENT_TYPE_POLICY_EVALUATED,
-    EVENT_TYPE_PRECEDENT_CITED,
     EVENT_TYPE_TRACE_FINISHED,
     EVENT_TYPE_TRACE_STARTED,
     StoredEvent,
@@ -521,12 +521,11 @@ class TestTraceSummary:
 class TestPrecedentIndex:
     """Tests for precedent index projection."""
 
-    def test_precedent_cited_indexed_on_finish(self) -> None:
-        """PrecedentCited events indexed when trace finishes."""
+    def test_policy_and_exception_events_indexed_on_finish(self) -> None:
+        """Finished traces create structured policy/exception precedent rows."""
         with SQLiteEventStore(":memory:") as store:
             projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()
-            cited_trace_id = generate_trace_id()
 
             # Start
             event0 = create_stored_event(
@@ -536,29 +535,39 @@ class TestPrecedentIndex:
                 payload={"workflow": "test", "title": "Test"},
                 log_seq=1,
             )
-            # Cite precedent (similarity_score as string to avoid float)
             event1 = create_stored_event(
                 trace_id=trace_id,
                 trace_seq=1,
-                event_type=EVENT_TYPE_PRECEDENT_CITED,
+                event_type=EVENT_TYPE_POLICY_EVALUATED,
                 payload={
-                    "cited_trace_id": cited_trace_id,
-                    "reason": "Similar case",
-                    "similarity_score": "0.9",  # String, not float
+                    "policy": {"policy_id": "discount-cap", "policy_version": "1.0"},
+                    "inputs": [],
+                    "decision": "require_exception",
                 },
                 log_seq=2,
             )
-            # Finish
             event2 = create_stored_event(
                 trace_id=trace_id,
                 trace_seq=2,
+                event_type=EVENT_TYPE_EXCEPTION_REQUESTED,
+                payload={
+                    "exception_id": "exc-123",
+                    "policy": {"policy_id": "discount-cap", "policy_version": "1.0"},
+                    "reason": "Similar case",
+                },
+                log_seq=3,
+            )
+            # Finish
+            event3 = create_stored_event(
+                trace_id=trace_id,
+                trace_seq=3,
                 event_type=EVENT_TYPE_TRACE_FINISHED,
                 payload={"outcome": "success"},
-                log_seq=3,
+                log_seq=4,
             )
 
             # Store events in SQLite for precedent index query
-            for event in [event0, event1, event2]:
+            for event in [event0, event1, event2, event3]:
                 store.connection.execute(
                     """
                     INSERT INTO dg_event_log (
@@ -594,13 +603,22 @@ class TestPrecedentIndex:
             projector.project_event(event0)
             projector.project_event(event1)
             projector.project_event(event2)
+            projector.project_event(event3)
 
             # Check precedent index
             cursor = store.connection.execute(
-                "SELECT * FROM dg_precedent_index WHERE trace_id = ?",
+                """
+                SELECT log_seq, policy_id, policy_version, exception_id
+                FROM dg_precedent_index
+                WHERE trace_id = ?
+                ORDER BY log_seq
+                """,
                 (trace_id,),
             )
             rows = cursor.fetchall()
-            assert len(rows) == 1
-            assert rows[0]["cited_trace_id"] == cited_trace_id
-            assert rows[0]["reason"] == "Similar case"
+            assert len(rows) == 2
+            assert rows[0]["log_seq"] < rows[1]["log_seq"]
+            assert rows[0]["policy_id"] == "discount-cap"
+            assert rows[0]["policy_version"] == "1.0"
+            assert rows[0]["exception_id"] is None
+            assert rows[1]["exception_id"] == "exc-123"

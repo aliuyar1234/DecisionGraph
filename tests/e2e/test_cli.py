@@ -69,6 +69,53 @@ class TestCLI:
 
         assert "Projection digests after replay:" in output
 
+    def test_cli_replay_does_not_mutate_source_db(self, tmp_path: Path) -> None:
+        """replay should inspect a database without modifying stored projections."""
+        from decisiongraph.__main__ import cmd_replay
+
+        db_path = tmp_path / "test.db"
+        fixture = load_fixture(FIXTURES_DIR / "renewal")
+        store = SQLiteEventStore(str(db_path))
+
+        for envelope in fixture.events:
+            store.append_event(envelope)
+
+        projection_tables = [
+            "dg_cg_nodes",
+            "dg_cg_edges",
+            "dg_trace_summary",
+            "dg_precedent_index",
+            "dg_policy_eval_index",
+            "dg_projection_meta",
+        ]
+        counts_before = {
+            table: store.connection.execute(
+                f"SELECT COUNT(*) AS count FROM {table}"
+            ).fetchone()["count"]
+            for table in projection_tables
+        }
+        event_count_before = store.connection.execute(
+            "SELECT COUNT(*) AS count FROM dg_event_log"
+        ).fetchone()["count"]
+        store.close()
+
+        cmd_replay(str(db_path))
+
+        readonly = SQLiteEventStore(str(db_path), read_only=True)
+        counts_after = {
+            table: readonly.connection.execute(
+                f"SELECT COUNT(*) AS count FROM {table}"
+            ).fetchone()["count"]
+            for table in projection_tables
+        }
+        event_count_after = readonly.connection.execute(
+            "SELECT COUNT(*) AS count FROM dg_event_log"
+        ).fetchone()["count"]
+        readonly.close()
+
+        assert counts_after == counts_before
+        assert event_count_after == event_count_before
+
     def test_cli_dump_trace_stable(self, tmp_path: Path) -> None:
         """TC-P6-008: CLI dump-trace produces stable output."""
         from decisiongraph.__main__ import cmd_dump_trace
@@ -133,6 +180,52 @@ class TestCLI:
             assert "source" in event
             assert "actor" in event
 
+    def test_cli_projection_status_reports_health(self, tmp_path: Path) -> None:
+        """projection-status prints deterministic projection health JSON."""
+        from decisiongraph.__main__ import cmd_projection_status
+
+        db_path = tmp_path / "status.db"
+        fixture = load_fixture(FIXTURES_DIR / "renewal")
+        store = SQLiteEventStore(str(db_path))
+        for envelope in fixture.events:
+            store.append_event(envelope)
+        store.close()
+
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            cmd_projection_status(str(db_path))
+            status = json.loads(mock_stdout.getvalue())
+
+        assert status["is_stale"] is True
+        assert status["pending_events"] == status["event_log_last_seq"]
+        assert status["digests"] is None
+
+    def test_cli_projection_status_include_digests(self, tmp_path: Path) -> None:
+        """projection-status can include current projection digests."""
+        from decisiongraph.__main__ import cmd_projection_status
+
+        db_path = tmp_path / "status.db"
+        fixture = load_fixture(FIXTURES_DIR / "renewal")
+        store = SQLiteEventStore(str(db_path))
+        conn = store.connection
+        projector = SQLiteProjector(conn)
+        for envelope in fixture.events:
+            store.append_event(envelope)
+        projector.rebuild()
+        projector.project_events(store.list_events())
+        store.close()
+
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            cmd_projection_status(str(db_path), include_digests=True)
+            status = json.loads(mock_stdout.getvalue())
+
+        assert status["is_stale"] is False
+        assert set(status["digests"]) == {
+            "context_graph",
+            "trace_summary",
+            "precedent_index",
+            "full_projection",
+        }
+
     def test_cli_replay_missing_db(self) -> None:
         """Test CLI replay with missing database."""
         from decisiongraph.__main__ import cmd_replay
@@ -173,6 +266,29 @@ class TestCLI:
 
         with pytest.raises(SystemExit):
             cmd_dump_trace(str(db_path), "trace-does-not-exist")
+
+        import sqlite3
+
+        conn = sqlite3.connect(str(db_path))
+        tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        conn.close()
+
+        assert "schema_migrations" not in tables
+
+    def test_cli_projection_status_read_only_no_migrations(self, tmp_path: Path) -> None:
+        """projection-status should not apply migrations or mutate DB."""
+        from decisiongraph.__main__ import cmd_projection_status
+
+        db_path = tmp_path / "empty.db"
+        db_path.write_bytes(b"")
+
+        with pytest.raises(SystemExit):
+            cmd_projection_status(str(db_path))
 
         import sqlite3
 

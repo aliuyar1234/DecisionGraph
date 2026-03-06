@@ -129,11 +129,10 @@ def find_precedents(
             f"limit must be <= 10000, got {query.limit}",
         )
 
-    # Build query based on filters
-    # We need to find finished traces that match the criteria
-    # by joining with policy index if policy_id is specified
-
-    conditions = ["ts.outcome IS NOT NULL"]  # Only finished traces
+    # Build query based on filters. Policy-filtered searches use the structured
+    # precedent index; broader searches continue to scan finished trace
+    # summaries so policy-less traces remain discoverable.
+    conditions = ["ts.outcome IS NOT NULL"]
     params: list[str | int] = []
 
     # Filter by outcome
@@ -151,28 +150,48 @@ def find_precedents(
         conditions.append("ts.primary_entity_id = ?")
         params.append(query.entity_id)
 
-    # Build the base query
     if query.policy_id:
         sql = f"""
-            SELECT DISTINCT
-                ts.trace_id,
-                ts.workflow,
-                ts.title,
-                ts.outcome,
-                ts.finished_at,
-                ts.last_log_seq,
-                pei.policy_id,
-                pei.policy_version
-            FROM dg_trace_summary ts
-            JOIN dg_policy_eval_index pei ON pei.trace_id = ts.trace_id
-            WHERE {' AND '.join(conditions)}
-                AND pei.policy_id = ?
+            SELECT
+                trace_id,
+                workflow,
+                title,
+                outcome,
+                finished_at,
+                policy_id,
+                policy_version
+            FROM (
+                SELECT
+                    ts.trace_id,
+                    ts.workflow,
+                    ts.title,
+                    ts.outcome,
+                    ts.finished_at,
+                    ts.last_log_seq,
+                    pi.policy_id,
+                    pi.policy_version,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY ts.trace_id
+                        ORDER BY
+                            CASE WHEN pi.exception_id IS NOT NULL THEN 0 ELSE 1 END,
+                            pi.log_seq DESC,
+                            pi.source_event_id ASC
+                    ) AS row_rank
+                FROM dg_trace_summary ts
+                JOIN dg_precedent_index pi ON pi.trace_id = ts.trace_id
+                WHERE {' AND '.join(conditions)}
+                    AND pi.policy_id = ?
         """
         params.append(query.policy_id)
         if query.policy_version:
-            sql += " AND pei.policy_version = ?"
+            sql += " AND pi.policy_version = ?"
             params.append(query.policy_version)
-        sql += " ORDER BY ts.last_log_seq DESC LIMIT ?"
+        sql += """
+            )
+            WHERE row_rank = 1
+            ORDER BY last_log_seq DESC, trace_id ASC
+            LIMIT ?
+        """
     else:
         sql = f"""
             SELECT
@@ -184,7 +203,7 @@ def find_precedents(
                 last_log_seq
             FROM dg_trace_summary ts
             WHERE {' AND '.join(conditions)}
-            ORDER BY last_log_seq DESC
+            ORDER BY last_log_seq DESC, trace_id ASC
             LIMIT ?
         """
 

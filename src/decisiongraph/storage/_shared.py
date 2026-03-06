@@ -90,14 +90,14 @@ def prepare_event_for_insert(envelope: EventEnvelope) -> PreparedEvent:
 
 def validate_idempotent_reuse(
     envelope: EventEnvelope,
-    row: Mapping[str, Any],
+    row: Mapping[str, Any] | StoredEvent,
     payload_hash: str,
 ) -> StoredEvent:
     """Validate idempotent reuse matches metadata, not just payload.
 
     Args:
         envelope: Incoming event envelope
-        row: Existing database row for the idempotency key
+        row: Existing database row or stored event for the idempotency key
         payload_hash: Hash of incoming payload
 
     Returns:
@@ -106,7 +106,7 @@ def validate_idempotent_reuse(
     Raises:
         DecisionGraphError: If idempotency key reused with conflicting data
     """
-    stored = row_to_stored_event(row)
+    stored = row if isinstance(row, StoredEvent) else row_to_stored_event(row)
 
     if stored.payload_hash != payload_hash:
         raise DecisionGraphError(

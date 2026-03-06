@@ -50,10 +50,19 @@ Stable public `DecisionGraph` methods for v1:
 - `from_postgres(conninfo)`
 - `close()`
 - `append_event(...)`
+- `observe_input(...)`
+- `observe_entity(...)`
+- `evaluate_policy(...)`
+- `request_exception(...)`
+- `record_approval(...)`
+- `cite_precedent(...)`
+- `propose_action(...)`
+- `commit_action(...)`
 - `start_trace(...)`
 - `finish_trace(...)`
 - `get_trace_events(trace_id)`
 - `get_context_subgraph(node_type, node_id, max_depth=1)`
+- `get_projection_health(include_digests=False)`
 - `find_precedents(...)`
 - `is_trace_finished(trace_id)`
 - `sync_projections(batch_size=None)`
@@ -64,8 +73,12 @@ Stable public `DecisionGraph` methods for v1:
 Stable commands and flags for v1:
 
 - `python -m decisiongraph replay <db>`
+- `python -m decisiongraph projection-status <db>`
+- `python -m decisiongraph projection-status <db> --include-digests`
 - `python -m decisiongraph dump-trace <db> <trace_id>`
 - `python -m decisiongraph dump-trace <db> <trace_id> --include-payload`
+
+`replay` is a read-only inspection command: it computes digests from isolated replay state and does not mutate the source database.
 
 Removing or renaming commands/flags is a breaking change.
 

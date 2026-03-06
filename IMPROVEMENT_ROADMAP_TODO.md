@@ -1,0 +1,25 @@
+# Improvement Roadmap TODO
+
+- [x] Complete initial codebase analysis
+- [x] Clarify the CLI contract for `replay`
+- [x] Decide whether `replay` should remain mutating or become fully read-only
+- [x] Update [README](README.md) and CLI help text to match the final `replay` behavior
+- [x] Add tests that lock the intended CLI contract in place
+- [x] Align `InMemoryEventStore` idempotency behavior with production backends
+- [x] Reuse shared idempotency validation logic in test fakes where practical
+- [x] Add parity tests covering idempotent retries when `trace_seq` changes
+- [x] Decide whether `dg_precedent_index` is a real query surface or an internal artifact
+- [x] Either wire `find_precedents()` to `dg_precedent_index` or remove/simplify the unused projection path
+- [x] Add tests that document the intended precedent-query data flow
+- [x] Refactor projection sync/replay to process events in bounded batches instead of loading the full log at once
+- [x] Add store-level iteration or paging helpers for large-log replay
+- [x] Add performance tests for replay/sync on larger datasets
+- [x] Normalize projection staleness behavior across query APIs
+- [x] Decide whether `get_trace_summary()` should enforce staleness checks like graph and precedent queries
+- [x] Add tests for the chosen `get_trace_summary()` staleness behavior
+- [x] Add typed helper APIs for common event writes on top of the generic dict-based `append_event()` surface
+- [x] Keep the current generic API stable while introducing typed convenience helpers
+- [x] Add API contract tests for any new helper methods
+- [x] Add projection health tooling for cursor lag, digest inspection, and recovery workflows
+- [x] Expose projection health details in the CLI or a small admin/debug surface
+- [x] Document operational guidance for projection recovery and multi-writer scenarios

@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from decisiongraph.__main__ import cmd_dump_trace, cmd_replay
+from decisiongraph.__main__ import cmd_dump_trace, cmd_projection_status, cmd_replay
 from decisiongraph.projections.projector import SQLiteProjector
 from decisiongraph.query import (
     NodeRef,
@@ -167,3 +167,21 @@ class TestCliOrderingContracts:
             cmd_replay(db_path)
 
         assert stdout_a.getvalue() == stdout_b.getvalue()
+
+    def test_projection_status_output_is_stable(
+        self, populated_db: tuple[str, SQLiteEventStore, SQLiteProjector, GoldenFixture]
+    ) -> None:
+        db_path, _, _, _ = populated_db
+
+        with patch("sys.stdout", new_callable=StringIO) as stdout_a:
+            cmd_projection_status(db_path, include_digests=True)
+        with patch("sys.stdout", new_callable=StringIO) as stdout_b:
+            cmd_projection_status(db_path, include_digests=True)
+
+        output_a = stdout_a.getvalue()
+        output_b = stdout_b.getvalue()
+        assert output_a == output_b
+
+        payload = json.loads(output_a)
+        assert list(payload.keys()) == sorted(payload.keys())
+        assert list(payload["digests"].keys()) == sorted(payload["digests"].keys())

@@ -3,6 +3,7 @@
 This module provides InMemoryEventStore for unit tests without database.
 """
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -20,20 +21,16 @@ from decisiongraph.domain.events import (
     EventEnvelope,
     StoredEvent,
 )
-from decisiongraph.domain.validation import (
-    check_event_pii,
-    validate_idempotency_key,
-    validate_payload_json_safe,
-    validate_payload_schema,
-)
 from decisiongraph.errors import (
     DG_ERR_CONFLICT,
-    DG_ERR_EVENT_SEQUENCE_INVALID,
-    DG_ERR_IDEMPOTENCY_CONFLICT,
+    DG_ERR_INVALID_ARGUMENT,
     DecisionGraphError,
 )
-from decisiongraph.serialization import compute_payload_hash
-from decisiongraph.time import now_rfc3339
+from decisiongraph.storage._shared import (
+    prepare_event_for_insert,
+    validate_idempotent_reuse,
+    validate_trace_seq,
+)
 
 
 @dataclass
@@ -71,56 +68,17 @@ class InMemoryEventStore:
         Raises:
             DecisionGraphError: With appropriate error code
         """
-        # Validate idempotency key
-        validate_idempotency_key(envelope.idempotency_key)
-
-        # Validate payload schema and JSON safety
-        validate_payload_json_safe(envelope.payload)
-        validate_payload_schema(envelope.event_type, envelope.payload)
-
-        # Check PII guard
-        check_event_pii(envelope)
+        prepared = prepare_event_for_insert(envelope)
 
         # Check idempotency - use producer_id from source
         idem_key = (envelope.source.producer_id, envelope.idempotency_key)
         if idem_key in self._idempotency_index:
             existing = self._idempotency_index[idem_key]
-            new_hash = compute_payload_hash(envelope.payload)
-            if existing.payload_hash != new_hash:
-                raise DecisionGraphError(
-                    DG_ERR_IDEMPOTENCY_CONFLICT,
-                    f"Idempotency key '{envelope.idempotency_key}' already used "
-                    f"with different payload",
-                )
-
-            mismatches: list[str] = []
-            if existing.trace_id != envelope.trace_id:
-                mismatches.append("trace_id")
-            if existing.trace_seq != envelope.trace_seq:
-                mismatches.append("trace_seq")
-            if existing.event_type != envelope.event_type:
-                mismatches.append("event_type")
-            if existing.source != envelope.source:
-                mismatches.append("source")
-            if existing.actor != envelope.actor:
-                mismatches.append("actor")
-            if existing.correlation_id != envelope.correlation_id:
-                mismatches.append("correlation_id")
-            if existing.causation_event_id != envelope.causation_event_id:
-                mismatches.append("causation_event_id")
-            if existing.schema_version != envelope.schema_version:
-                mismatches.append("schema_version")
-            if list(existing.tags) != list(envelope.tags):
-                mismatches.append("tags")
-
-            if mismatches:
-                raise DecisionGraphError(
-                    DG_ERR_IDEMPOTENCY_CONFLICT,
-                    f"Idempotency key '{envelope.idempotency_key}' already used "
-                    f"with different metadata: {', '.join(mismatches)}",
-                )
-
-            return existing
+            return validate_idempotent_reuse(
+                envelope,
+                existing,
+                prepared.payload_hash,
+            )
 
         # Check if trace is finished
         if envelope.trace_id in self._finished_traces:
@@ -129,30 +87,8 @@ class InMemoryEventStore:
                 f"Trace '{envelope.trace_id}' is already finished",
             )
 
-        # Validate trace_seq
         expected_seq = self.get_next_trace_seq(envelope.trace_id)
-        if envelope.trace_seq != expected_seq:
-            raise DecisionGraphError(
-                DG_ERR_EVENT_SEQUENCE_INVALID,
-                f"Expected trace_seq {expected_seq}, got {envelope.trace_seq}",
-            )
-
-        # TraceStarted must be first event (trace_seq=0)
-        if envelope.event_type == EVENT_TYPE_TRACE_STARTED and envelope.trace_seq != 0:
-            raise DecisionGraphError(
-                DG_ERR_EVENT_SEQUENCE_INVALID,
-                "TraceStarted must have trace_seq=0",
-            )
-
-        # Non-TraceStarted must not be first event
-        if envelope.event_type != EVENT_TYPE_TRACE_STARTED and envelope.trace_seq == 0:
-            raise DecisionGraphError(
-                DG_ERR_EVENT_SEQUENCE_INVALID,
-                f"First event must be TraceStarted, got {envelope.event_type}",
-            )
-
-        # Compute payload hash
-        payload_hash = compute_payload_hash(envelope.payload)
+        validate_trace_seq(envelope, expected_seq)
 
         # Create stored event
         stored = StoredEvent(
@@ -162,12 +98,12 @@ class InMemoryEventStore:
             trace_seq=envelope.trace_seq,
             event_type=envelope.event_type,
             occurred_at=envelope.occurred_at,
-            recorded_at=now_rfc3339(),
+            recorded_at=prepared.recorded_at,
             source=envelope.source,
             actor=envelope.actor,
             idempotency_key=envelope.idempotency_key,
             payload=envelope.payload,
-            payload_hash=payload_hash,
+            payload_hash=prepared.payload_hash,
             correlation_id=envelope.correlation_id,
             causation_event_id=envelope.causation_event_id,
             schema_version=envelope.schema_version,
@@ -254,6 +190,39 @@ class InMemoryEventStore:
             events = events[:limit]
 
         return events
+
+    def iter_event_batches(
+        self,
+        since_log_seq: int | None = None,
+        until_log_seq: int | None = None,
+        event_type: str | None = None,
+        trace_id: str | None = None,
+        batch_size: int = 1000,
+    ) -> Iterator[list[StoredEvent]]:
+        """Iterate through event-log pages in ascending log_seq order."""
+        if batch_size <= 0:
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "batch_size must be positive",
+            )
+
+        cursor = since_log_seq
+        while True:
+            batch = self.list_events(
+                since_log_seq=cursor,
+                until_log_seq=until_log_seq,
+                event_type=event_type,
+                trace_id=trace_id,
+                limit=batch_size,
+            )
+            if not batch:
+                return
+
+            yield batch
+            cursor = batch[-1].log_seq
+
+            if until_log_seq is not None and cursor >= until_log_seq:
+                return
 
     def get_last_log_seq(self) -> int:
         """Get the current maximum log_seq.

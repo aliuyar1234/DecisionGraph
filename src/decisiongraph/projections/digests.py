@@ -171,25 +171,27 @@ def compute_precedent_index_digest(conn: Any) -> str:
     rows = _fetch_rows(
         conn,
         """
-        SELECT index_id, trace_id, cited_trace_id, reason, similarity_score,
-               log_seq, created_at
+        SELECT source_event_id, log_seq, trace_id, policy_id, policy_version,
+               exception_id, primary_entity_type, primary_entity_system, primary_entity_id
         FROM dg_precedent_index
-        ORDER BY index_id
+        ORDER BY source_event_id
         """
     )
 
     entries: list[dict[str, Any]] = []
     for row in rows:
         entries.append({
-            "index_id": row["index_id"],
-            "trace_id": row["trace_id"],
-            "cited_trace_id": row["cited_trace_id"],
-            "reason": row["reason"],
-            "similarity_score": row["similarity_score"],
+            "source_event_id": row["source_event_id"],
             "log_seq": row["log_seq"],
-            "created_at": row["created_at"],
+            "trace_id": row["trace_id"],
+            "policy_id": row["policy_id"],
+            "policy_version": row["policy_version"],
+            "exception_id": row["exception_id"],
+            "primary_entity_type": row["primary_entity_type"],
+            "primary_entity_system": row["primary_entity_system"],
+            "primary_entity_id": row["primary_entity_id"],
         })
-    entries.sort(key=lambda item: item["index_id"])
+    entries.sort(key=lambda item: item["source_event_id"])
 
     canonical = json.dumps(entries, sort_keys=True, separators=(",", ":"))
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()

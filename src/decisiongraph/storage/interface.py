@@ -3,6 +3,7 @@
 This module defines the EventStore protocol that all storage backends must implement.
 """
 
+from collections.abc import Iterator
 from typing import Protocol
 
 from decisiongraph.domain.events import EventEnvelope, StoredEvent
@@ -72,6 +73,17 @@ class EventStore(Protocol):
         Returns:
             List of stored events ordered by log_seq
         """
+        ...
+
+    def iter_event_batches(
+        self,
+        since_log_seq: int | None = None,
+        until_log_seq: int | None = None,
+        event_type: str | None = None,
+        trace_id: str | None = None,
+        batch_size: int = 1000,
+    ) -> Iterator[list[StoredEvent]]:
+        """Iterate through events in bounded log_seq-ordered batches."""
         ...
 
     def get_last_log_seq(self) -> int:

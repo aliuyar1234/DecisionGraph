@@ -33,9 +33,12 @@
 If projection tables are inconsistent:
 
 1. Keep event log as source of truth.
-2. Run projection rebuild:
+2. Inspect current lag before taking action:
+   - `python -m decisiongraph projection-status <db>`
+   - `python -m decisiongraph projection-status <db> --include-digests`
+3. Run projection rebuild:
    - `python -m decisiongraph replay <db>`
-3. Verify all digest outputs are present and stable across repeated runs.
+4. Verify all digest outputs are present and stable across repeated runs.
 
 If event log corruption is detected:
 
@@ -57,3 +60,16 @@ Use deterministic digests to prove replay equivalence:
    - `full_projection`
 4. Repeat replay in another environment and compare digests.
 5. Treat digest mismatch as release-blocking until root cause is resolved.
+
+## Multi-Writer Projection Monitoring
+
+When multiple writers may append events outside the current process, use projection health checks to detect lag before projection-backed reads:
+
+1. Inspect current state from the CLI:
+   - `python -m decisiongraph projection-status <db>`
+2. Or inspect in process:
+   - `DecisionGraph.get_projection_health(include_digests=True)`
+3. If `is_stale` is `true`, either:
+   - call `sync_projections()` to catch up incrementally, or
+   - call `replay_projections()` if you suspect projection corruption
+4. Treat non-zero `pending_events` as an operational signal that projection-backed queries may be stale until catch-up completes.

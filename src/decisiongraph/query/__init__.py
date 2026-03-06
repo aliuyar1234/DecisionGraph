@@ -30,6 +30,7 @@ from decisiongraph.query.graph import (
     get_context_subgraph,
     list_node_edges,
 )
+from decisiongraph.query.health import ProjectionHealth, get_projection_health
 
 # Precedent search types and functions
 from decisiongraph.query.precedents import (
@@ -54,6 +55,9 @@ __all__ = [
     "GraphEdgePage",
     "get_context_subgraph",
     "list_node_edges",
+    # Projection health
+    "ProjectionHealth",
+    "get_projection_health",
     # Precedent search
     "PrecedentQuery",
     "PrecedentHit",

@@ -6,6 +6,7 @@ using SQLite as the persistence layer.
 
 import contextlib
 import sqlite3
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,7 @@ from decisiongraph.errors import (
     DG_ERR_CONFLICT,
     DG_ERR_EVENT_SEQUENCE_INVALID,
     DG_ERR_IDEMPOTENCY_CONFLICT,
+    DG_ERR_INVALID_ARGUMENT,
     DG_ERR_STORAGE,
     DecisionGraphError,
 )
@@ -335,6 +337,39 @@ class SQLiteEventStore:
 
         cursor = self._conn.execute(query, params)
         return [row_to_stored_event(row) for row in cursor.fetchall()]
+
+    def iter_event_batches(
+        self,
+        since_log_seq: int | None = None,
+        until_log_seq: int | None = None,
+        event_type: str | None = None,
+        trace_id: str | None = None,
+        batch_size: int = 1000,
+    ) -> Iterator[list[StoredEvent]]:
+        """Iterate through event-log pages in ascending log_seq order."""
+        if batch_size <= 0:
+            raise DecisionGraphError(
+                DG_ERR_INVALID_ARGUMENT,
+                "batch_size must be positive",
+            )
+
+        cursor = since_log_seq
+        while True:
+            batch = self.list_events(
+                since_log_seq=cursor,
+                until_log_seq=until_log_seq,
+                event_type=event_type,
+                trace_id=trace_id,
+                limit=batch_size,
+            )
+            if not batch:
+                return
+
+            yield batch
+            cursor = batch[-1].log_seq
+
+            if until_log_seq is not None and cursor >= until_log_seq:
+                return
 
     def get_last_log_seq(self) -> int:
         """Get the current maximum log_seq.

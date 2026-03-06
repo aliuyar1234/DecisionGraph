@@ -522,8 +522,12 @@ class TestStalenessChecks:
                 find_precedents(store, projector, PrecedentQuery())
             assert exc_info.value.code == DG_ERR_PROJECTION_OUT_OF_DATE
 
+            with pytest.raises(DecisionGraphError) as exc_info:
+                get_trace_summary(store, projector, trace_id)
+            assert exc_info.value.code == DG_ERR_PROJECTION_OUT_OF_DATE
+
     def test_event_queries_bypass_staleness_check(self) -> None:
-        """Test that event-log-only queries work even when projections are stale."""
+        """Event-log-only queries still work even when projections are stale."""
         with SQLiteEventStore(":memory:") as store:
             projector = SQLiteProjector(store.connection)
             trace_id = generate_trace_id()

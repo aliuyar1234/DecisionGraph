@@ -100,7 +100,7 @@ uv sync --extra postgres
 
 ```python
 from decisiongraph import DecisionGraph
-from decisiongraph.domain.types import ActorRef, EntityRef, SourceRef
+from decisiongraph.domain.types import ActorRef, EntityRef, PolicyRef, SourceRef
 
 dg = DecisionGraph(":memory:")
 
@@ -116,6 +116,14 @@ trace_id = dg.start_trace(
     actor=actor,
 )
 
+dg.evaluate_policy(
+    trace_id=trace_id,
+    policy=PolicyRef(policy_id="discount-cap", policy_version="1.0"),
+    inputs=[],
+    decision="allow",
+    source=source,
+    actor=actor,
+)
 dg.finish_trace(trace_id, outcome="success", source=source, actor=actor)
 events = dg.get_trace_events(trace_id)
 print(f"trace={trace_id} events={len(events)}")
@@ -126,8 +134,14 @@ dg.close()
 ## CLI
 
 ```bash
-# Rebuild projections and print deterministic digests
+# Replay events into temporary projection state and print deterministic digests
 python -m decisiongraph replay sample.db
+
+# Inspect projection cursor lag and current health
+python -m decisiongraph projection-status sample.db
+
+# Include digests for the current on-disk projection state
+python -m decisiongraph projection-status sample.db --include-digests
 
 # Dump trace events as JSON (safe output mode)
 python -m decisiongraph dump-trace sample.db trace-123
