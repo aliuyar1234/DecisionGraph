@@ -51,6 +51,8 @@ Event Log -> Projector -> Query Layer
 - [ADR: Python Reference Core](architecture/ADR_PYTHON_REFERENCE_CORE.md)
 - [ADR: Phoenix Platform Role](architecture/ADR_PHOENIX_PLATFORM_ROLE.md)
 - [Repo Evolution Map](architecture/REPO_EVOLUTION_MAP.md)
+- [BEAM Supervision Tree](architecture/BEAM_SUPERVISION_TREE.md)
+- [BEAM Process Ownership](architecture/BEAM_PROCESS_OWNERSHIP.md)
 - [Personas](product/PERSONAS.md)
 - [V1 Platform Scope](product/V1_PLATFORM_SCOPE.md)
 - [Demo Scenario](product/DEMO_SCENARIO.md)

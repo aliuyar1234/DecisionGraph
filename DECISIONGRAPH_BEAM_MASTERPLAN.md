@@ -114,20 +114,20 @@ Goal:
 - stand up a production-grade Elixir foundation without rewriting the core logic yet
 
 Tasks:
-- [ ] Create the Elixir umbrella project in the repo
-- [ ] Set up OTP application boundaries for domain, store, projector, API, and web
-- [ ] Configure Elixir formatter, Credo, Dialyzer, and test conventions
-- [ ] Add property-based testing for concurrency-sensitive platform behavior
-- [ ] Add local development orchestration for Postgres and any required service dependencies
-- [ ] Add CI for Elixir compile, lint, type analysis, and tests
-- [ ] Define config strategy for dev, test, staging, and prod
-- [ ] Add OpenTelemetry baseline instrumentation
-- [ ] Add structured logging and request correlation conventions
-- [ ] Add architectural docs for supervision trees and process ownership
+- [x] Create the Elixir umbrella project in the repo
+- [x] Set up OTP application boundaries for domain, store, projector, API, and web
+- [x] Configure Elixir formatter, Credo, Dialyzer, and test conventions
+- [x] Add property-based testing for concurrency-sensitive platform behavior
+- [x] Add local development orchestration for Postgres and any required service dependencies
+- [x] Add CI for Elixir compile, lint, type analysis, and tests
+- [x] Define config strategy for dev, test, staging, and prod
+- [x] Add OpenTelemetry baseline instrumentation
+- [x] Add structured logging and request correlation conventions
+- [x] Add architectural docs for supervision trees and process ownership
 
 Phase exit:
-- [ ] The repo can build and test both Python and Elixir surfaces cleanly
-- [ ] The Elixir side is ready to receive real platform features
+- [x] The repo can build and test both Python and Elixir surfaces cleanly
+- [x] The Elixir side is ready to receive real platform features
 
 ## Phase 3 - Build the BEAM Event Store
 
@@ -308,7 +308,7 @@ If we start now, this is the recommended order:
 - [x] Open Phase 0 as the active execution phase
 - [x] Create a second execution roadmap for Phase 0 and Phase 1 only
 - [x] Start by hardening the Python semantic reference before writing BEAM production code
-- [ ] Add the Elixir umbrella only after the parity target is explicit
+- [x] Add the Elixir umbrella only after the parity target is explicit
 
 ## What We Should Not Do
 

@@ -1,0 +1,52 @@
+name: BEAM
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  beam-check:
+    name: Elixir Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: beam
+    steps:
+      - uses: actions/checkout@v6
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.19.5"
+          otp-version: "28.2.2"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            beam/deps
+            beam/_build
+          key: ${{ runner.os }}-beam-${{ hashFiles('beam/mix.lock', 'beam/mix.exs', 'beam/apps/**/mix.exs') }}
+      - run: mix deps.get
+      - run: mix format --check-formatted
+      - run: mix credo --strict
+      - run: mix test
+
+  beam-dialyzer:
+    name: Elixir Dialyzer
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: beam
+    steps:
+      - uses: actions/checkout@v6
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.19.5"
+          otp-version: "28.2.2"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            beam/deps
+            beam/_build
+            beam/*.plt
+            beam/*.plt.hash
+          key: ${{ runner.os }}-beam-dialyzer-${{ hashFiles('beam/mix.lock', 'beam/mix.exs', 'beam/apps/**/mix.exs') }}
+      - run: mix deps.get
+      - run: mix dialyzer

@@ -10,6 +10,7 @@ Deterministic, append-only decision audit trails for AI agents and automation sy
 [![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://aliuyar1234.github.io/DecisionGraph/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
+[![BEAM](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/beam.yml/badge.svg?branch=master&event=push&label=BEAM)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/beam.yml)
 
 ## Why DecisionGraph
 
@@ -32,6 +33,46 @@ DecisionGraph v1 is intentionally limited to:
 - Read-only inspection CLI.
 
 Not in scope: workflow orchestration, policy execution engines, hosted SaaS control plane.
+
+## BEAM Bootstrap
+
+Phase 2 adds a real Elixir umbrella under `beam/` without changing the Python semantic oracle.
+
+Current BEAM apps:
+
+- `dg_domain`
+- `dg_store`
+- `dg_projector`
+- `dg_api`
+- `dg_web`
+- `dg_observability`
+
+Local bootstrap:
+
+```bash
+docker compose up postgres otel-collector -d
+cd beam
+mix setup
+mix test
+```
+
+Quality gates:
+
+```bash
+cd beam
+mix format --check-formatted
+mix credo --strict
+mix dialyzer
+mix test
+```
+
+Run the Phoenix shell:
+
+```bash
+cd beam
+set PHX_SERVER=true
+iex -S mix
+```
 
 ## Architecture
 
@@ -193,6 +234,10 @@ uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b 
 - V1 contracts: [docs/v1-contracts.md](docs/v1-contracts.md)
 - Release checklist: [docs/release.md](docs/release.md)
 - Operations runbook: [docs/operations.md](docs/operations.md)
+- BEAM umbrella guide: [beam/README.md](beam/README.md)
+- BEAM supervision tree: [docs/architecture/BEAM_SUPERVISION_TREE.md](docs/architecture/BEAM_SUPERVISION_TREE.md)
+- BEAM process ownership: [docs/architecture/BEAM_PROCESS_OWNERSHIP.md](docs/architecture/BEAM_PROCESS_OWNERSHIP.md)
+- Phase 2 execution plan: [PHASE_2_EXECUTION_PLAN.md](PHASE_2_EXECUTION_PLAN.md)
 
 ## Development
 
