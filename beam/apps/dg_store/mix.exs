@@ -27,8 +27,10 @@ defmodule DecisionGraph.Store.MixProject do
   defp deps do
     [
       {:dg_domain, in_umbrella: true},
+      {:dg_observability, in_umbrella: true},
       {:ecto_sql, "~> 3.13"},
-      {:postgrex, "~> 0.21"}
+      {:postgrex, "~> 0.21"},
+      {:stream_data, "~> 1.1", only: :test}
     ]
   end
 

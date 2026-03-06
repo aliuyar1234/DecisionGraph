@@ -1,10 +1,6 @@
-defmodule DecisionGraph.Domain.EventEnvelope do
+defmodule DecisionGraph.Domain.StoredEvent do
   @moduledoc """
-  Runtime-side BEAM representation of the frozen event envelope contract.
-
-  The authoritative semantic reference remains the Python implementation; this
-  struct mirrors the boundary shape so later phases can work against a stable
-  contract.
+  Persisted event envelope with store-assigned metadata.
   """
 
   alias DecisionGraph.Domain.{ActorRef, SourceRef}
@@ -14,8 +10,11 @@ defmodule DecisionGraph.Domain.EventEnvelope do
     :event_id,
     :event_type,
     :idempotency_key,
+    :log_seq,
     :occurred_at,
     :payload,
+    :payload_hash,
+    :recorded_at,
     :source,
     :trace_id,
     :trace_seq
@@ -28,11 +27,15 @@ defmodule DecisionGraph.Domain.EventEnvelope do
              :event_id,
              :event_type,
              :idempotency_key,
+             :log_seq,
              :occurred_at,
              :payload,
+             :payload_hash,
+             :recorded_at,
              :schema_version,
              :source,
              :tags,
+             :tenant_id,
              :trace_id,
              :trace_seq
            ]}
@@ -43,13 +46,17 @@ defmodule DecisionGraph.Domain.EventEnvelope do
     :event_id,
     :event_type,
     :idempotency_key,
+    :log_seq,
     :occurred_at,
     :payload,
+    :payload_hash,
+    :recorded_at,
     :source,
     :trace_id,
     :trace_seq,
     schema_version: 1,
-    tags: []
+    tags: [],
+    tenant_id: "default"
   ]
 
   @type t :: %__MODULE__{
@@ -59,11 +66,15 @@ defmodule DecisionGraph.Domain.EventEnvelope do
           event_id: String.t(),
           event_type: String.t(),
           idempotency_key: String.t(),
+          log_seq: pos_integer(),
           occurred_at: String.t(),
           payload: map(),
+          payload_hash: String.t(),
+          recorded_at: String.t(),
           schema_version: pos_integer(),
           source: SourceRef.t(),
           tags: [String.t()],
+          tenant_id: String.t(),
           trace_id: String.t(),
           trace_seq: non_neg_integer()
         }
@@ -79,13 +90,21 @@ defmodule DecisionGraph.Domain.EventEnvelope do
       event_id: attrs |> fetch!(:event_id) |> normalize_required!(:event_id),
       event_type: attrs |> fetch!(:event_type) |> normalize_required!(:event_type),
       idempotency_key: attrs |> fetch!(:idempotency_key) |> normalize_required!(:idempotency_key),
+      log_seq: attrs |> fetch!(:log_seq) |> normalize_positive_integer!(:log_seq),
       occurred_at: attrs |> fetch!(:occurred_at) |> normalize_required!(:occurred_at),
       payload: attrs |> fetch!(:payload) |> normalize_payload!(),
-      schema_version: attrs |> fetch_optional(:schema_version, 1),
+      payload_hash: attrs |> fetch!(:payload_hash) |> normalize_required!(:payload_hash),
+      recorded_at: attrs |> fetch!(:recorded_at) |> normalize_required!(:recorded_at),
+      schema_version:
+        attrs
+        |> fetch_optional(:schema_version, 1)
+        |> normalize_positive_integer!(:schema_version),
       source: attrs |> fetch!(:source) |> normalize_source(),
       tags: attrs |> fetch_optional(:tags, []) |> normalize_tags(),
+      tenant_id:
+        attrs |> fetch_optional(:tenant_id, "default") |> normalize_required!(:tenant_id),
       trace_id: attrs |> fetch!(:trace_id) |> normalize_required!(:trace_id),
-      trace_seq: attrs |> fetch!(:trace_seq) |> normalize_trace_seq!()
+      trace_seq: attrs |> fetch!(:trace_seq) |> normalize_non_negative_integer!(:trace_seq)
     }
   end
 
@@ -142,8 +161,15 @@ defmodule DecisionGraph.Domain.EventEnvelope do
     raise ArgumentError, "tags must be a list, got: #{inspect(tags)}"
   end
 
-  defp normalize_trace_seq!(value) when is_integer(value) and value >= 0, do: value
+  defp normalize_positive_integer!(value, _key) when is_integer(value) and value > 0, do: value
 
-  defp normalize_trace_seq!(value),
-    do: raise(ArgumentError, "trace_seq must be >= 0, got: #{inspect(value)}")
+  defp normalize_positive_integer!(value, key),
+    do: raise(ArgumentError, "#{key} must be > 0, got: #{inspect(value)}")
+
+  defp normalize_non_negative_integer!(value, _key) when is_integer(value) and value >= 0,
+    do: value
+
+  defp normalize_non_negative_integer!(value, key) do
+    raise ArgumentError, "#{key} must be >= 0, got: #{inspect(value)}"
+  end
 end

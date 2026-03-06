@@ -73,3 +73,22 @@ When multiple writers may append events outside the current process, use project
    - call `sync_projections()` to catch up incrementally, or
    - call `replay_projections()` if you suspect projection corruption
 4. Treat non-zero `pending_events` as an operational signal that projection-backed queries may be stale until catch-up completes.
+
+## BEAM Phase 3 Local Store Workflow
+
+For the Elixir event-store phase, the local operating loop is:
+
+1. Start Postgres from the repo root:
+   - `docker compose up postgres -d`
+2. Run Elixir store tests:
+   - `cd beam`
+   - `mix test apps/dg_store/test`
+3. Run the local store benchmark in an isolated test database:
+   - `set MIX_ENV=test`
+   - `mix dg.store.bench --traces 100 --events-per-trace 8 --batch-size 250 --payload-bytes 512`
+
+Phase 3 operator notes:
+
+- the benchmark command is intended for baseline comparison, not for load-testing claims
+- `dg_projection_cursors` exists before BEAM projection runtime work so Phase 4 can inherit a stable cursor table
+- projection materialization remains a later phase; Phase 3 health is about store correctness, not projector lag

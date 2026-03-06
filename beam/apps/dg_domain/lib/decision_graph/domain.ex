@@ -1,13 +1,24 @@
 defmodule DecisionGraph.Domain do
   @moduledoc """
-  Shared structs and conventions for the BEAM platform boundary.
-
-  Phase 2 keeps this app intentionally light. It codifies the runtime-facing
-  contract shapes we need for bootstrapping without attempting to replace the
-  Python semantic oracle.
+  Shared semantic contracts and conventions for the BEAM platform boundary.
   """
 
+  @event_types [
+    "TraceStarted",
+    "InputObserved",
+    "EntityObserved",
+    "PolicyEvaluated",
+    "ExceptionRequested",
+    "ApprovalRecorded",
+    "PrecedentCited",
+    "ActionProposed",
+    "ActionCommitted",
+    "TraceFinished"
+  ]
   @projection_names [:context_graph, :trace_summary, :precedent_index]
+
+  @spec event_types() :: [String.t()]
+  def event_types, do: @event_types
 
   @spec projection_names() :: [atom()]
   def projection_names, do: @projection_names

@@ -53,6 +53,8 @@ Event Log -> Projector -> Query Layer
 - [Repo Evolution Map](architecture/REPO_EVOLUTION_MAP.md)
 - [BEAM Supervision Tree](architecture/BEAM_SUPERVISION_TREE.md)
 - [BEAM Process Ownership](architecture/BEAM_PROCESS_OWNERSHIP.md)
+- [BEAM Store Contract](architecture/BEAM_STORE_CONTRACT.md)
 - [Personas](product/PERSONAS.md)
 - [V1 Platform Scope](product/V1_PLATFORM_SCOPE.md)
 - [Demo Scenario](product/DEMO_SCENARIO.md)
+- [Phase 3 Store Baseline](benchmarks/PHASE_3_STORE_BASELINE.md)

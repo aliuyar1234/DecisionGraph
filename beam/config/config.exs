@@ -15,11 +15,13 @@ config :dg_projector,
   projection_partitions: 8
 
 config :dg_store, DecisionGraph.Store.Repo,
+  maintenance_database: "postgres",
   migration_primary_key: [name: :id, type: :binary_id],
   migration_timestamps: [type: :utc_datetime_usec],
   telemetry_prefix: [:decision_graph, :repo]
 
 config :dg_web, DecisionGraphWeb.Endpoint,
+  adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
   render_errors: [
     formats: [json: DecisionGraphWeb.ErrorJSON],

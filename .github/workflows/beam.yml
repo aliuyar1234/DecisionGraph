@@ -8,6 +8,20 @@ jobs:
   beam-check:
     name: Elixir Check
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: decisiongraph
+          POSTGRES_PASSWORD: decisiongraph
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U decisiongraph -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: beam
@@ -26,6 +40,9 @@ jobs:
       - run: mix deps.get
       - run: mix format --check-formatted
       - run: mix credo --strict
+      - run: mix cmd --app dg_store mix ecto.create
+        env:
+          MIX_ENV: test
       - run: mix test
 
   beam-dialyzer:

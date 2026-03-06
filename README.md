@@ -38,6 +38,14 @@ Not in scope: workflow orchestration, policy execution engines, hosted SaaS cont
 
 Phase 2 adds a real Elixir umbrella under `beam/` without changing the Python semantic oracle.
 
+Phase 3 now adds a real Postgres-backed BEAM event store with:
+
+- append-only event persistence in `dg_store`
+- idempotency reuse semantics matched to the Python reference
+- `trace_seq` enforcement under contention
+- deterministic list and batch-read APIs for projector handoff
+- projection-cursor storage for the upcoming projection runtime
+
 Current BEAM apps:
 
 - `dg_domain`
@@ -54,6 +62,15 @@ docker compose up postgres otel-collector -d
 cd beam
 mix setup
 mix test
+```
+
+Phase 3 store workflow:
+
+```bash
+cd beam
+mix test apps/dg_store/test
+set MIX_ENV=test
+mix dg.store.bench --traces 100 --events-per-trace 8 --batch-size 250 --payload-bytes 512
 ```
 
 Quality gates:
@@ -237,7 +254,10 @@ uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b 
 - BEAM umbrella guide: [beam/README.md](beam/README.md)
 - BEAM supervision tree: [docs/architecture/BEAM_SUPERVISION_TREE.md](docs/architecture/BEAM_SUPERVISION_TREE.md)
 - BEAM process ownership: [docs/architecture/BEAM_PROCESS_OWNERSHIP.md](docs/architecture/BEAM_PROCESS_OWNERSHIP.md)
+- BEAM store contract: [docs/architecture/BEAM_STORE_CONTRACT.md](docs/architecture/BEAM_STORE_CONTRACT.md)
+- Phase 3 benchmark baseline: [docs/benchmarks/PHASE_3_STORE_BASELINE.md](docs/benchmarks/PHASE_3_STORE_BASELINE.md)
 - Phase 2 execution plan: [PHASE_2_EXECUTION_PLAN.md](PHASE_2_EXECUTION_PLAN.md)
+- Phase 3 execution plan: [PHASE_3_EXECUTION_PLAN.md](PHASE_3_EXECUTION_PLAN.md)
 
 ## Development
 

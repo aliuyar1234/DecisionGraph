@@ -135,20 +135,20 @@ Goal:
 - implement the authoritative BEAM-side write model and persistence layer
 
 Tasks:
-- [ ] Design the Postgres schema for event log, cursors, projections, and metadata
-- [ ] Implement append-only event persistence in Elixir
-- [ ] Implement idempotency handling with the same semantics as the Python reference
-- [ ] Implement trace sequence monotonicity enforcement
-- [ ] Implement event listing, filtering, and batch iteration APIs
-- [ ] Implement migration management for the Elixir platform database
-- [ ] Add write-path telemetry and failure classification
-- [ ] Add store-level concurrency tests under contention
-- [ ] Add parity tests that replay Python fixture envelopes through the Elixir store
-- [ ] Benchmark append throughput and batch-read throughput
+- [x] Design the Postgres schema for event log, cursors, projections, and metadata
+- [x] Implement append-only event persistence in Elixir
+- [x] Implement idempotency handling with the same semantics as the Python reference
+- [x] Implement trace sequence monotonicity enforcement
+- [x] Implement event listing, filtering, and batch iteration APIs
+- [x] Implement migration management for the Elixir platform database
+- [x] Add write-path telemetry and failure classification
+- [x] Add store-level concurrency tests under contention
+- [x] Add parity tests that replay Python fixture envelopes through the Elixir store
+- [x] Benchmark append throughput and batch-read throughput
 
 Phase exit:
-- [ ] The Elixir store can safely accept and read events with reference-level semantics
-- [ ] The store is production-capable for the next phases
+- [x] The Elixir store can safely accept and read events with reference-level semantics
+- [x] The store is production-capable for the next phases
 
 ## Phase 4 - Build the Projection Runtime
 
