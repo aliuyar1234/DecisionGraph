@@ -137,6 +137,6 @@ Completed outputs:
 
 ## Immediate Next Actions After Phase 1
 
-- [x] begin Phase 2 Elixir umbrella bootstrap
+- [ ] begin Phase 2 Elixir umbrella bootstrap
 - [ ] add BEAM CI and tooling
 - [ ] start implementing runtime and delivery layers without replacing the semantic oracle prematurely
