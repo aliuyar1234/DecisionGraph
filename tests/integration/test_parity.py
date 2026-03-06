@@ -6,6 +6,7 @@ for the same operations, including projection digests.
 
 import os
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 
@@ -22,6 +23,10 @@ from decisiongraph.projections import Projector  # noqa: E402
 from decisiongraph.storage.postgres import PostgresEventStore  # noqa: E402
 from decisiongraph.storage.sqlite import SQLiteEventStore  # noqa: E402
 from decisiongraph.testing import create_test_envelope  # noqa: E402
+from decisiongraph.testing.golden import load_all_fixtures  # noqa: E402
+
+FIXTURES_DIR = Path(__file__).parent.parent / "golden"
+GOLDEN_FIXTURES = load_all_fixtures(FIXTURES_DIR)
 
 
 @pytest.fixture
@@ -316,3 +321,23 @@ def test_parity_trace_finished_lock(
     # Verify next seq is consistent
     assert sqlite_store.get_next_trace_seq(trace_id) == 2
     assert postgres_store.get_next_trace_seq(trace_id) == 2
+
+
+@pytest.mark.parametrize("fixture", GOLDEN_FIXTURES, ids=lambda fixture: fixture.scenario)
+def test_parity_golden_fixture_projection_digest(
+    sqlite_store: SQLiteEventStore,
+    postgres_store: PostgresEventStore,
+    fixture: object,
+) -> None:
+    """Golden fixtures should replay to the same full digest on both backends."""
+    for envelope in fixture.events:
+        sqlite_store.append_event(envelope)
+        postgres_store.append_event(envelope)
+
+    sqlite_projector = Projector(sqlite_store)
+    postgres_projector = Projector(postgres_store)
+
+    sqlite_projector.run()
+    postgres_projector.run()
+
+    assert sqlite_projector.get_digest() == postgres_projector.get_digest()

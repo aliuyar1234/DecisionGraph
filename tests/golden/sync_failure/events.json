@@ -1,0 +1,245 @@
+{
+  "scenario": "sync_failure",
+  "ssot_reference": "10.5",
+  "description": "CRM to billing sync fails after the downstream commit attempt",
+  "trace_id": "12121212-1212-1212-1212-121212121212",
+  "events": [
+    {
+      "event_id": "12111111-1111-1111-1111-111111111111",
+      "trace_id": "12121212-1212-1212-1212-121212121212",
+      "trace_seq": 0,
+      "event_type": "TraceStarted",
+      "occurred_at": "2025-12-31T14:00:00Z",
+      "source": {
+        "producer_id": "ops-agent-service",
+        "system": "ops-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "ops-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": null,
+      "idempotency_key": "start:crm_sync:acct:42",
+      "schema_version": 1,
+      "payload": {
+        "workflow": "crm_sync",
+        "title": "Sync crm:acct:42 to billing",
+        "primary_entity": {
+          "entity_type": "account",
+          "entity_id": "crm:acct:42",
+          "system": "crm"
+        }
+      },
+      "tags": []
+    },
+    {
+      "event_id": "12222222-2222-2222-2222-222222222222",
+      "trace_id": "12121212-1212-1212-1212-121212121212",
+      "trace_seq": 1,
+      "event_type": "EntityObserved",
+      "occurred_at": "2025-12-31T14:00:01Z",
+      "source": {
+        "producer_id": "ops-agent-service",
+        "system": "ops-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "ops-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "12111111-1111-1111-1111-111111111111",
+      "idempotency_key": "ent:account:crm:acct:42",
+      "schema_version": 1,
+      "payload": {
+        "entity": {
+          "entity_type": "account",
+          "entity_id": "crm:acct:42",
+          "system": "crm"
+        },
+        "role": "primary",
+        "facts": [
+          {
+            "key": "billing_plan",
+            "value": {
+              "type": "string",
+              "value": "basic"
+            },
+            "as_of": "2025-12-31T13:59:30Z"
+          }
+        ]
+      },
+      "tags": []
+    },
+    {
+      "event_id": "12333333-3333-3333-3333-333333333333",
+      "trace_id": "12121212-1212-1212-1212-121212121212",
+      "trace_seq": 2,
+      "event_type": "InputObserved",
+      "occurred_at": "2025-12-31T14:00:02Z",
+      "source": {
+        "producer_id": "ops-agent-service",
+        "system": "ops-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "ops-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "12222222-2222-2222-2222-222222222222",
+      "idempotency_key": "input:crm.plan_upgrade",
+      "schema_version": 1,
+      "payload": {
+        "input_id": "input:crm.plan_upgrade",
+        "source": {
+          "system": "crm",
+          "object_type": "account_change",
+          "object_id": "crm:acct:42"
+        },
+        "facts": [
+          {
+            "key": "requested_plan",
+            "value": {
+              "type": "string",
+              "value": "pro"
+            },
+            "as_of": "2025-12-31T13:59:00Z"
+          }
+        ]
+      },
+      "tags": []
+    },
+    {
+      "event_id": "12444444-4444-4444-4444-444444444444",
+      "trace_id": "12121212-1212-1212-1212-121212121212",
+      "trace_seq": 3,
+      "event_type": "PolicyEvaluated",
+      "occurred_at": "2025-12-31T14:00:03Z",
+      "source": {
+        "producer_id": "ops-agent-service",
+        "system": "ops-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "ops-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "12333333-3333-3333-3333-333333333333",
+      "idempotency_key": "policy_eval:sync_guard@1.4",
+      "schema_version": 1,
+      "payload": {
+        "policy": {
+          "policy_id": "sync_guard",
+          "policy_version": "1.4"
+        },
+        "inputs": ["input:crm.plan_upgrade"],
+        "decision": "allow",
+        "violations": [],
+        "explanation": {
+          "summary": "The account change is eligible for sync to billing."
+        }
+      },
+      "tags": []
+    },
+    {
+      "event_id": "12555555-5555-5555-5555-555555555555",
+      "trace_id": "12121212-1212-1212-1212-121212121212",
+      "trace_seq": 4,
+      "event_type": "ActionProposed",
+      "occurred_at": "2025-12-31T14:00:04Z",
+      "source": {
+        "producer_id": "ops-agent-service",
+        "system": "ops-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "ops-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "12444444-4444-4444-4444-444444444444",
+      "idempotency_key": "act:push_sync",
+      "schema_version": 1,
+      "payload": {
+        "action_id": "act:push_sync",
+        "action_type": "update",
+        "target_entity": {
+          "entity_type": "account",
+          "entity_id": "crm:acct:42",
+          "system": "crm"
+        },
+        "target_system": "billing-system",
+        "changes": [
+          {
+            "path": "plan_tier",
+            "old_value": {
+              "type": "string",
+              "value": "basic"
+            },
+            "new_value": {
+              "type": "string",
+              "value": "pro"
+            }
+          }
+        ]
+      },
+      "tags": []
+    },
+    {
+      "event_id": "12666666-6666-6666-6666-666666666666",
+      "trace_id": "12121212-1212-1212-1212-121212121212",
+      "trace_seq": 5,
+      "event_type": "ActionCommitted",
+      "occurred_at": "2025-12-31T14:00:05Z",
+      "source": {
+        "producer_id": "ops-agent-service",
+        "system": "ops-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "ops-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "12555555-5555-5555-5555-555555555555",
+      "idempotency_key": "commit:push_sync",
+      "schema_version": 1,
+      "payload": {
+        "action_id": "act:push_sync",
+        "status": "failure",
+        "external_reference": "billing:req:7788",
+        "error": "billing API timeout"
+      },
+      "tags": []
+    },
+    {
+      "event_id": "12777777-7777-7777-7777-777777777777",
+      "trace_id": "12121212-1212-1212-1212-121212121212",
+      "trace_seq": 6,
+      "event_type": "TraceFinished",
+      "occurred_at": "2025-12-31T14:00:06Z",
+      "source": {
+        "producer_id": "ops-agent-service",
+        "system": "ops-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "ops-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "12666666-6666-6666-6666-666666666666",
+      "idempotency_key": "finish:crm_sync:acct:42",
+      "schema_version": 1,
+      "payload": {
+        "outcome": "abandoned",
+        "summary": "Sync abandoned after downstream timeout."
+      },
+      "tags": []
+    }
+  ]
+}

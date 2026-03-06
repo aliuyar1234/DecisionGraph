@@ -23,6 +23,9 @@ from decisiongraph.projections.digests import (
 from decisiongraph.projections.projector import SQLiteProjector
 from decisiongraph.storage.sqlite import SQLiteEventStore
 
+REFERENCE_FIXTURE_BUNDLE_FORMAT = "decisiongraph.reference_fixture_bundle"
+REFERENCE_FIXTURE_BUNDLE_VERSION = 1
+
 
 @dataclass(frozen=True)
 class GoldenFixture:
@@ -43,6 +46,25 @@ class GoldenFixture:
     trace_id: str
     events: list[EventEnvelope]
     expected_digests: dict[str, str]
+
+
+def discover_fixture_dirs(fixtures_root: Path) -> list[Path]:
+    """Discover fixture directories in deterministic order."""
+    return sorted(
+        [
+            path
+            for path in fixtures_root.iterdir()
+            if path.is_dir()
+            and (path / "events.json").exists()
+            and (path / "expected_digest.txt").exists()
+        ],
+        key=lambda path: path.name,
+    )
+
+
+def load_all_fixtures(fixtures_root: Path) -> list[GoldenFixture]:
+    """Load every golden fixture under a root directory."""
+    return [load_fixture(path) for path in discover_fixture_dirs(fixtures_root)]
 
 
 def load_fixture(fixture_dir: Path) -> GoldenFixture:
@@ -139,6 +161,200 @@ def envelope_from_dict(event_dict: dict[str, Any]) -> EventEnvelope:
         payload=event_dict["payload"],
         tags=event_dict.get("tags", []),
     )
+
+
+def event_envelope_to_dict(envelope: EventEnvelope) -> dict[str, Any]:
+    """Convert EventEnvelope to a deterministic JSON-compatible dict."""
+    return {
+        "actor": {
+            "actor_id": envelope.actor.actor_id,
+            "actor_type": envelope.actor.actor_type,
+        },
+        "causation_event_id": envelope.causation_event_id,
+        "correlation_id": envelope.correlation_id,
+        "event_id": envelope.event_id,
+        "event_type": envelope.event_type,
+        "idempotency_key": envelope.idempotency_key,
+        "occurred_at": envelope.occurred_at,
+        "payload": envelope.payload,
+        "schema_version": envelope.schema_version,
+        "source": {
+            "producer_id": envelope.source.producer_id,
+            "subsystem": envelope.source.subsystem,
+            "system": envelope.source.system,
+        },
+        "tags": list(envelope.tags),
+        "trace_id": envelope.trace_id,
+        "trace_seq": envelope.trace_seq,
+    }
+
+
+def _normalize_projection_snapshot(fixture: GoldenFixture) -> dict[str, Any]:
+    with SQLiteEventStore(":memory:") as store:
+        projector = SQLiteProjector(store.connection)
+
+        for envelope in fixture.events:
+            store.append_event(envelope)
+
+        projector.rebuild()
+        projector.project_events(store.list_events())
+
+        nodes = [
+            {
+                "attrs": json.loads(row["metadata_json"]),
+                "created_at": row["created_at"],
+                "log_seq": row["log_seq"],
+                "node_id": row["node_id"],
+                "node_type": row["node_type"],
+                "trace_id": row["trace_id"],
+            }
+            for row in projector.get_nodes()
+        ]
+        edges = [
+            {
+                "attrs": json.loads(row["metadata_json"]),
+                "created_at": row["created_at"],
+                "edge_id": row["edge_id"],
+                "edge_type": row["edge_type"],
+                "from_node_id": row["from_node_id"],
+                "log_seq": row["log_seq"],
+                "to_node_id": row["to_node_id"],
+                "trace_id": row["trace_id"],
+            }
+            for row in projector.get_edges()
+        ]
+
+        trace_summary_row = projector.get_trace_summary(fixture.trace_id)
+        trace_summary = None
+        if trace_summary_row is not None:
+            trace_summary = {
+                "event_count": trace_summary_row["event_count"],
+                "finished_at": trace_summary_row["finished_at"],
+                "last_log_seq": trace_summary_row["last_log_seq"],
+                "outcome": trace_summary_row["outcome"],
+                "primary_entity_id": trace_summary_row["primary_entity_id"],
+                "primary_entity_type": trace_summary_row["primary_entity_type"],
+                "started_at": trace_summary_row["started_at"],
+                "title": trace_summary_row["title"],
+                "trace_id": trace_summary_row["trace_id"],
+                "workflow": trace_summary_row["workflow"],
+            }
+
+        precedent_rows = projector.execute_query(
+            """
+            SELECT source_event_id, log_seq, trace_id, policy_id, policy_version,
+                   exception_id, primary_entity_type, primary_entity_system, primary_entity_id
+            FROM dg_precedent_index
+            ORDER BY source_event_id
+            """
+        )
+        precedent_index = [
+            {
+                "exception_id": row["exception_id"],
+                "log_seq": row["log_seq"],
+                "policy_id": row["policy_id"],
+                "policy_version": row["policy_version"],
+                "primary_entity_id": row["primary_entity_id"],
+                "primary_entity_system": row["primary_entity_system"],
+                "primary_entity_type": row["primary_entity_type"],
+                "source_event_id": row["source_event_id"],
+                "trace_id": row["trace_id"],
+            }
+            for row in precedent_rows
+        ]
+
+        policy_rows = projector.execute_query(
+            """
+            SELECT index_id, trace_id, policy_id, policy_version, log_seq, created_at
+            FROM dg_policy_eval_index
+            ORDER BY log_seq ASC, index_id ASC
+            """
+        )
+        policy_eval_index = [
+            {
+                "created_at": row["created_at"],
+                "index_id": row["index_id"],
+                "log_seq": row["log_seq"],
+                "policy_id": row["policy_id"],
+                "policy_version": row["policy_version"],
+                "trace_id": row["trace_id"],
+            }
+            for row in policy_rows
+        ]
+
+        return {
+            "context_graph": {
+                "edge_count": len(edges),
+                "edges": edges,
+                "node_count": len(nodes),
+                "nodes": nodes,
+            },
+            "policy_eval_index": policy_eval_index,
+            "precedent_index": precedent_index,
+            "projection_cursor": projector.get_cursor(),
+            "trace_summary": trace_summary,
+        }
+
+
+def fixture_to_dict(
+    fixture: GoldenFixture,
+    *,
+    include_projection_snapshot: bool = True,
+) -> dict[str, Any]:
+    """Convert a fixture into the exported parity-bundle format."""
+    data: dict[str, Any] = {
+        "description": fixture.description,
+        "event_count": len(fixture.events),
+        "event_type_sequence": [event.event_type for event in fixture.events],
+        "events": [event_envelope_to_dict(event) for event in fixture.events],
+        "expected_digests": dict(sorted(fixture.expected_digests.items())),
+        "scenario": fixture.scenario,
+        "ssot_reference": fixture.ssot_reference,
+        "trace_id": fixture.trace_id,
+    }
+    if include_projection_snapshot:
+        data["projection_snapshot"] = _normalize_projection_snapshot(fixture)
+    return data
+
+
+def build_fixture_bundle(
+    fixtures: list[GoldenFixture],
+    *,
+    include_projection_snapshots: bool = True,
+) -> dict[str, Any]:
+    """Build a deterministic cross-language parity bundle from fixtures."""
+    ordered_fixtures = sorted(fixtures, key=lambda fixture: fixture.scenario)
+    return {
+        "format": REFERENCE_FIXTURE_BUNDLE_FORMAT,
+        "scenario_count": len(ordered_fixtures),
+        "scenarios": [
+            fixture_to_dict(
+                fixture,
+                include_projection_snapshot=include_projection_snapshots,
+            )
+            for fixture in ordered_fixtures
+        ],
+        "version": REFERENCE_FIXTURE_BUNDLE_VERSION,
+    }
+
+
+def export_fixture_bundle(
+    fixtures: list[GoldenFixture],
+    output_path: Path,
+    *,
+    include_projection_snapshots: bool = True,
+) -> Path:
+    """Export a deterministic fixture bundle for cross-language parity tests."""
+    bundle = build_fixture_bundle(
+        fixtures,
+        include_projection_snapshots=include_projection_snapshots,
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(bundle, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return output_path
 
 
 def replay_fixture(fixture: GoldenFixture) -> dict[str, str]:
@@ -241,6 +457,14 @@ def validate_no_chain_of_thought(fixture: GoldenFixture) -> list[str]:
 
 __all__ = [
     "GoldenFixture",
+    "REFERENCE_FIXTURE_BUNDLE_FORMAT",
+    "REFERENCE_FIXTURE_BUNDLE_VERSION",
+    "build_fixture_bundle",
+    "discover_fixture_dirs",
+    "event_envelope_to_dict",
+    "export_fixture_bundle",
+    "fixture_to_dict",
+    "load_all_fixtures",
     "load_fixture",
     "envelope_from_dict",
     "replay_fixture",

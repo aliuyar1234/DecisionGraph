@@ -1,0 +1,263 @@
+{
+  "scenario": "release_rejected",
+  "ssot_reference": "10.4",
+  "description": "High-risk payout release rejected during manual review",
+  "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+  "events": [
+    {
+      "event_id": "f1111111-1111-1111-1111-111111111111",
+      "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "trace_seq": 0,
+      "event_type": "TraceStarted",
+      "occurred_at": "2025-12-31T13:00:00Z",
+      "source": {
+        "producer_id": "payout-agent-service",
+        "system": "payments-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "payout-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": null,
+      "idempotency_key": "start:pay:txn:1001",
+      "schema_version": 1,
+      "payload": {
+        "workflow": "payout_release",
+        "title": "Manual review for payout pay:txn:1001",
+        "primary_entity": {
+          "entity_type": "transaction",
+          "entity_id": "pay:txn:1001",
+          "system": "payments-ledger"
+        }
+      },
+      "tags": []
+    },
+    {
+      "event_id": "f2222222-2222-2222-2222-222222222222",
+      "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "trace_seq": 1,
+      "event_type": "EntityObserved",
+      "occurred_at": "2025-12-31T13:00:01Z",
+      "source": {
+        "producer_id": "payout-agent-service",
+        "system": "payments-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "payout-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "f1111111-1111-1111-1111-111111111111",
+      "idempotency_key": "ent:transaction:pay:txn:1001",
+      "schema_version": 1,
+      "payload": {
+        "entity": {
+          "entity_type": "transaction",
+          "entity_id": "pay:txn:1001",
+          "system": "payments-ledger"
+        },
+        "role": "primary",
+        "facts": [
+          {
+            "key": "status",
+            "value": {
+              "type": "string",
+              "value": "pending"
+            },
+            "as_of": "2025-12-31T12:59:59Z"
+          }
+        ]
+      },
+      "tags": []
+    },
+    {
+      "event_id": "f3333333-3333-3333-3333-333333333333",
+      "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "trace_seq": 2,
+      "event_type": "InputObserved",
+      "occurred_at": "2025-12-31T13:00:02Z",
+      "source": {
+        "producer_id": "payout-agent-service",
+        "system": "payments-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "payout-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "f2222222-2222-2222-2222-222222222222",
+      "idempotency_key": "input:risk_score",
+      "schema_version": 1,
+      "payload": {
+        "input_id": "input:risk_score",
+        "source": {
+          "system": "risk_service",
+          "object_type": "transaction_assessment",
+          "object_id": "pay:txn:1001"
+        },
+        "facts": [
+          {
+            "key": "risk_score",
+            "value": {
+              "type": "int",
+              "value": "92"
+            },
+            "as_of": "2025-12-31T12:59:30Z"
+          }
+        ]
+      },
+      "tags": []
+    },
+    {
+      "event_id": "f4444444-4444-4444-4444-444444444444",
+      "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "trace_seq": 3,
+      "event_type": "PolicyEvaluated",
+      "occurred_at": "2025-12-31T13:00:03Z",
+      "source": {
+        "producer_id": "payout-agent-service",
+        "system": "payments-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "payout-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "f3333333-3333-3333-3333-333333333333",
+      "idempotency_key": "policy_eval:payout_risk_gate@4.0",
+      "schema_version": 1,
+      "payload": {
+        "policy": {
+          "policy_id": "payout_risk_gate",
+          "policy_version": "4.0"
+        },
+        "inputs": ["input:risk_score"],
+        "decision": "require_exception",
+        "violations": [
+          {
+            "code": "HIGH_RISK",
+            "details": {
+              "threshold": "70",
+              "observed": "92"
+            }
+          }
+        ],
+        "explanation": {
+          "summary": "Risk score exceeds the auto-release threshold and requires manual approval."
+        }
+      },
+      "tags": []
+    },
+    {
+      "event_id": "f5555555-5555-5555-5555-555555555555",
+      "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "trace_seq": 4,
+      "event_type": "ActionProposed",
+      "occurred_at": "2025-12-31T13:00:04Z",
+      "source": {
+        "producer_id": "payout-agent-service",
+        "system": "payments-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "payout-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "f4444444-4444-4444-4444-444444444444",
+      "idempotency_key": "act:release_payout",
+      "schema_version": 1,
+      "payload": {
+        "action_id": "act:release_payout",
+        "action_type": "release",
+        "target_entity": {
+          "entity_type": "transaction",
+          "entity_id": "pay:txn:1001",
+          "system": "payments-ledger"
+        },
+        "target_system": "payments-ledger",
+        "changes": [
+          {
+            "path": "status",
+            "old_value": {
+              "type": "string",
+              "value": "pending"
+            },
+            "new_value": {
+              "type": "string",
+              "value": "released"
+            }
+          }
+        ]
+      },
+      "tags": []
+    },
+    {
+      "event_id": "f6666666-6666-6666-6666-666666666666",
+      "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "trace_seq": 5,
+      "event_type": "ApprovalRecorded",
+      "occurred_at": "2025-12-31T13:01:00Z",
+      "source": {
+        "producer_id": "payout-agent-service",
+        "system": "payments-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "payout-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "f5555555-5555-5555-5555-555555555555",
+      "idempotency_key": "appr:risk:001",
+      "schema_version": 1,
+      "payload": {
+        "approval_id": "appr:risk:001",
+        "subject": {
+          "subject_type": "action",
+          "subject_id": "act:release_payout",
+          "exception_id": null,
+          "action_id": "act:release_payout"
+        },
+        "approver": {
+          "actor_type": "person",
+          "actor_id": "risk_manager_01"
+        },
+        "decision": "rejected",
+        "reason": "Manual reviewer rejected the payout release because the fraud signal remains elevated.",
+        "evidence": []
+      },
+      "tags": []
+    },
+    {
+      "event_id": "f7777777-7777-7777-7777-777777777777",
+      "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "trace_seq": 6,
+      "event_type": "TraceFinished",
+      "occurred_at": "2025-12-31T13:01:01Z",
+      "source": {
+        "producer_id": "payout-agent-service",
+        "system": "payments-orchestrator",
+        "subsystem": null
+      },
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "payout-agent-v1"
+      },
+      "correlation_id": null,
+      "causation_event_id": "f6666666-6666-6666-6666-666666666666",
+      "idempotency_key": "finish:pay:txn:1001",
+      "schema_version": 1,
+      "payload": {
+        "outcome": "failure",
+        "summary": "Payout release blocked after manual rejection."
+      },
+      "tags": []
+    }
+  ]
+}

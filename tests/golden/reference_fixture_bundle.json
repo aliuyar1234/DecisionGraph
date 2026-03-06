@@ -1,0 +1,2401 @@
+{
+  "format": "decisiongraph.reference_fixture_bundle",
+  "scenario_count": 5,
+  "scenarios": [
+    {
+      "description": "Deal Desk healthcare extra 10% discount with tribal knowledge made explicit",
+      "event_count": 9,
+      "event_type_sequence": [
+        "TraceStarted",
+        "EntityObserved",
+        "InputObserved",
+        "PolicyEvaluated",
+        "ExceptionRequested",
+        "PrecedentCited",
+        "ApprovalRecorded",
+        "ActionCommitted",
+        "TraceFinished"
+      ],
+      "events": [
+        {
+          "actor": {
+            "actor_id": "dealdesk_agent_v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": null,
+          "correlation_id": null,
+          "event_id": "d1111111-1111-1111-1111-111111111111",
+          "event_type": "TraceStarted",
+          "idempotency_key": "start:deal:opp:789",
+          "occurred_at": "2025-12-31T12:00:00Z",
+          "payload": {
+            "primary_entity": {
+              "entity_id": "sf:opp:789",
+              "entity_type": "opportunity",
+              "system": "salesforce"
+            },
+            "title": "Healthcare customer discount approval",
+            "workflow": "deal_approval"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "dealdesk_agent_service",
+            "subsystem": null,
+            "system": "deal-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          "trace_seq": 0
+        },
+        {
+          "actor": {
+            "actor_id": "dealdesk_agent_v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "d1111111-1111-1111-1111-111111111111",
+          "correlation_id": null,
+          "event_id": "d2222222-2222-2222-2222-222222222222",
+          "event_type": "EntityObserved",
+          "idempotency_key": "ent:account:healthcare:001",
+          "occurred_at": "2025-12-31T12:00:01Z",
+          "payload": {
+            "entity": {
+              "entity_id": "healthcare:001",
+              "entity_type": "account",
+              "system": "salesforce"
+            },
+            "facts": [
+              {
+                "as_of": null,
+                "key": "industry",
+                "value": {
+                  "type": "string",
+                  "value": "Healthcare"
+                }
+              }
+            ],
+            "role": "primary"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "dealdesk_agent_service",
+            "subsystem": null,
+            "system": "deal-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          "trace_seq": 1
+        },
+        {
+          "actor": {
+            "actor_id": "dealdesk_agent_v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "d2222222-2222-2222-2222-222222222222",
+          "correlation_id": null,
+          "event_id": "d3333333-3333-3333-3333-333333333333",
+          "event_type": "InputObserved",
+          "idempotency_key": "input:deal_size",
+          "occurred_at": "2025-12-31T12:00:02Z",
+          "payload": {
+            "facts": [
+              {
+                "as_of": "2025-12-31T11:55:00Z",
+                "key": "deal_value",
+                "value": {
+                  "type": "int",
+                  "value": "250000"
+                }
+              }
+            ],
+            "input_id": "input:deal_size",
+            "source": {
+              "object_id": "sf:opp:789",
+              "object_type": "opportunity",
+              "system": "salesforce"
+            }
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "dealdesk_agent_service",
+            "subsystem": null,
+            "system": "deal-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          "trace_seq": 2
+        },
+        {
+          "actor": {
+            "actor_id": "dealdesk_agent_v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "d3333333-3333-3333-3333-333333333333",
+          "correlation_id": null,
+          "event_id": "d4444444-4444-4444-4444-444444444444",
+          "event_type": "PolicyEvaluated",
+          "idempotency_key": "policy_eval:baseline_discount@1.0",
+          "occurred_at": "2025-12-31T12:00:03Z",
+          "payload": {
+            "decision": "allow",
+            "explanation": {
+              "summary": "Baseline discount 15% allowed for deal size 250k."
+            },
+            "inputs": [
+              "input:deal_size"
+            ],
+            "policy": {
+              "policy_id": "baseline_discount",
+              "policy_version": "1.0"
+            },
+            "violations": []
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "dealdesk_agent_service",
+            "subsystem": null,
+            "system": "deal-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          "trace_seq": 3
+        },
+        {
+          "actor": {
+            "actor_id": "dealdesk_agent_v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "d4444444-4444-4444-4444-444444444444",
+          "correlation_id": null,
+          "event_id": "d5555555-5555-5555-5555-555555555555",
+          "event_type": "ExceptionRequested",
+          "idempotency_key": "exc:req:healthcare_extra",
+          "occurred_at": "2025-12-31T12:00:04Z",
+          "payload": {
+            "evidence": [],
+            "exception_id": "exc:healthcare_extra_discount",
+            "policy": {
+              "policy_id": "baseline_discount",
+              "policy_version": "1.0"
+            },
+            "reason": "Healthcare procurement cycles require extended discount. Industry standard practice."
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "dealdesk_agent_service",
+            "subsystem": null,
+            "system": "deal-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          "trace_seq": 4
+        },
+        {
+          "actor": {
+            "actor_id": "dealdesk_agent_v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "d5555555-5555-5555-5555-555555555555",
+          "correlation_id": null,
+          "event_id": "d6666666-6666-6666-6666-666666666666",
+          "event_type": "PrecedentCited",
+          "idempotency_key": "prec:healthcare_discount",
+          "occurred_at": "2025-12-31T12:00:05Z",
+          "payload": {
+            "cited_trace_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+            "reason": "Previous healthcare customer received similar extra discount.",
+            "similarity_score": null
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "dealdesk_agent_service",
+            "subsystem": null,
+            "system": "deal-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          "trace_seq": 5
+        },
+        {
+          "actor": {
+            "actor_id": "dealdesk_agent_v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "d6666666-6666-6666-6666-666666666666",
+          "correlation_id": null,
+          "event_id": "d7777777-7777-7777-7777-777777777777",
+          "event_type": "ApprovalRecorded",
+          "idempotency_key": "appr:dealdesk:001",
+          "occurred_at": "2025-12-31T12:05:00Z",
+          "payload": {
+            "approval_id": "appr:dealdesk_001",
+            "approver": {
+              "actor_id": "deal_desk_lead_456",
+              "actor_type": "person"
+            },
+            "decision": "approved",
+            "evidence": [],
+            "reason": "Approved based on healthcare industry practice and precedent.",
+            "subject": {
+              "action_id": null,
+              "exception_id": "exc:healthcare_extra_discount",
+              "subject_id": "exc:healthcare_extra_discount",
+              "subject_type": "exception"
+            }
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "dealdesk_agent_service",
+            "subsystem": null,
+            "system": "deal-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          "trace_seq": 6
+        },
+        {
+          "actor": {
+            "actor_id": "dealdesk_agent_v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "d7777777-7777-7777-7777-777777777777",
+          "correlation_id": null,
+          "event_id": "d8888888-8888-8888-8888-888888888888",
+          "event_type": "ActionCommitted",
+          "idempotency_key": "commit:deal:opp:789",
+          "occurred_at": "2025-12-31T12:06:00Z",
+          "payload": {
+            "action_id": "act:apply_healthcare_discount",
+            "error": null,
+            "external_reference": "sf:opp:789:discount:25pct",
+            "status": "success"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "dealdesk_agent_service",
+            "subsystem": null,
+            "system": "deal-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          "trace_seq": 7
+        },
+        {
+          "actor": {
+            "actor_id": "dealdesk_agent_v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "d8888888-8888-8888-8888-888888888888",
+          "correlation_id": null,
+          "event_id": "d9999999-9999-9999-9999-999999999999",
+          "event_type": "TraceFinished",
+          "idempotency_key": "finish:deal:opp:789",
+          "occurred_at": "2025-12-31T12:06:01Z",
+          "payload": {
+            "outcome": "success",
+            "summary": "Healthcare extra discount 25% approved and applied. Tribal knowledge now explicit."
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "dealdesk_agent_service",
+            "subsystem": null,
+            "system": "deal-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          "trace_seq": 8
+        }
+      ],
+      "expected_digests": {
+        "context_graph": "sha256:ab7a2718d62b4ac45061232640771046fb992bc47a74203af2edeacdc0375c18",
+        "full_projection": "sha256:dbd59e5b94604d22b86868e97819770cb275b81bf5d1b4bae7e809cd6b3df437",
+        "precedent_index": "sha256:5e2dae21d45c0b7efebae9be0c12a977e94f1d1055653db4d7db4cf183cc4658",
+        "trace_summary": "sha256:17753ccef96ebb9ff3454d21c171e7d2548cfcbae963a0fa963edd7a6795be5d"
+      },
+      "projection_snapshot": {
+        "context_graph": {
+          "edge_count": 8,
+          "edges": [
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:05:00Z",
+              "edge_id": "exception_approved_by:exception:exc:healthcare_extra_discount:actor:person:deal_desk_lead_456:d7777777-7777-7777-7777-777777777777",
+              "edge_type": "exception_approved_by",
+              "from_node_id": "exception:exc:healthcare_extra_discount",
+              "log_seq": 7,
+              "to_node_id": "actor:person:deal_desk_lead_456",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:05Z",
+              "edge_id": "trace_cited_precedent:trace:dddddddd-dddd-dddd-dddd-dddddddddddd:trace:eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee:d6666666-6666-6666-6666-666666666666",
+              "edge_type": "trace_cited_precedent",
+              "from_node_id": "trace:dddddddd-dddd-dddd-dddd-dddddddddddd",
+              "log_seq": 6,
+              "to_node_id": "trace:eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:06:00Z",
+              "edge_id": "trace_committed_action:trace:dddddddd-dddd-dddd-dddd-dddddddddddd:action:act:apply_healthcare_discount:d8888888-8888-8888-8888-888888888888",
+              "edge_type": "trace_committed_action",
+              "from_node_id": "trace:dddddddd-dddd-dddd-dddd-dddddddddddd",
+              "log_seq": 8,
+              "to_node_id": "action:act:apply_healthcare_discount",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:03Z",
+              "edge_id": "trace_evaluated_policy:trace:dddddddd-dddd-dddd-dddd-dddddddddddd:policy:baseline_discount:1.0:d4444444-4444-4444-4444-444444444444",
+              "edge_type": "trace_evaluated_policy",
+              "from_node_id": "trace:dddddddd-dddd-dddd-dddd-dddddddddddd",
+              "log_seq": 4,
+              "to_node_id": "policy:baseline_discount:1.0",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:01Z",
+              "edge_id": "trace_involves_entity:trace:dddddddd-dddd-dddd-dddd-dddddddddddd:entity:account:healthcare:001:d2222222-2222-2222-2222-222222222222",
+              "edge_type": "trace_involves_entity",
+              "from_node_id": "trace:dddddddd-dddd-dddd-dddd-dddddddddddd",
+              "log_seq": 2,
+              "to_node_id": "entity:account:healthcare:001",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:00Z",
+              "edge_id": "trace_involves_entity:trace:dddddddd-dddd-dddd-dddd-dddddddddddd:entity:opportunity:sf:opp:789:d1111111-1111-1111-1111-111111111111",
+              "edge_type": "trace_involves_entity",
+              "from_node_id": "trace:dddddddd-dddd-dddd-dddd-dddddddddddd",
+              "log_seq": 1,
+              "to_node_id": "entity:opportunity:sf:opp:789",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:02Z",
+              "edge_id": "trace_observed_input:trace:dddddddd-dddd-dddd-dddd-dddddddddddd:input:input:deal_size:d3333333-3333-3333-3333-333333333333",
+              "edge_type": "trace_observed_input",
+              "from_node_id": "trace:dddddddd-dddd-dddd-dddd-dddddddddddd",
+              "log_seq": 3,
+              "to_node_id": "input:input:deal_size",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:04Z",
+              "edge_id": "trace_requested_exception:trace:dddddddd-dddd-dddd-dddd-dddddddddddd:exception:exc:healthcare_extra_discount:d5555555-5555-5555-5555-555555555555",
+              "edge_type": "trace_requested_exception",
+              "from_node_id": "trace:dddddddd-dddd-dddd-dddd-dddddddddddd",
+              "log_seq": 5,
+              "to_node_id": "exception:exc:healthcare_extra_discount",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            }
+          ],
+          "node_count": 10,
+          "nodes": [
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:06:00Z",
+              "log_seq": 8,
+              "node_id": "action:act:apply_healthcare_discount",
+              "node_type": "action",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:00Z",
+              "log_seq": 1,
+              "node_id": "actor:agent:dealdesk_agent_v1",
+              "node_type": "actor",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:05:00Z",
+              "log_seq": 7,
+              "node_id": "actor:person:deal_desk_lead_456",
+              "node_type": "actor",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:01Z",
+              "log_seq": 2,
+              "node_id": "entity:account:healthcare:001",
+              "node_type": "entity",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:00Z",
+              "log_seq": 1,
+              "node_id": "entity:opportunity:sf:opp:789",
+              "node_type": "entity",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:04Z",
+              "log_seq": 5,
+              "node_id": "exception:exc:healthcare_extra_discount",
+              "node_type": "exception",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:02Z",
+              "log_seq": 3,
+              "node_id": "input:input:deal_size",
+              "node_type": "input",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:03Z",
+              "log_seq": 4,
+              "node_id": "policy:baseline_discount:1.0",
+              "node_type": "policy",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:00Z",
+              "log_seq": 1,
+              "node_id": "trace:dddddddd-dddd-dddd-dddd-dddddddddddd",
+              "node_type": "trace",
+              "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T12:00:05Z",
+              "log_seq": 6,
+              "node_id": "trace:eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+              "node_type": "trace",
+              "trace_id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+            }
+          ]
+        },
+        "policy_eval_index": [
+          {
+            "created_at": "2025-12-31T12:00:03Z",
+            "index_id": "dddddddd-dddd-dddd-dddd-dddddddddddd:baseline_discount:1.0:d4444444-4444-4444-4444-444444444444",
+            "log_seq": 4,
+            "policy_id": "baseline_discount",
+            "policy_version": "1.0",
+            "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+          }
+        ],
+        "precedent_index": [
+          {
+            "exception_id": null,
+            "log_seq": 4,
+            "policy_id": "baseline_discount",
+            "policy_version": "1.0",
+            "primary_entity_id": "sf:opp:789",
+            "primary_entity_system": "salesforce",
+            "primary_entity_type": "opportunity",
+            "source_event_id": "d4444444-4444-4444-4444-444444444444",
+            "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+          },
+          {
+            "exception_id": "exc:healthcare_extra_discount",
+            "log_seq": 5,
+            "policy_id": "baseline_discount",
+            "policy_version": "1.0",
+            "primary_entity_id": "sf:opp:789",
+            "primary_entity_system": "salesforce",
+            "primary_entity_type": "opportunity",
+            "source_event_id": "d5555555-5555-5555-5555-555555555555",
+            "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+          }
+        ],
+        "projection_cursor": 9,
+        "trace_summary": {
+          "event_count": 2,
+          "finished_at": "2025-12-31T12:06:01Z",
+          "last_log_seq": 9,
+          "outcome": "success",
+          "primary_entity_id": "sf:opp:789",
+          "primary_entity_type": "opportunity",
+          "started_at": "2025-12-31T12:00:00Z",
+          "title": "Healthcare customer discount approval",
+          "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+          "workflow": "deal_approval"
+        }
+      },
+      "scenario": "dealdesk",
+      "ssot_reference": "10.3",
+      "trace_id": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+    },
+    {
+      "description": "High-risk payout release rejected during manual review",
+      "event_count": 7,
+      "event_type_sequence": [
+        "TraceStarted",
+        "EntityObserved",
+        "InputObserved",
+        "PolicyEvaluated",
+        "ActionProposed",
+        "ApprovalRecorded",
+        "TraceFinished"
+      ],
+      "events": [
+        {
+          "actor": {
+            "actor_id": "payout-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": null,
+          "correlation_id": null,
+          "event_id": "f1111111-1111-1111-1111-111111111111",
+          "event_type": "TraceStarted",
+          "idempotency_key": "start:pay:txn:1001",
+          "occurred_at": "2025-12-31T13:00:00Z",
+          "payload": {
+            "primary_entity": {
+              "entity_id": "pay:txn:1001",
+              "entity_type": "transaction",
+              "system": "payments-ledger"
+            },
+            "title": "Manual review for payout pay:txn:1001",
+            "workflow": "payout_release"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "payout-agent-service",
+            "subsystem": null,
+            "system": "payments-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+          "trace_seq": 0
+        },
+        {
+          "actor": {
+            "actor_id": "payout-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "f1111111-1111-1111-1111-111111111111",
+          "correlation_id": null,
+          "event_id": "f2222222-2222-2222-2222-222222222222",
+          "event_type": "EntityObserved",
+          "idempotency_key": "ent:transaction:pay:txn:1001",
+          "occurred_at": "2025-12-31T13:00:01Z",
+          "payload": {
+            "entity": {
+              "entity_id": "pay:txn:1001",
+              "entity_type": "transaction",
+              "system": "payments-ledger"
+            },
+            "facts": [
+              {
+                "as_of": "2025-12-31T12:59:59Z",
+                "key": "status",
+                "value": {
+                  "type": "string",
+                  "value": "pending"
+                }
+              }
+            ],
+            "role": "primary"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "payout-agent-service",
+            "subsystem": null,
+            "system": "payments-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+          "trace_seq": 1
+        },
+        {
+          "actor": {
+            "actor_id": "payout-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "f2222222-2222-2222-2222-222222222222",
+          "correlation_id": null,
+          "event_id": "f3333333-3333-3333-3333-333333333333",
+          "event_type": "InputObserved",
+          "idempotency_key": "input:risk_score",
+          "occurred_at": "2025-12-31T13:00:02Z",
+          "payload": {
+            "facts": [
+              {
+                "as_of": "2025-12-31T12:59:30Z",
+                "key": "risk_score",
+                "value": {
+                  "type": "int",
+                  "value": "92"
+                }
+              }
+            ],
+            "input_id": "input:risk_score",
+            "source": {
+              "object_id": "pay:txn:1001",
+              "object_type": "transaction_assessment",
+              "system": "risk_service"
+            }
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "payout-agent-service",
+            "subsystem": null,
+            "system": "payments-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+          "trace_seq": 2
+        },
+        {
+          "actor": {
+            "actor_id": "payout-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "f3333333-3333-3333-3333-333333333333",
+          "correlation_id": null,
+          "event_id": "f4444444-4444-4444-4444-444444444444",
+          "event_type": "PolicyEvaluated",
+          "idempotency_key": "policy_eval:payout_risk_gate@4.0",
+          "occurred_at": "2025-12-31T13:00:03Z",
+          "payload": {
+            "decision": "require_exception",
+            "explanation": {
+              "summary": "Risk score exceeds the auto-release threshold and requires manual approval."
+            },
+            "inputs": [
+              "input:risk_score"
+            ],
+            "policy": {
+              "policy_id": "payout_risk_gate",
+              "policy_version": "4.0"
+            },
+            "violations": [
+              {
+                "code": "HIGH_RISK",
+                "details": {
+                  "observed": "92",
+                  "threshold": "70"
+                }
+              }
+            ]
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "payout-agent-service",
+            "subsystem": null,
+            "system": "payments-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+          "trace_seq": 3
+        },
+        {
+          "actor": {
+            "actor_id": "payout-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "f4444444-4444-4444-4444-444444444444",
+          "correlation_id": null,
+          "event_id": "f5555555-5555-5555-5555-555555555555",
+          "event_type": "ActionProposed",
+          "idempotency_key": "act:release_payout",
+          "occurred_at": "2025-12-31T13:00:04Z",
+          "payload": {
+            "action_id": "act:release_payout",
+            "action_type": "release",
+            "changes": [
+              {
+                "new_value": {
+                  "type": "string",
+                  "value": "released"
+                },
+                "old_value": {
+                  "type": "string",
+                  "value": "pending"
+                },
+                "path": "status"
+              }
+            ],
+            "target_entity": {
+              "entity_id": "pay:txn:1001",
+              "entity_type": "transaction",
+              "system": "payments-ledger"
+            },
+            "target_system": "payments-ledger"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "payout-agent-service",
+            "subsystem": null,
+            "system": "payments-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+          "trace_seq": 4
+        },
+        {
+          "actor": {
+            "actor_id": "payout-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "f5555555-5555-5555-5555-555555555555",
+          "correlation_id": null,
+          "event_id": "f6666666-6666-6666-6666-666666666666",
+          "event_type": "ApprovalRecorded",
+          "idempotency_key": "appr:risk:001",
+          "occurred_at": "2025-12-31T13:01:00Z",
+          "payload": {
+            "approval_id": "appr:risk:001",
+            "approver": {
+              "actor_id": "risk_manager_01",
+              "actor_type": "person"
+            },
+            "decision": "rejected",
+            "evidence": [],
+            "reason": "Manual reviewer rejected the payout release because the fraud signal remains elevated.",
+            "subject": {
+              "action_id": "act:release_payout",
+              "exception_id": null,
+              "subject_id": "act:release_payout",
+              "subject_type": "action"
+            }
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "payout-agent-service",
+            "subsystem": null,
+            "system": "payments-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+          "trace_seq": 5
+        },
+        {
+          "actor": {
+            "actor_id": "payout-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "f6666666-6666-6666-6666-666666666666",
+          "correlation_id": null,
+          "event_id": "f7777777-7777-7777-7777-777777777777",
+          "event_type": "TraceFinished",
+          "idempotency_key": "finish:pay:txn:1001",
+          "occurred_at": "2025-12-31T13:01:01Z",
+          "payload": {
+            "outcome": "failure",
+            "summary": "Payout release blocked after manual rejection."
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "payout-agent-service",
+            "subsystem": null,
+            "system": "payments-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+          "trace_seq": 6
+        }
+      ],
+      "expected_digests": {
+        "context_graph": "sha256:76a0f1710663f622521ff9f8e283cfc1d8cb3600fbe62a61e2b49e2b0bb35e46",
+        "full_projection": "sha256:cff77f20fc6aeb434b6c9e7f113ae849013e0a75dc60d1c071690ae2ce8d4801",
+        "precedent_index": "sha256:ad75fc8df42405f7103449bc0b5abb9710dd9a3e34107cc11fc0a484edc43dcb",
+        "trace_summary": "sha256:4489055963478e94e76638721c8250e221c1980ab84b8dc9cd2475d138e89975"
+      },
+      "projection_snapshot": {
+        "context_graph": {
+          "edge_count": 6,
+          "edges": [
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:04Z",
+              "edge_id": "action_targets_entity:action:act:release_payout:entity:transaction:pay:txn:1001:f5555555-5555-5555-5555-555555555555",
+              "edge_type": "action_targets_entity",
+              "from_node_id": "action:act:release_payout",
+              "log_seq": 5,
+              "to_node_id": "entity:transaction:pay:txn:1001",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:03Z",
+              "edge_id": "trace_evaluated_policy:trace:ffffffff-ffff-ffff-ffff-ffffffffffff:policy:payout_risk_gate:4.0:f4444444-4444-4444-4444-444444444444",
+              "edge_type": "trace_evaluated_policy",
+              "from_node_id": "trace:ffffffff-ffff-ffff-ffff-ffffffffffff",
+              "log_seq": 4,
+              "to_node_id": "policy:payout_risk_gate:4.0",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:00Z",
+              "edge_id": "trace_involves_entity:trace:ffffffff-ffff-ffff-ffff-ffffffffffff:entity:transaction:pay:txn:1001:f1111111-1111-1111-1111-111111111111",
+              "edge_type": "trace_involves_entity",
+              "from_node_id": "trace:ffffffff-ffff-ffff-ffff-ffffffffffff",
+              "log_seq": 1,
+              "to_node_id": "entity:transaction:pay:txn:1001",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:01Z",
+              "edge_id": "trace_involves_entity:trace:ffffffff-ffff-ffff-ffff-ffffffffffff:entity:transaction:pay:txn:1001:f2222222-2222-2222-2222-222222222222",
+              "edge_type": "trace_involves_entity",
+              "from_node_id": "trace:ffffffff-ffff-ffff-ffff-ffffffffffff",
+              "log_seq": 2,
+              "to_node_id": "entity:transaction:pay:txn:1001",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:02Z",
+              "edge_id": "trace_observed_input:trace:ffffffff-ffff-ffff-ffff-ffffffffffff:input:input:risk_score:f3333333-3333-3333-3333-333333333333",
+              "edge_type": "trace_observed_input",
+              "from_node_id": "trace:ffffffff-ffff-ffff-ffff-ffffffffffff",
+              "log_seq": 3,
+              "to_node_id": "input:input:risk_score",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:04Z",
+              "edge_id": "trace_proposed_action:trace:ffffffff-ffff-ffff-ffff-ffffffffffff:action:act:release_payout:f5555555-5555-5555-5555-555555555555",
+              "edge_type": "trace_proposed_action",
+              "from_node_id": "trace:ffffffff-ffff-ffff-ffff-ffffffffffff",
+              "log_seq": 5,
+              "to_node_id": "action:act:release_payout",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            }
+          ],
+          "node_count": 7,
+          "nodes": [
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:04Z",
+              "log_seq": 5,
+              "node_id": "action:act:release_payout",
+              "node_type": "action",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:00Z",
+              "log_seq": 1,
+              "node_id": "actor:agent:payout-agent-v1",
+              "node_type": "actor",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:01:00Z",
+              "log_seq": 6,
+              "node_id": "actor:person:risk_manager_01",
+              "node_type": "actor",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:00Z",
+              "log_seq": 1,
+              "node_id": "entity:transaction:pay:txn:1001",
+              "node_type": "entity",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:02Z",
+              "log_seq": 3,
+              "node_id": "input:input:risk_score",
+              "node_type": "input",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:03Z",
+              "log_seq": 4,
+              "node_id": "policy:payout_risk_gate:4.0",
+              "node_type": "policy",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T13:00:00Z",
+              "log_seq": 1,
+              "node_id": "trace:ffffffff-ffff-ffff-ffff-ffffffffffff",
+              "node_type": "trace",
+              "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+            }
+          ]
+        },
+        "policy_eval_index": [
+          {
+            "created_at": "2025-12-31T13:00:03Z",
+            "index_id": "ffffffff-ffff-ffff-ffff-ffffffffffff:payout_risk_gate:4.0:f4444444-4444-4444-4444-444444444444",
+            "log_seq": 4,
+            "policy_id": "payout_risk_gate",
+            "policy_version": "4.0",
+            "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+          }
+        ],
+        "precedent_index": [
+          {
+            "exception_id": null,
+            "log_seq": 4,
+            "policy_id": "payout_risk_gate",
+            "policy_version": "4.0",
+            "primary_entity_id": "pay:txn:1001",
+            "primary_entity_system": "payments-ledger",
+            "primary_entity_type": "transaction",
+            "source_event_id": "f4444444-4444-4444-4444-444444444444",
+            "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+          }
+        ],
+        "projection_cursor": 7,
+        "trace_summary": {
+          "event_count": 2,
+          "finished_at": "2025-12-31T13:01:01Z",
+          "last_log_seq": 7,
+          "outcome": "failure",
+          "primary_entity_id": "pay:txn:1001",
+          "primary_entity_type": "transaction",
+          "started_at": "2025-12-31T13:00:00Z",
+          "title": "Manual review for payout pay:txn:1001",
+          "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+          "workflow": "payout_release"
+        }
+      },
+      "scenario": "release_rejected",
+      "ssot_reference": "10.4",
+      "trace_id": "ffffffff-ffff-ffff-ffff-ffffffffffff"
+    },
+    {
+      "description": "Renewal Agent with 20% discount exception and Finance approval",
+      "event_count": 9,
+      "event_type_sequence": [
+        "TraceStarted",
+        "EntityObserved",
+        "InputObserved",
+        "PolicyEvaluated",
+        "PrecedentCited",
+        "ExceptionRequested",
+        "ApprovalRecorded",
+        "ActionCommitted",
+        "TraceFinished"
+      ],
+      "events": [
+        {
+          "actor": {
+            "actor_id": "renewal-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": null,
+          "correlation_id": null,
+          "event_id": "11111111-1111-1111-1111-111111111111",
+          "event_type": "TraceStarted",
+          "idempotency_key": "start:sf:opp:123",
+          "occurred_at": "2025-12-31T10:00:00Z",
+          "payload": {
+            "primary_entity": {
+              "entity_id": "sf:acct:001",
+              "entity_type": "account",
+              "system": "salesforce"
+            },
+            "title": "Renewal discount for sf:opp:123",
+            "workflow": "renewal_discount"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "renewal-agent-service",
+            "subsystem": null,
+            "system": "agent-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "trace_seq": 0
+        },
+        {
+          "actor": {
+            "actor_id": "renewal-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "11111111-1111-1111-1111-111111111111",
+          "correlation_id": null,
+          "event_id": "22222222-2222-2222-2222-222222222222",
+          "event_type": "EntityObserved",
+          "idempotency_key": "ent:account:sf:acct:001",
+          "occurred_at": "2025-12-31T10:00:01Z",
+          "payload": {
+            "entity": {
+              "entity_id": "sf:acct:001",
+              "entity_type": "account",
+              "system": "salesforce"
+            },
+            "facts": [],
+            "role": "primary"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "renewal-agent-service",
+            "subsystem": null,
+            "system": "agent-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "trace_seq": 1
+        },
+        {
+          "actor": {
+            "actor_id": "renewal-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "22222222-2222-2222-2222-222222222222",
+          "correlation_id": null,
+          "event_id": "33333333-3333-3333-3333-333333333333",
+          "event_type": "InputObserved",
+          "idempotency_key": "input:pd.sev1_count",
+          "occurred_at": "2025-12-31T10:00:02Z",
+          "payload": {
+            "facts": [
+              {
+                "as_of": "2025-12-31T09:55:00Z",
+                "key": "sev1_last_90d",
+                "value": {
+                  "type": "int",
+                  "value": "3"
+                }
+              }
+            ],
+            "input_id": "input:pd.sev1_count",
+            "source": {
+              "object_id": "sf:acct:001",
+              "object_type": "incident_summary",
+              "system": "PagerDuty"
+            }
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "renewal-agent-service",
+            "subsystem": null,
+            "system": "agent-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "trace_seq": 2
+        },
+        {
+          "actor": {
+            "actor_id": "renewal-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "33333333-3333-3333-3333-333333333333",
+          "correlation_id": null,
+          "event_id": "44444444-4444-4444-4444-444444444444",
+          "event_type": "PolicyEvaluated",
+          "idempotency_key": "policy_eval:renewal_discount_cap@3.2",
+          "occurred_at": "2025-12-31T10:00:03Z",
+          "payload": {
+            "decision": "require_exception",
+            "explanation": {
+              "summary": "Requested discount 20% exceeds cap 10% unless exception approved."
+            },
+            "inputs": [
+              "input:pd.sev1_count"
+            ],
+            "policy": {
+              "policy_id": "renewal_discount_cap",
+              "policy_version": "3.2"
+            },
+            "violations": [
+              {
+                "code": "CAP_EXCEEDED",
+                "details": {
+                  "cap": "10%",
+                  "requested": "20%"
+                }
+              }
+            ]
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "renewal-agent-service",
+            "subsystem": null,
+            "system": "agent-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "trace_seq": 3
+        },
+        {
+          "actor": {
+            "actor_id": "renewal-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "44444444-4444-4444-4444-444444444444",
+          "correlation_id": null,
+          "event_id": "55555555-5555-5555-5555-555555555555",
+          "event_type": "PrecedentCited",
+          "idempotency_key": "prec:trace:last_qtr",
+          "occurred_at": "2025-12-31T10:00:04Z",
+          "payload": {
+            "cited_trace_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+            "reason": "Similar churn-risk exception approved last quarter.",
+            "similarity_score": null
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "renewal-agent-service",
+            "subsystem": null,
+            "system": "agent-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "trace_seq": 4
+        },
+        {
+          "actor": {
+            "actor_id": "renewal-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "55555555-5555-5555-5555-555555555555",
+          "correlation_id": null,
+          "event_id": "66666666-6666-6666-6666-666666666666",
+          "event_type": "ExceptionRequested",
+          "idempotency_key": "exc:req:over_cap",
+          "occurred_at": "2025-12-31T10:00:05Z",
+          "payload": {
+            "evidence": [],
+            "exception_id": "exc:renewal_discount_over_cap",
+            "policy": {
+              "policy_id": "renewal_discount_cap",
+              "policy_version": "3.2"
+            },
+            "reason": "3 SEV-1 incidents; consistent with precedent."
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "renewal-agent-service",
+            "subsystem": null,
+            "system": "agent-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "trace_seq": 5
+        },
+        {
+          "actor": {
+            "actor_id": "renewal-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "66666666-6666-6666-6666-666666666666",
+          "correlation_id": null,
+          "event_id": "77777777-7777-7777-7777-777777777777",
+          "event_type": "ApprovalRecorded",
+          "idempotency_key": "appr:finance:001",
+          "occurred_at": "2025-12-31T10:05:00Z",
+          "payload": {
+            "approval_id": "appr:finance-001",
+            "approver": {
+              "actor_id": "vp_finance_123",
+              "actor_type": "person"
+            },
+            "decision": "approved",
+            "evidence": [],
+            "reason": "Approved due to service impact and precedent.",
+            "subject": {
+              "action_id": null,
+              "exception_id": "exc:renewal_discount_over_cap",
+              "subject_id": "exc:renewal_discount_over_cap",
+              "subject_type": "exception"
+            }
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "renewal-agent-service",
+            "subsystem": null,
+            "system": "agent-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "trace_seq": 6
+        },
+        {
+          "actor": {
+            "actor_id": "renewal-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "77777777-7777-7777-7777-777777777777",
+          "correlation_id": null,
+          "event_id": "88888888-8888-8888-8888-888888888888",
+          "event_type": "ActionCommitted",
+          "idempotency_key": "commit:sf:opp:123",
+          "occurred_at": "2025-12-31T10:06:00Z",
+          "payload": {
+            "action_id": "act:update_discount",
+            "error": null,
+            "external_reference": "sf:update:xyz",
+            "status": "success"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "renewal-agent-service",
+            "subsystem": null,
+            "system": "agent-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "trace_seq": 7
+        },
+        {
+          "actor": {
+            "actor_id": "renewal-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "88888888-8888-8888-8888-888888888888",
+          "correlation_id": null,
+          "event_id": "99999999-9999-9999-9999-999999999999",
+          "event_type": "TraceFinished",
+          "idempotency_key": "finish:sf:opp:123",
+          "occurred_at": "2025-12-31T10:06:01Z",
+          "payload": {
+            "outcome": "success",
+            "summary": "Discount 20% applied with Finance exception approval."
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "renewal-agent-service",
+            "subsystem": null,
+            "system": "agent-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "trace_seq": 8
+        }
+      ],
+      "expected_digests": {
+        "context_graph": "sha256:a64cbb20a9462681293a68b4e127be25b8946ed4a33f07e70c93ba942fadf679",
+        "full_projection": "sha256:30aba38f295f46a17c7185cddd4771cdaf11321649959776fa8ac5c7cb842504",
+        "precedent_index": "sha256:0117e61f7550c716c0effc43f8e4fe600e4db511366fc64e14ce0cf652049c7c",
+        "trace_summary": "sha256:1735ba6bf5a1ddcad79a706e6c0e23b19710128da744e55e708bbe5696f2389f"
+      },
+      "projection_snapshot": {
+        "context_graph": {
+          "edge_count": 8,
+          "edges": [
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:05:00Z",
+              "edge_id": "exception_approved_by:exception:exc:renewal_discount_over_cap:actor:person:vp_finance_123:77777777-7777-7777-7777-777777777777",
+              "edge_type": "exception_approved_by",
+              "from_node_id": "exception:exc:renewal_discount_over_cap",
+              "log_seq": 7,
+              "to_node_id": "actor:person:vp_finance_123",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:04Z",
+              "edge_id": "trace_cited_precedent:trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:trace:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb:55555555-5555-5555-5555-555555555555",
+              "edge_type": "trace_cited_precedent",
+              "from_node_id": "trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+              "log_seq": 5,
+              "to_node_id": "trace:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:06:00Z",
+              "edge_id": "trace_committed_action:trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:action:act:update_discount:88888888-8888-8888-8888-888888888888",
+              "edge_type": "trace_committed_action",
+              "from_node_id": "trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+              "log_seq": 8,
+              "to_node_id": "action:act:update_discount",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:03Z",
+              "edge_id": "trace_evaluated_policy:trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:policy:renewal_discount_cap:3.2:44444444-4444-4444-4444-444444444444",
+              "edge_type": "trace_evaluated_policy",
+              "from_node_id": "trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+              "log_seq": 4,
+              "to_node_id": "policy:renewal_discount_cap:3.2",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:00Z",
+              "edge_id": "trace_involves_entity:trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:entity:account:sf:acct:001:11111111-1111-1111-1111-111111111111",
+              "edge_type": "trace_involves_entity",
+              "from_node_id": "trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+              "log_seq": 1,
+              "to_node_id": "entity:account:sf:acct:001",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:01Z",
+              "edge_id": "trace_involves_entity:trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:entity:account:sf:acct:001:22222222-2222-2222-2222-222222222222",
+              "edge_type": "trace_involves_entity",
+              "from_node_id": "trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+              "log_seq": 2,
+              "to_node_id": "entity:account:sf:acct:001",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:02Z",
+              "edge_id": "trace_observed_input:trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:input:input:pd.sev1_count:33333333-3333-3333-3333-333333333333",
+              "edge_type": "trace_observed_input",
+              "from_node_id": "trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+              "log_seq": 3,
+              "to_node_id": "input:input:pd.sev1_count",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:05Z",
+              "edge_id": "trace_requested_exception:trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:exception:exc:renewal_discount_over_cap:66666666-6666-6666-6666-666666666666",
+              "edge_type": "trace_requested_exception",
+              "from_node_id": "trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+              "log_seq": 6,
+              "to_node_id": "exception:exc:renewal_discount_over_cap",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            }
+          ],
+          "node_count": 9,
+          "nodes": [
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:06:00Z",
+              "log_seq": 8,
+              "node_id": "action:act:update_discount",
+              "node_type": "action",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:00Z",
+              "log_seq": 1,
+              "node_id": "actor:agent:renewal-agent-v1",
+              "node_type": "actor",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:05:00Z",
+              "log_seq": 7,
+              "node_id": "actor:person:vp_finance_123",
+              "node_type": "actor",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:00Z",
+              "log_seq": 1,
+              "node_id": "entity:account:sf:acct:001",
+              "node_type": "entity",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:05Z",
+              "log_seq": 6,
+              "node_id": "exception:exc:renewal_discount_over_cap",
+              "node_type": "exception",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:02Z",
+              "log_seq": 3,
+              "node_id": "input:input:pd.sev1_count",
+              "node_type": "input",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:03Z",
+              "log_seq": 4,
+              "node_id": "policy:renewal_discount_cap:3.2",
+              "node_type": "policy",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:00Z",
+              "log_seq": 1,
+              "node_id": "trace:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+              "node_type": "trace",
+              "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T10:00:04Z",
+              "log_seq": 5,
+              "node_id": "trace:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+              "node_type": "trace",
+              "trace_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+            }
+          ]
+        },
+        "policy_eval_index": [
+          {
+            "created_at": "2025-12-31T10:00:03Z",
+            "index_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:renewal_discount_cap:3.2:44444444-4444-4444-4444-444444444444",
+            "log_seq": 4,
+            "policy_id": "renewal_discount_cap",
+            "policy_version": "3.2",
+            "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+          }
+        ],
+        "precedent_index": [
+          {
+            "exception_id": null,
+            "log_seq": 4,
+            "policy_id": "renewal_discount_cap",
+            "policy_version": "3.2",
+            "primary_entity_id": "sf:acct:001",
+            "primary_entity_system": "salesforce",
+            "primary_entity_type": "account",
+            "source_event_id": "44444444-4444-4444-4444-444444444444",
+            "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+          },
+          {
+            "exception_id": "exc:renewal_discount_over_cap",
+            "log_seq": 6,
+            "policy_id": "renewal_discount_cap",
+            "policy_version": "3.2",
+            "primary_entity_id": "sf:acct:001",
+            "primary_entity_system": "salesforce",
+            "primary_entity_type": "account",
+            "source_event_id": "66666666-6666-6666-6666-666666666666",
+            "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+          }
+        ],
+        "projection_cursor": 9,
+        "trace_summary": {
+          "event_count": 2,
+          "finished_at": "2025-12-31T10:06:01Z",
+          "last_log_seq": 9,
+          "outcome": "success",
+          "primary_entity_id": "sf:acct:001",
+          "primary_entity_type": "account",
+          "started_at": "2025-12-31T10:00:00Z",
+          "title": "Renewal discount for sf:opp:123",
+          "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "workflow": "renewal_discount"
+        }
+      },
+      "scenario": "renewal",
+      "ssot_reference": "10.1",
+      "trace_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    },
+    {
+      "description": "Support Escalation with cross-system synthesis to Tier 3",
+      "event_count": 8,
+      "event_type_sequence": [
+        "TraceStarted",
+        "EntityObserved",
+        "InputObserved",
+        "InputObserved",
+        "InputObserved",
+        "PolicyEvaluated",
+        "ActionCommitted",
+        "TraceFinished"
+      ],
+      "events": [
+        {
+          "actor": {
+            "actor_id": "support-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": null,
+          "correlation_id": null,
+          "event_id": "c1111111-1111-1111-1111-111111111111",
+          "event_type": "TraceStarted",
+          "idempotency_key": "start:support:ticket:456",
+          "occurred_at": "2025-12-31T11:00:00Z",
+          "payload": {
+            "primary_entity": {
+              "entity_id": "ZD-456",
+              "entity_type": "ticket",
+              "system": "zendesk"
+            },
+            "title": "Escalation for ticket ZD-456",
+            "workflow": "support_escalation"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "support-agent-service",
+            "subsystem": null,
+            "system": "support-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          "trace_seq": 0
+        },
+        {
+          "actor": {
+            "actor_id": "support-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "c1111111-1111-1111-1111-111111111111",
+          "correlation_id": null,
+          "event_id": "c2222222-2222-2222-2222-222222222222",
+          "event_type": "EntityObserved",
+          "idempotency_key": "ent:ticket:ZD-456",
+          "occurred_at": "2025-12-31T11:00:01Z",
+          "payload": {
+            "entity": {
+              "entity_id": "ZD-456",
+              "entity_type": "ticket",
+              "system": "zendesk"
+            },
+            "facts": [],
+            "role": "primary"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "support-agent-service",
+            "subsystem": null,
+            "system": "support-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          "trace_seq": 1
+        },
+        {
+          "actor": {
+            "actor_id": "support-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "c2222222-2222-2222-2222-222222222222",
+          "correlation_id": null,
+          "event_id": "c3333333-3333-3333-3333-333333333333",
+          "event_type": "InputObserved",
+          "idempotency_key": "input:crm.arr",
+          "occurred_at": "2025-12-31T11:00:02Z",
+          "payload": {
+            "facts": [
+              {
+                "as_of": "2025-12-31T10:55:00Z",
+                "key": "annual_recurring_revenue",
+                "value": {
+                  "type": "int",
+                  "value": "500000"
+                }
+              }
+            ],
+            "input_id": "input:crm.arr",
+            "source": {
+              "object_id": "sf:acct:002",
+              "object_type": "account",
+              "system": "salesforce"
+            }
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "support-agent-service",
+            "subsystem": null,
+            "system": "support-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          "trace_seq": 2
+        },
+        {
+          "actor": {
+            "actor_id": "support-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "c3333333-3333-3333-3333-333333333333",
+          "correlation_id": null,
+          "event_id": "c4444444-4444-4444-4444-444444444444",
+          "event_type": "InputObserved",
+          "idempotency_key": "input:zendesk.open_escalations",
+          "occurred_at": "2025-12-31T11:00:03Z",
+          "payload": {
+            "facts": [
+              {
+                "as_of": "2025-12-31T10:58:00Z",
+                "key": "open_escalations_count",
+                "value": {
+                  "type": "int",
+                  "value": "3"
+                }
+              }
+            ],
+            "input_id": "input:zendesk.open_escalations",
+            "source": {
+              "object_id": "sf:acct:002",
+              "object_type": "escalation_summary",
+              "system": "zendesk"
+            }
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "support-agent-service",
+            "subsystem": null,
+            "system": "support-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          "trace_seq": 3
+        },
+        {
+          "actor": {
+            "actor_id": "support-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "c4444444-4444-4444-4444-444444444444",
+          "correlation_id": null,
+          "event_id": "c5555555-5555-5555-5555-555555555555",
+          "event_type": "InputObserved",
+          "idempotency_key": "input:slack.churn_risk",
+          "occurred_at": "2025-12-31T11:00:04Z",
+          "payload": {
+            "facts": [
+              {
+                "as_of": "2025-12-31T10:45:00Z",
+                "key": "churn_risk_flag",
+                "value": {
+                  "type": "bool",
+                  "value": "true"
+                }
+              }
+            ],
+            "input_id": "input:slack.churn_risk",
+            "source": {
+              "object_id": "slack://C123/p456",
+              "object_type": "message",
+              "system": "slack"
+            }
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "support-agent-service",
+            "subsystem": null,
+            "system": "support-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          "trace_seq": 4
+        },
+        {
+          "actor": {
+            "actor_id": "support-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "c5555555-5555-5555-5555-555555555555",
+          "correlation_id": null,
+          "event_id": "c6666666-6666-6666-6666-666666666666",
+          "event_type": "PolicyEvaluated",
+          "idempotency_key": "policy_eval:escalation_criteria@2.1",
+          "occurred_at": "2025-12-31T11:00:05Z",
+          "payload": {
+            "decision": "allow",
+            "explanation": {
+              "summary": "High ARR customer with churn risk and multiple escalations. Escalate to Tier 3."
+            },
+            "inputs": [
+              "input:crm.arr",
+              "input:zendesk.open_escalations",
+              "input:slack.churn_risk"
+            ],
+            "policy": {
+              "policy_id": "escalation_criteria",
+              "policy_version": "2.1"
+            },
+            "violations": []
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "support-agent-service",
+            "subsystem": null,
+            "system": "support-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          "trace_seq": 5
+        },
+        {
+          "actor": {
+            "actor_id": "support-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "c6666666-6666-6666-6666-666666666666",
+          "correlation_id": null,
+          "event_id": "c7777777-7777-7777-7777-777777777777",
+          "event_type": "ActionCommitted",
+          "idempotency_key": "commit:zendesk:escalate:456",
+          "occurred_at": "2025-12-31T11:00:06Z",
+          "payload": {
+            "action_id": "act:escalate_tier3",
+            "error": null,
+            "external_reference": "zendesk:escalation:tier3:456",
+            "status": "success"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "support-agent-service",
+            "subsystem": null,
+            "system": "support-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          "trace_seq": 6
+        },
+        {
+          "actor": {
+            "actor_id": "support-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "c7777777-7777-7777-7777-777777777777",
+          "correlation_id": null,
+          "event_id": "c8888888-8888-8888-8888-888888888888",
+          "event_type": "TraceFinished",
+          "idempotency_key": "finish:support:ticket:456",
+          "occurred_at": "2025-12-31T11:00:07Z",
+          "payload": {
+            "outcome": "success",
+            "summary": "Ticket escalated to Tier 3 based on cross-system synthesis."
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "support-agent-service",
+            "subsystem": null,
+            "system": "support-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          "trace_seq": 7
+        }
+      ],
+      "expected_digests": {
+        "context_graph": "sha256:d33495707933d5afec56963350f5272d16bab6b06723836116a083b70483eda6",
+        "full_projection": "sha256:07c491e2c39a1fef906accac3533b34d596942238fb8056e427f6775a957b3c7",
+        "precedent_index": "sha256:23ea7aa00c55aa369fc0a91d1569f7e072acba02de4fd13c9fc1402e61d5597c",
+        "trace_summary": "sha256:dd2ea1baa9eb9df261c4ddc68e9c1783fbc81674604084db4b6a1b21a124b7f8"
+      },
+      "projection_snapshot": {
+        "context_graph": {
+          "edge_count": 7,
+          "edges": [
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:06Z",
+              "edge_id": "trace_committed_action:trace:cccccccc-cccc-cccc-cccc-cccccccccccc:action:act:escalate_tier3:c7777777-7777-7777-7777-777777777777",
+              "edge_type": "trace_committed_action",
+              "from_node_id": "trace:cccccccc-cccc-cccc-cccc-cccccccccccc",
+              "log_seq": 7,
+              "to_node_id": "action:act:escalate_tier3",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:05Z",
+              "edge_id": "trace_evaluated_policy:trace:cccccccc-cccc-cccc-cccc-cccccccccccc:policy:escalation_criteria:2.1:c6666666-6666-6666-6666-666666666666",
+              "edge_type": "trace_evaluated_policy",
+              "from_node_id": "trace:cccccccc-cccc-cccc-cccc-cccccccccccc",
+              "log_seq": 6,
+              "to_node_id": "policy:escalation_criteria:2.1",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:00Z",
+              "edge_id": "trace_involves_entity:trace:cccccccc-cccc-cccc-cccc-cccccccccccc:entity:ticket:ZD-456:c1111111-1111-1111-1111-111111111111",
+              "edge_type": "trace_involves_entity",
+              "from_node_id": "trace:cccccccc-cccc-cccc-cccc-cccccccccccc",
+              "log_seq": 1,
+              "to_node_id": "entity:ticket:ZD-456",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:01Z",
+              "edge_id": "trace_involves_entity:trace:cccccccc-cccc-cccc-cccc-cccccccccccc:entity:ticket:ZD-456:c2222222-2222-2222-2222-222222222222",
+              "edge_type": "trace_involves_entity",
+              "from_node_id": "trace:cccccccc-cccc-cccc-cccc-cccccccccccc",
+              "log_seq": 2,
+              "to_node_id": "entity:ticket:ZD-456",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:02Z",
+              "edge_id": "trace_observed_input:trace:cccccccc-cccc-cccc-cccc-cccccccccccc:input:input:crm.arr:c3333333-3333-3333-3333-333333333333",
+              "edge_type": "trace_observed_input",
+              "from_node_id": "trace:cccccccc-cccc-cccc-cccc-cccccccccccc",
+              "log_seq": 3,
+              "to_node_id": "input:input:crm.arr",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:04Z",
+              "edge_id": "trace_observed_input:trace:cccccccc-cccc-cccc-cccc-cccccccccccc:input:input:slack.churn_risk:c5555555-5555-5555-5555-555555555555",
+              "edge_type": "trace_observed_input",
+              "from_node_id": "trace:cccccccc-cccc-cccc-cccc-cccccccccccc",
+              "log_seq": 5,
+              "to_node_id": "input:input:slack.churn_risk",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:03Z",
+              "edge_id": "trace_observed_input:trace:cccccccc-cccc-cccc-cccc-cccccccccccc:input:input:zendesk.open_escalations:c4444444-4444-4444-4444-444444444444",
+              "edge_type": "trace_observed_input",
+              "from_node_id": "trace:cccccccc-cccc-cccc-cccc-cccccccccccc",
+              "log_seq": 4,
+              "to_node_id": "input:input:zendesk.open_escalations",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            }
+          ],
+          "node_count": 8,
+          "nodes": [
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:06Z",
+              "log_seq": 7,
+              "node_id": "action:act:escalate_tier3",
+              "node_type": "action",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:00Z",
+              "log_seq": 1,
+              "node_id": "actor:agent:support-agent-v1",
+              "node_type": "actor",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:00Z",
+              "log_seq": 1,
+              "node_id": "entity:ticket:ZD-456",
+              "node_type": "entity",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:02Z",
+              "log_seq": 3,
+              "node_id": "input:input:crm.arr",
+              "node_type": "input",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:04Z",
+              "log_seq": 5,
+              "node_id": "input:input:slack.churn_risk",
+              "node_type": "input",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:03Z",
+              "log_seq": 4,
+              "node_id": "input:input:zendesk.open_escalations",
+              "node_type": "input",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:05Z",
+              "log_seq": 6,
+              "node_id": "policy:escalation_criteria:2.1",
+              "node_type": "policy",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T11:00:00Z",
+              "log_seq": 1,
+              "node_id": "trace:cccccccc-cccc-cccc-cccc-cccccccccccc",
+              "node_type": "trace",
+              "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+            }
+          ]
+        },
+        "policy_eval_index": [
+          {
+            "created_at": "2025-12-31T11:00:05Z",
+            "index_id": "cccccccc-cccc-cccc-cccc-cccccccccccc:escalation_criteria:2.1:c6666666-6666-6666-6666-666666666666",
+            "log_seq": 6,
+            "policy_id": "escalation_criteria",
+            "policy_version": "2.1",
+            "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+          }
+        ],
+        "precedent_index": [
+          {
+            "exception_id": null,
+            "log_seq": 6,
+            "policy_id": "escalation_criteria",
+            "policy_version": "2.1",
+            "primary_entity_id": "ZD-456",
+            "primary_entity_system": "zendesk",
+            "primary_entity_type": "ticket",
+            "source_event_id": "c6666666-6666-6666-6666-666666666666",
+            "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+          }
+        ],
+        "projection_cursor": 8,
+        "trace_summary": {
+          "event_count": 2,
+          "finished_at": "2025-12-31T11:00:07Z",
+          "last_log_seq": 8,
+          "outcome": "success",
+          "primary_entity_id": "ZD-456",
+          "primary_entity_type": "ticket",
+          "started_at": "2025-12-31T11:00:00Z",
+          "title": "Escalation for ticket ZD-456",
+          "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          "workflow": "support_escalation"
+        }
+      },
+      "scenario": "support",
+      "ssot_reference": "10.2",
+      "trace_id": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    },
+    {
+      "description": "CRM to billing sync fails after the downstream commit attempt",
+      "event_count": 7,
+      "event_type_sequence": [
+        "TraceStarted",
+        "EntityObserved",
+        "InputObserved",
+        "PolicyEvaluated",
+        "ActionProposed",
+        "ActionCommitted",
+        "TraceFinished"
+      ],
+      "events": [
+        {
+          "actor": {
+            "actor_id": "ops-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": null,
+          "correlation_id": null,
+          "event_id": "12111111-1111-1111-1111-111111111111",
+          "event_type": "TraceStarted",
+          "idempotency_key": "start:crm_sync:acct:42",
+          "occurred_at": "2025-12-31T14:00:00Z",
+          "payload": {
+            "primary_entity": {
+              "entity_id": "crm:acct:42",
+              "entity_type": "account",
+              "system": "crm"
+            },
+            "title": "Sync crm:acct:42 to billing",
+            "workflow": "crm_sync"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "ops-agent-service",
+            "subsystem": null,
+            "system": "ops-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "12121212-1212-1212-1212-121212121212",
+          "trace_seq": 0
+        },
+        {
+          "actor": {
+            "actor_id": "ops-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "12111111-1111-1111-1111-111111111111",
+          "correlation_id": null,
+          "event_id": "12222222-2222-2222-2222-222222222222",
+          "event_type": "EntityObserved",
+          "idempotency_key": "ent:account:crm:acct:42",
+          "occurred_at": "2025-12-31T14:00:01Z",
+          "payload": {
+            "entity": {
+              "entity_id": "crm:acct:42",
+              "entity_type": "account",
+              "system": "crm"
+            },
+            "facts": [
+              {
+                "as_of": "2025-12-31T13:59:30Z",
+                "key": "billing_plan",
+                "value": {
+                  "type": "string",
+                  "value": "basic"
+                }
+              }
+            ],
+            "role": "primary"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "ops-agent-service",
+            "subsystem": null,
+            "system": "ops-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "12121212-1212-1212-1212-121212121212",
+          "trace_seq": 1
+        },
+        {
+          "actor": {
+            "actor_id": "ops-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "12222222-2222-2222-2222-222222222222",
+          "correlation_id": null,
+          "event_id": "12333333-3333-3333-3333-333333333333",
+          "event_type": "InputObserved",
+          "idempotency_key": "input:crm.plan_upgrade",
+          "occurred_at": "2025-12-31T14:00:02Z",
+          "payload": {
+            "facts": [
+              {
+                "as_of": "2025-12-31T13:59:00Z",
+                "key": "requested_plan",
+                "value": {
+                  "type": "string",
+                  "value": "pro"
+                }
+              }
+            ],
+            "input_id": "input:crm.plan_upgrade",
+            "source": {
+              "object_id": "crm:acct:42",
+              "object_type": "account_change",
+              "system": "crm"
+            }
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "ops-agent-service",
+            "subsystem": null,
+            "system": "ops-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "12121212-1212-1212-1212-121212121212",
+          "trace_seq": 2
+        },
+        {
+          "actor": {
+            "actor_id": "ops-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "12333333-3333-3333-3333-333333333333",
+          "correlation_id": null,
+          "event_id": "12444444-4444-4444-4444-444444444444",
+          "event_type": "PolicyEvaluated",
+          "idempotency_key": "policy_eval:sync_guard@1.4",
+          "occurred_at": "2025-12-31T14:00:03Z",
+          "payload": {
+            "decision": "allow",
+            "explanation": {
+              "summary": "The account change is eligible for sync to billing."
+            },
+            "inputs": [
+              "input:crm.plan_upgrade"
+            ],
+            "policy": {
+              "policy_id": "sync_guard",
+              "policy_version": "1.4"
+            },
+            "violations": []
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "ops-agent-service",
+            "subsystem": null,
+            "system": "ops-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "12121212-1212-1212-1212-121212121212",
+          "trace_seq": 3
+        },
+        {
+          "actor": {
+            "actor_id": "ops-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "12444444-4444-4444-4444-444444444444",
+          "correlation_id": null,
+          "event_id": "12555555-5555-5555-5555-555555555555",
+          "event_type": "ActionProposed",
+          "idempotency_key": "act:push_sync",
+          "occurred_at": "2025-12-31T14:00:04Z",
+          "payload": {
+            "action_id": "act:push_sync",
+            "action_type": "update",
+            "changes": [
+              {
+                "new_value": {
+                  "type": "string",
+                  "value": "pro"
+                },
+                "old_value": {
+                  "type": "string",
+                  "value": "basic"
+                },
+                "path": "plan_tier"
+              }
+            ],
+            "target_entity": {
+              "entity_id": "crm:acct:42",
+              "entity_type": "account",
+              "system": "crm"
+            },
+            "target_system": "billing-system"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "ops-agent-service",
+            "subsystem": null,
+            "system": "ops-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "12121212-1212-1212-1212-121212121212",
+          "trace_seq": 4
+        },
+        {
+          "actor": {
+            "actor_id": "ops-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "12555555-5555-5555-5555-555555555555",
+          "correlation_id": null,
+          "event_id": "12666666-6666-6666-6666-666666666666",
+          "event_type": "ActionCommitted",
+          "idempotency_key": "commit:push_sync",
+          "occurred_at": "2025-12-31T14:00:05Z",
+          "payload": {
+            "action_id": "act:push_sync",
+            "error": "billing API timeout",
+            "external_reference": "billing:req:7788",
+            "status": "failure"
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "ops-agent-service",
+            "subsystem": null,
+            "system": "ops-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "12121212-1212-1212-1212-121212121212",
+          "trace_seq": 5
+        },
+        {
+          "actor": {
+            "actor_id": "ops-agent-v1",
+            "actor_type": "agent"
+          },
+          "causation_event_id": "12666666-6666-6666-6666-666666666666",
+          "correlation_id": null,
+          "event_id": "12777777-7777-7777-7777-777777777777",
+          "event_type": "TraceFinished",
+          "idempotency_key": "finish:crm_sync:acct:42",
+          "occurred_at": "2025-12-31T14:00:06Z",
+          "payload": {
+            "outcome": "abandoned",
+            "summary": "Sync abandoned after downstream timeout."
+          },
+          "schema_version": 1,
+          "source": {
+            "producer_id": "ops-agent-service",
+            "subsystem": null,
+            "system": "ops-orchestrator"
+          },
+          "tags": [],
+          "trace_id": "12121212-1212-1212-1212-121212121212",
+          "trace_seq": 6
+        }
+      ],
+      "expected_digests": {
+        "context_graph": "sha256:80611db6146cd271310651e3f0ed3d59885cc16f24c27e0ee7a0a192d25ff5f9",
+        "full_projection": "sha256:98efba6e34fe8e60d7235fce4aa0adc3fd87c5a2c90217ae35df155600584f02",
+        "precedent_index": "sha256:44960f3bdd52a296b16194ed1058db117ad4c83ef672b596a2085427f9be496a",
+        "trace_summary": "sha256:979f4a23ecd4ccdbb8d47b5f67c7d9dd4be54ed21abb65b87ba0d5067b860938"
+      },
+      "projection_snapshot": {
+        "context_graph": {
+          "edge_count": 7,
+          "edges": [
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:04Z",
+              "edge_id": "action_targets_entity:action:act:push_sync:entity:account:crm:acct:42:12555555-5555-5555-5555-555555555555",
+              "edge_type": "action_targets_entity",
+              "from_node_id": "action:act:push_sync",
+              "log_seq": 5,
+              "to_node_id": "entity:account:crm:acct:42",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:05Z",
+              "edge_id": "trace_committed_action:trace:12121212-1212-1212-1212-121212121212:action:act:push_sync:12666666-6666-6666-6666-666666666666",
+              "edge_type": "trace_committed_action",
+              "from_node_id": "trace:12121212-1212-1212-1212-121212121212",
+              "log_seq": 6,
+              "to_node_id": "action:act:push_sync",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:03Z",
+              "edge_id": "trace_evaluated_policy:trace:12121212-1212-1212-1212-121212121212:policy:sync_guard:1.4:12444444-4444-4444-4444-444444444444",
+              "edge_type": "trace_evaluated_policy",
+              "from_node_id": "trace:12121212-1212-1212-1212-121212121212",
+              "log_seq": 4,
+              "to_node_id": "policy:sync_guard:1.4",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:00Z",
+              "edge_id": "trace_involves_entity:trace:12121212-1212-1212-1212-121212121212:entity:account:crm:acct:42:12111111-1111-1111-1111-111111111111",
+              "edge_type": "trace_involves_entity",
+              "from_node_id": "trace:12121212-1212-1212-1212-121212121212",
+              "log_seq": 1,
+              "to_node_id": "entity:account:crm:acct:42",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:01Z",
+              "edge_id": "trace_involves_entity:trace:12121212-1212-1212-1212-121212121212:entity:account:crm:acct:42:12222222-2222-2222-2222-222222222222",
+              "edge_type": "trace_involves_entity",
+              "from_node_id": "trace:12121212-1212-1212-1212-121212121212",
+              "log_seq": 2,
+              "to_node_id": "entity:account:crm:acct:42",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:02Z",
+              "edge_id": "trace_observed_input:trace:12121212-1212-1212-1212-121212121212:input:input:crm.plan_upgrade:12333333-3333-3333-3333-333333333333",
+              "edge_type": "trace_observed_input",
+              "from_node_id": "trace:12121212-1212-1212-1212-121212121212",
+              "log_seq": 3,
+              "to_node_id": "input:input:crm.plan_upgrade",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:04Z",
+              "edge_id": "trace_proposed_action:trace:12121212-1212-1212-1212-121212121212:action:act:push_sync:12555555-5555-5555-5555-555555555555",
+              "edge_type": "trace_proposed_action",
+              "from_node_id": "trace:12121212-1212-1212-1212-121212121212",
+              "log_seq": 5,
+              "to_node_id": "action:act:push_sync",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            }
+          ],
+          "node_count": 6,
+          "nodes": [
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:04Z",
+              "log_seq": 5,
+              "node_id": "action:act:push_sync",
+              "node_type": "action",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:00Z",
+              "log_seq": 1,
+              "node_id": "actor:agent:ops-agent-v1",
+              "node_type": "actor",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:00Z",
+              "log_seq": 1,
+              "node_id": "entity:account:crm:acct:42",
+              "node_type": "entity",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:02Z",
+              "log_seq": 3,
+              "node_id": "input:input:crm.plan_upgrade",
+              "node_type": "input",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:03Z",
+              "log_seq": 4,
+              "node_id": "policy:sync_guard:1.4",
+              "node_type": "policy",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            },
+            {
+              "attrs": {},
+              "created_at": "2025-12-31T14:00:00Z",
+              "log_seq": 1,
+              "node_id": "trace:12121212-1212-1212-1212-121212121212",
+              "node_type": "trace",
+              "trace_id": "12121212-1212-1212-1212-121212121212"
+            }
+          ]
+        },
+        "policy_eval_index": [
+          {
+            "created_at": "2025-12-31T14:00:03Z",
+            "index_id": "12121212-1212-1212-1212-121212121212:sync_guard:1.4:12444444-4444-4444-4444-444444444444",
+            "log_seq": 4,
+            "policy_id": "sync_guard",
+            "policy_version": "1.4",
+            "trace_id": "12121212-1212-1212-1212-121212121212"
+          }
+        ],
+        "precedent_index": [
+          {
+            "exception_id": null,
+            "log_seq": 4,
+            "policy_id": "sync_guard",
+            "policy_version": "1.4",
+            "primary_entity_id": "crm:acct:42",
+            "primary_entity_system": "crm",
+            "primary_entity_type": "account",
+            "source_event_id": "12444444-4444-4444-4444-444444444444",
+            "trace_id": "12121212-1212-1212-1212-121212121212"
+          }
+        ],
+        "projection_cursor": 7,
+        "trace_summary": {
+          "event_count": 2,
+          "finished_at": "2025-12-31T14:00:06Z",
+          "last_log_seq": 7,
+          "outcome": "abandoned",
+          "primary_entity_id": "crm:acct:42",
+          "primary_entity_type": "account",
+          "started_at": "2025-12-31T14:00:00Z",
+          "title": "Sync crm:acct:42 to billing",
+          "trace_id": "12121212-1212-1212-1212-121212121212",
+          "workflow": "crm_sync"
+        }
+      },
+      "scenario": "sync_failure",
+      "ssot_reference": "10.5",
+      "trace_id": "12121212-1212-1212-1212-121212121212"
+    }
+  ],
+  "version": 1
+}

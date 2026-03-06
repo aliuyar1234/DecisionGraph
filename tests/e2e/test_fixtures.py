@@ -5,15 +5,29 @@ Test cases TC-P6-001 through TC-P6-010.
 
 from pathlib import Path
 
+import pytest
+
 from decisiongraph.projections.projector import SQLiteProjector
 from decisiongraph.query import (
     get_context_subgraph,
     get_trace_events,
 )
 from decisiongraph.storage.sqlite import SQLiteEventStore
-from decisiongraph.testing.golden import load_fixture, validate_fixture
+from decisiongraph.testing.golden import (
+    discover_fixture_dirs,
+    load_fixture,
+    validate_fixture,
+)
 
 FIXTURES_DIR = Path(__file__).parent.parent / "golden"
+FIXTURE_DIRS = discover_fixture_dirs(FIXTURES_DIR)
+
+
+@pytest.mark.parametrize("fixture_dir", FIXTURE_DIRS, ids=lambda path: path.name)
+def test_all_fixture_digests_match_expected(fixture_dir: Path) -> None:
+    """Every checked-in golden fixture must match its digest snapshot."""
+    all_match, mismatches = validate_fixture(fixture_dir)
+    assert all_match, f"{fixture_dir.name} digest mismatches: {mismatches}"
 
 
 class TestRenewalFixture:
@@ -175,6 +189,84 @@ class TestDealdeskFixture:
         assert "healthcare" in reason.lower(), "Expected healthcare-related reason"
 
 
+class TestReleaseRejectedFixture:
+    """Tests for failed release-review scenario (SSOT 10.4)."""
+
+    def test_fixture_release_rejected_queries(self) -> None:
+        fixture = load_fixture(FIXTURES_DIR / "release_rejected")
+
+        store = SQLiteEventStore(":memory:")
+        conn = store.connection
+        projector = SQLiteProjector(conn)
+
+        for envelope in fixture.events:
+            store.append_event(envelope)
+
+        projector.rebuild()
+        projector.project_events(store.list_events())
+
+        events = get_trace_events(store, trace_id=fixture.trace_id)
+        event_types = [event.event_type for event in events]
+
+        assert event_types == [
+            "TraceStarted",
+            "EntityObserved",
+            "InputObserved",
+            "PolicyEvaluated",
+            "ActionProposed",
+            "ApprovalRecorded",
+            "TraceFinished",
+        ]
+
+        approval = next(event for event in events if event.event_type == "ApprovalRecorded")
+        assert approval.payload["decision"] == "rejected"
+        assert approval.payload["subject"]["subject_type"] == "action"
+
+        finished = next(event for event in events if event.event_type == "TraceFinished")
+        assert finished.payload["outcome"] == "failure"
+
+        store.close()
+
+
+class TestSyncFailureFixture:
+    """Tests for sync failure scenario (SSOT 10.5)."""
+
+    def test_fixture_sync_failure_queries(self) -> None:
+        fixture = load_fixture(FIXTURES_DIR / "sync_failure")
+
+        store = SQLiteEventStore(":memory:")
+        conn = store.connection
+        projector = SQLiteProjector(conn)
+
+        for envelope in fixture.events:
+            store.append_event(envelope)
+
+        projector.rebuild()
+        projector.project_events(store.list_events())
+
+        events = get_trace_events(store, trace_id=fixture.trace_id)
+        event_types = [event.event_type for event in events]
+
+        assert event_types == [
+            "TraceStarted",
+            "EntityObserved",
+            "InputObserved",
+            "PolicyEvaluated",
+            "ActionProposed",
+            "ActionCommitted",
+            "TraceFinished",
+        ]
+
+        committed = next(event for event in events if event.event_type == "ActionCommitted")
+        assert committed.payload["status"] == "failure"
+        assert committed.payload["error"] == "billing API timeout"
+
+        finished = next(event for event in events if event.event_type == "TraceFinished")
+        assert finished.payload["outcome"] == "abandoned"
+
+        store.close()
+
+
 class TestChainOfThought:
     """Tests for chain-of-thought detection per SSOT 13."""
 
@@ -182,10 +274,11 @@ class TestChainOfThought:
         """TC-P6-010: No chain-of-thought content in fixtures."""
         from decisiongraph.testing.golden import validate_no_chain_of_thought
 
-        for scenario in ["renewal", "support", "dealdesk"]:
-            fixture_dir = FIXTURES_DIR / scenario
+        for fixture_dir in FIXTURE_DIRS:
             fixture = load_fixture(fixture_dir)
 
             violations = validate_no_chain_of_thought(fixture)
 
-            assert len(violations) == 0, f"{scenario} fixture has CoT violations: {violations}"
+            assert len(violations) == 0, (
+                f"{fixture_dir.name} fixture has CoT violations: {violations}"
+            )

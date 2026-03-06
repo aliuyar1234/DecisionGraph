@@ -22,7 +22,7 @@ from decisiongraph.query import (
     list_node_edges,
 )
 from decisiongraph.storage.sqlite import SQLiteEventStore
-from decisiongraph.testing.golden import GoldenFixture, load_fixture
+from decisiongraph.testing.golden import GoldenFixture, load_all_fixtures
 
 FIXTURES_DIR = Path(__file__).parent.parent / "golden"
 
@@ -33,11 +33,7 @@ def populated_db(tmp_path: Path) -> tuple[str, SQLiteEventStore, SQLiteProjector
     store = SQLiteEventStore(str(db_path))
     projector = SQLiteProjector(store.connection)
 
-    fixtures = [
-        load_fixture(FIXTURES_DIR / "dealdesk"),
-        load_fixture(FIXTURES_DIR / "renewal"),
-        load_fixture(FIXTURES_DIR / "support"),
-    ]
+    fixtures = load_all_fixtures(FIXTURES_DIR)
     for fixture in fixtures:
         for envelope in fixture.events:
             store.append_event(envelope)

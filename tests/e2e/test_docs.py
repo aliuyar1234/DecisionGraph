@@ -126,22 +126,20 @@ class TestNoChainOfThought:
 
     def test_no_chain_of_thought_in_fixtures(self) -> None:
         """TC-P6-010: Verify no chain-of-thought in golden fixtures."""
-        from pathlib import Path
-
         from decisiongraph.testing.golden import (
+            discover_fixture_dirs,
             load_fixture,
             validate_no_chain_of_thought,
         )
 
         fixtures_dir = Path(__file__).parent.parent / "golden"
 
-        for scenario in ["renewal", "support", "dealdesk"]:
-            fixture_dir = fixtures_dir / scenario
+        for fixture_dir in discover_fixture_dirs(fixtures_dir):
             fixture = load_fixture(fixture_dir)
 
             violations = validate_no_chain_of_thought(fixture)
 
             assert len(violations) == 0, (
-                f"{scenario} fixture contains chain-of-thought patterns:\n"
+                f"{fixture_dir.name} fixture contains chain-of-thought patterns:\n"
                 + "\n".join(f"  - {v}" for v in violations)
             )
