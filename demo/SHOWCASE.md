@@ -1,8 +1,12 @@
-# DecisionGraph Showcase
+# DecisionGraph Python Showcase
 
-This is a 2-minute preview of what users get before integrating the library.
+This is the semantic-reference showcase for the Python package.
 
-## 1. Generate a deterministic demo dataset
+If you want the current self-hosted BEAM platform demo instead, use:
+
+- `docs/showcase.md`
+
+## 1. Generate A Deterministic Demo Dataset
 
 ```bash
 uv sync
@@ -10,11 +14,11 @@ uv run python demo/run_demo.py --db demo/showcase.db --output demo/showcase_outp
 ```
 
 This creates a small but realistic audit dataset from golden fixtures:
-- 3 scenarios (`dealdesk`, `renewal`, `support`)
-- 3 traces
-- 26 events
+- 5 scenarios (`dealdesk`, `release_rejected`, `renewal`, `support`, `sync_failure`)
+- 5 traces
+- 40 events
 
-## 2. Replay projections and verify digests
+## 2. Replay Projections And Verify Digests
 
 ```bash
 uv run python -m decisiongraph replay demo/showcase.db
@@ -24,13 +28,13 @@ Example output:
 
 ```text
 Projection digests after replay:
-  context_graph: sha256:866b7d3b199949aa92f452840151973ef56387329f00fa4b25f438c636959528
-  full_projection: sha256:045813620d5a47e7096eccc53d86d1e484db12bb257e4610536fb97b10d783ec
-  precedent_index: sha256:ac214e9522f666636be86f7cf9d86d169c6febc7e68acb38af76ad84785d6be6
-  trace_summary: sha256:f985a505c80d3aa7a327c29b264160da1745c712d642e0dfe1b4fe79d29f4ea5
+  context_graph: sha256:57870a0d6ef5f07dbf79eb53c642987582f102f05bc06de3d94d709ea43c57b1
+  full_projection: sha256:e912b7080ed689e1031e963c1cb33ca3acd752952876d5f446c12329f2673614
+  precedent_index: sha256:a87cf8124584225fd87e80cbd573dc40af912e4c92b48621928edec9dadc9251
+  trace_summary: sha256:5c5d5c3bfb68b74818e1f5c742522154c5ab0711b09c0cdea8eb02a110b391dd
 ```
 
-## 3. Inspect a real trace as JSON
+## 3. Inspect A Real Trace As JSON
 
 ```bash
 uv run python -m decisiongraph dump-trace demo/showcase.db aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
@@ -43,7 +47,7 @@ What users can see immediately:
 - Why decisions happened (`PolicyEvaluated`, `PrecedentCited`, approvals)
 - Final outcome (`TraceFinished`)
 
-## 4. Optional: run with a local LLM via Ollama
+## 4. Optional: Run With A Local LLM Via Ollama
 
 ```bash
 uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b

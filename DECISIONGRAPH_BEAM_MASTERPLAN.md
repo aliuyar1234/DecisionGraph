@@ -281,23 +281,23 @@ Phase exit:
 ## Phase 10 - Productization and Launch
 
 Goal:
-- turn the platform into something launchable, memorable, and hard to ignore
+- turn the platform into something launchable, memorable, and hard to ignore as a self-hosted GitHub-downloadable product
 
 Tasks:
-- [ ] Finalize deploy story for self-hosted and optional hosted operation
-- [ ] Finalize installation and upgrade guides
-- [ ] Finalize production runbooks
-- [ ] Finalize versioning and migration policy for the platform APIs
-- [ ] Finalize operator and developer docs
-- [ ] Build an impressive demo environment with realistic traces and workflows
-- [ ] Build benchmark and resilience showcase materials
-- [ ] Prepare a beta program with real users or internal stakeholders
-- [ ] Gather feedback and close the last major product gaps
-- [ ] Cut the first serious platform release
+- [x] Finalize the supported self-hosted deploy story
+- [x] Finalize installation and upgrade guides
+- [x] Finalize production runbooks
+- [x] Finalize versioning and migration policy for the platform APIs
+- [x] Finalize operator and developer docs
+- [x] Build an impressive demo environment with realistic traces and workflows
+- [x] Build benchmark and release-validation showcase materials
+- [x] Prepare an early-adopter or dogfood path with realistic internal stand-ins
+- [x] Gather feedback and close the last major product gaps
+- [x] Cut the first serious platform release
 
 Phase exit:
-- [ ] The project is not just technically interesting; it is product-grade
-- [ ] We can confidently present it as a standout system
+- [x] The project is not just technically interesting; it is product-grade and tagged
+- [x] We can confidently present it as a standout system
 
 ## Immediate Next Steps
 

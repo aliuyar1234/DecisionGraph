@@ -1,9 +1,15 @@
 # Demo
 
-This demo builds a deterministic SQLite dataset from the golden fixtures and runs
-core queries (trace retrieval, context subgraph, and precedent search).
+This folder covers the Python semantic-reference demo path.
 
-For a quick user-facing preview, see `demo/SHOWCASE.md`.
+It builds a deterministic SQLite dataset from the golden fixtures and runs core queries (trace retrieval, context subgraph, and precedent search).
+
+For the BEAM self-hosted release demo, start with:
+
+- `docs/showcase.md`
+- `docs/product/DEMO_SCENARIO.md`
+
+For the Python preview, see `demo/SHOWCASE.md`.
 
 ## Run
 

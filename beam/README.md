@@ -70,13 +70,91 @@ iex -S mix
 
 The web shell listens on `http://localhost:4100`.
 
+## Phase 10 Demo And Release Validation
+
+Seed the curated self-hosted release demo from a second terminal:
+
+```bash
+cd beam
+mix dg.demo.seed --output ../.tmp/phase10-demo-report.json
+```
+
+That seeds the `release-demo` tenant with:
+
+- `trace-precedent-renewal-001`
+- `trace-live-renewal-002`
+- `trace-incident-review-003`
+
+The main seeded console routes are:
+
+- `http://localhost:4100/?tenant=release-demo&trace_id=trace-live-renewal-002&workflow_id=trace-live-renewal-002:exception:ex-live-renewal-002`
+- `http://localhost:4100/?tenant=release-demo&trace_id=trace-incident-review-003&workflow_id=trace-incident-review-003:trace_review:incident_triage`
+
+Validate the supported release path with the real HTTP runtime:
+
+```bash
+cd beam
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+```
+
+That release validator checks:
+
+- `/api/healthz`
+- operator console HTML for the seeded route
+- authenticated projection health
+- authenticated trace read
+- authenticated workflow list and export
+- replay admission and completion
+
+Generate a production-style bootstrap file:
+
+```bash
+cd beam
+mix dg.accounts.bootstrap --output ../.tmp/service-accounts.json
+```
+
+Build the OTP release artifact:
+
+```bash
+cd beam
+mix release decisiongraph_beam
+```
+
+The packaged release is created under:
+
+- `_build/prod/rel/decisiongraph_beam`
+
+Run migrations from the packaged release:
+
+```bash
+cd beam
+_build/prod/rel/decisiongraph_beam/bin/decisiongraph_beam eval "DecisionGraph.Store.Release.migrate()"
+```
+
+Build the container image:
+
+```bash
+cd beam
+mix release decisiongraph_beam
+docker build -f Dockerfile -t decisiongraph-beam:local _build/prod/rel
+```
+
+That default image packages the already-built OTP release from `_build/prod/rel/decisiongraph_beam` and uses `_build/prod/rel` as the Docker build context.
+
+If you want Docker to compile the BEAM release from source instead, use:
+
+```bash
+cd beam
+docker build -f Dockerfile.build -t decisiongraph-beam:source .
+```
+
 ## Self-Hosted Guidance
 
 The first supported self-hosted topology is intentionally narrow:
 
 - one BEAM node
 - one Postgres instance
-- source-based deployment from this repo
+- source-based deployment from this repo, or a packaged OTP release derived from it
 
 Start with:
 
@@ -87,6 +165,7 @@ Start with:
 - [`docs/operations/UPGRADE_AND_ROLLBACK.md`](../docs/operations/UPGRADE_AND_ROLLBACK.md)
 - [`docs/operations/DISASTER_RECOVERY.md`](../docs/operations/DISASTER_RECOVERY.md)
 - [`docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md`](../docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md)
+- [`docs/benchmarks/PHASE_10_RELEASE_VALIDATION.md`](../docs/benchmarks/PHASE_10_RELEASE_VALIDATION.md)
 - [`docs/benchmarks/PHASE_8_CAPACITY_MODEL.md`](../docs/benchmarks/PHASE_8_CAPACITY_MODEL.md)
 - [`docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md`](../docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md)
 

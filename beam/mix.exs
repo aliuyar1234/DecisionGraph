@@ -7,6 +7,7 @@ defmodule DecisionGraphBeam.MixProject do
       aliases: aliases(),
       dialyzer: [ignore_warnings: ".dialyzer_ignore.exs"],
       elixir: "~> 1.19",
+      releases: releases(),
       start_permanent: Mix.env() == :prod,
       version: "0.1.0",
       deps: deps()
@@ -40,6 +41,23 @@ defmodule DecisionGraphBeam.MixProject do
       check: :test,
       credo: :test,
       dialyzer: :dev
+    ]
+  end
+
+  defp releases do
+    [
+      decisiongraph_beam: [
+        applications: [
+          runtime_tools: :permanent,
+          dg_domain: :permanent,
+          dg_store: :permanent,
+          dg_projector: :permanent,
+          dg_api: :permanent,
+          dg_web: :permanent,
+          dg_observability: :permanent
+        ],
+        include_executables_for: [:unix, :windows]
+      ]
     ]
   end
 end

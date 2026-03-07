@@ -48,7 +48,7 @@ defmodule DecisionGraph.Api.Auth do
   defp lookup_account(token) do
     Application.get_env(:dg_api, :service_accounts, [])
     |> Enum.map(&ServiceAccount.new/1)
-    |> Enum.find(&(&1.token == token))
+    |> Enum.find(&ServiceAccount.matches_token?(&1, token))
     |> case do
       nil -> {:error, Errors.unauthorized("Unknown service account token")}
       account -> {:ok, account}

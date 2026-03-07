@@ -29,14 +29,14 @@ config :dg_api,
       account_id: "dev-reader",
       permissions: [],
       roles: ["reader"],
-      tenant_ids: ["default"],
+      tenant_ids: ["default", "release-demo"],
       token: "dev-reader-token"
     },
     %{
       account_id: "dev-writer",
       permissions: ["workflow_assign", "workflow_review"],
       roles: ["writer"],
-      tenant_ids: ["default"],
+      tenant_ids: ["default", "release-demo"],
       token: "dev-writer-token"
     },
     %{

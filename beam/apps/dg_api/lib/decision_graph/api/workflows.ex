@@ -1043,7 +1043,7 @@ defmodule DecisionGraph.Api.Workflows do
   defp insert_action!(attrs, opts) do
     action_id =
       case attrs[:source_event_id] do
-        nil -> "wfa:" <> Integer.to_string(System.unique_integer([:positive]))
+        nil -> "wfa:" <> Ecto.UUID.generate()
         source_event_id -> "wfa:event:" <> source_event_id
       end
 
@@ -1909,7 +1909,7 @@ defmodule DecisionGraph.Api.Workflows do
   end
 
   defp insert_notification!(attrs) do
-    notification_id = "wfn:" <> Integer.to_string(System.unique_integer([:positive]))
+    notification_id = "wfn:" <> Ecto.UUID.generate()
 
     SQL.execute!(
       """

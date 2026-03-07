@@ -6,9 +6,9 @@ Enterprise Revenue Exception Control Plane
 
 ## Purpose
 
-This is the first impressive demo scenario the future DecisionGraph platform should support end to end.
+This is the first serious self-hosted release demo that the current BEAM platform already supports end to end.
 
-The demo should prove that DecisionGraph is not just storing traces. It is actively running the decision operations loop for a high-stakes workflow.
+The goal is to prove that DecisionGraph is not just storing traces. It actively runs the decision operations loop for a high-stakes workflow with precedent context, workflow escalation, operator investigation, and replay verification.
 
 ## Scenario Summary
 
@@ -16,7 +16,16 @@ An AI-assisted revenue operations system is handling a large enterprise renewal.
 
 The agent proposes a discount that exceeds the standard policy cap.
 
-DecisionGraph captures the full trace, evaluates the policy, finds relevant precedent, routes the exception for human approval, shows operators the system state live, and allows replay verification after the decision completes.
+DecisionGraph captures the full trace, evaluates the policy, finds relevant precedent, routes the exception for review, shows operators the system state live, and allows replay verification after the decision completes.
+
+The current seeded release-demo tenant packages this into three traces:
+
+- approved precedent:
+  - `trace-precedent-renewal-001`
+- live exception review:
+  - `trace-live-renewal-002`
+- incident review:
+  - `trace-incident-review-003`
 
 ## Actors
 
@@ -85,7 +94,9 @@ The decision operations lead opens the operator console and sees:
 - any lag or replay issues
 - queue status for the exception workflow
 
-### Step 5 - Human Approval
+In the seeded release demo, the live workflow is intentionally escalated already so the operator sees real SLA pressure immediately.
+
+### Step 5 - Human Review
 
 A finance approver opens the approval inbox and reviews:
 
@@ -94,12 +105,12 @@ A finance approver opens the approval inbox and reviews:
 - precedent context
 - supporting evidence
 
-The approver records:
+The reviewer records:
 
 - approve or reject
 - optional rationale
 
-DecisionGraph records the approval event and the decision trail stays intact.
+DecisionGraph records the review event and the decision trail stays intact.
 
 ### Step 6 - Action Commit
 
@@ -127,6 +138,30 @@ An operator or investigator triggers replay verification and confirms:
 - live operator visibility
 - human-in-the-loop approval
 - deterministic replay and auditability
+
+## How To Run It
+
+From the repository root:
+
+```bash
+docker compose up postgres otel-collector -d
+cd beam
+mix setup
+set PHX_SERVER=true
+iex -S mix
+```
+
+In a second terminal:
+
+```bash
+cd beam
+mix dg.demo.seed --output ../.tmp/phase10-demo-report.json
+```
+
+Start with:
+
+- `http://localhost:4100/?tenant=release-demo&trace_id=trace-live-renewal-002&workflow_id=trace-live-renewal-002:exception:ex-live-renewal-002`
+- `http://localhost:4100/?tenant=release-demo&trace_id=trace-incident-review-003&workflow_id=trace-incident-review-003:trace_review:incident_triage`
 
 ## Why This Is the Right First Demo
 

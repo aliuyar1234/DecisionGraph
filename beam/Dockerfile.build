@@ -1,0 +1,33 @@
+FROM elixir:1.19.5 AS build
+
+WORKDIR /app
+
+RUN mix local.hex --force && mix local.rebar --force
+
+ENV MIX_ENV=prod
+
+COPY mix.exs mix.lock ./
+COPY config config
+COPY apps apps
+COPY rel rel
+
+RUN mix deps.get
+RUN mix deps.compile
+RUN mix compile
+RUN mix release decisiongraph_beam
+
+FROM debian:bookworm-slim AS runtime
+
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV HOME=/app
+ENV PHX_SERVER=true
+ENV DECISION_GRAPH_DEPLOYMENT_ENV=prod
+
+WORKDIR /app
+
+COPY --from=build /app/_build/prod/rel/decisiongraph_beam ./
+
+EXPOSE 4100
+
+CMD ["bin/decisiongraph_beam", "start"]

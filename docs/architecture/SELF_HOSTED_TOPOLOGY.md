@@ -8,12 +8,19 @@ The goal is to make one topology clearly supported before we broaden the matrix.
 
 ## Supported Topology
 
-The supported Phase 8 topology is:
+The supported Phase 10 topology is:
 
 - one DecisionGraph BEAM application node
 - one PostgreSQL 16 instance reachable from that node
 - optional OpenTelemetry collector
 - operator-managed source checkout from this repository
+
+Packaging paths now available for that topology:
+
+- source-first runtime from the repo checkout
+- OTP release built with `mix release decisiongraph_beam`
+- container image built from the packaged release with `beam/Dockerfile`
+- optional source-building container path with `beam/Dockerfile.build`
 
 This is a single-operator, single-node topology.
 It is intended for:
@@ -66,6 +73,7 @@ The default local path is:
 2. run `mix setup` from `beam/`
 3. start Phoenix and the OTP supervision tree from source
 4. use the built-in development service-account tokens for local evaluation only
+5. optionally seed the `release-demo` tenant with `mix dg.demo.seed` for the operator showcase
 
 This is the path documented in:
 
@@ -75,8 +83,7 @@ This is the path documented in:
 
 ### Small-Server Path
 
-The default small-server path is still source-based.
-It is not yet a packaged release artifact.
+The default small-server path is still source-first, but it is no longer limited to `mix phx.server`.
 
 The supported shape is:
 
@@ -84,7 +91,7 @@ The supported shape is:
 - one Postgres instance on the same host or trusted local network
 - `MIX_ENV=prod`
 - `DATABASE_URL`, `SECRET_KEY_BASE`, `PHX_HOST`, `PORT`, and `POOL_SIZE` configured for runtime
-- Phoenix started from the repo checkout under `beam/`
+- Phoenix started from the repo checkout under `beam/`, or the packaged `decisiongraph_beam` OTP release
 
 ## Auth Defaults And Bootstrap Expectations
 
@@ -94,6 +101,7 @@ Even in the first self-hosted topology, the operator is expected to bootstrap se
 Current behavior:
 
 - development config ships with `dev-reader-token`, `dev-writer-token`, and `dev-admin-token`
+- the reader and writer tokens cover both `default` and `release-demo` for local evaluation
 - those tokens are for local evaluation only
 - production config does not ship with permanent public tokens
 - replay controls require `operator_console_account_id` or an equivalent operator actor
@@ -101,8 +109,16 @@ Current behavior:
 Current supported bootstrap expectation:
 
 - local evaluation may use the dev tokens on a trusted machine
-- any network-accessible install should define its own `:dg_api` service accounts before exposure
+- any network-accessible install should define its own service-account bootstrap file before exposure
 - the default tenant can remain `default` until the operator needs more logical separation
+
+Recommended bootstrap inputs:
+
+- `mix dg.accounts.bootstrap --output ../.tmp/service-accounts.json`
+- `DECISION_GRAPH_SERVICE_ACCOUNTS_FILE=/path/to/service-accounts.json`
+- `DECISION_GRAPH_OPERATOR_ACCOUNT_ID=admin-main`
+
+The bootstrap JSON format supports `tokens` lists per account, so token rotation can be handled by overlapping old and new tokens during a controlled transition window.
 
 ## Operating Assumptions
 
@@ -114,9 +130,20 @@ The first supported topology assumes:
 - projection rebuild is acceptable for derived-state recovery
 - workflow audit history should be treated as durable operational data, not disposable cache
 
+## Phase 10 Release Demo Shape
+
+The current release-demo seed path is part of the supported evaluation topology:
+
+- the demo dataset is seeded into tenant `release-demo`
+- the live review route focuses on `trace-live-renewal-002`
+- the incident review route focuses on `trace-incident-review-003`
+- the seeded workflows are intentionally escalated to make SLA pressure and queue handling visible on first load
+
+This is still the same single-node topology. The demo does not introduce a second deployment shape.
+
 ## Unsupported Or Deferred Topologies
 
-These are intentionally outside the first supported Phase 8 posture:
+These are intentionally outside the first supported self-hosted posture:
 
 - BEAM clustering and distributed worker ownership
 - active-active or multi-region deployment

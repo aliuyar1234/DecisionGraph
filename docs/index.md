@@ -1,15 +1,14 @@
 # DecisionGraph
 
-DecisionGraph is a **library-first** audit trail for AI agent decisions.
-It records immutable events, produces deterministic projections, and lets you
-replay any decision trace for verification.
+DecisionGraph is a local-first decision audit platform for AI agents and automation systems.
+It records immutable events, produces deterministic projections, lets you replay any decision trace for verification, and now ships a self-hosted BEAM runtime with APIs, workflows, and an operator console.
 
 ## Highlights
 
-- Append-only event log (immutable audit trail)
-- Deterministic projection digests for reproducibility
-- SQLite and PostgreSQL backends
-- Read-only CLI tools for replay and trace dumps
+- Append-only event log and deterministic replay evidence
+- Python semantic reference plus BEAM self-hosted runtime
+- Operator workflows, replay controls, and investigation UI
+- SQLite and PostgreSQL support across the reference and platform surfaces
 
 ## Architecture
 
@@ -33,6 +32,9 @@ Event Log -> Projector -> Query Layer
 - [Upgrade and Rollback](operations/UPGRADE_AND_ROLLBACK.md)
 - [Disaster Recovery](operations/DISASTER_RECOVERY.md)
 - [Semantic Authority Transition](operations/SEMANTIC_AUTHORITY_TRANSITION.md)
+- [First Release Limitations](operations/FIRST_RELEASE_LIMITATIONS.md)
+- [Early Adopter Feedback](operations/EARLY_ADOPTER_FEEDBACK.md)
+- [Post Release Review](operations/POST_RELEASE_REVIEW.md)
 - [Self-Hosted Release Checklist](operations/SELF_HOSTED_RELEASE_CHECKLIST.md)
 
 ## Semantic Reference
@@ -77,4 +79,6 @@ Event Log -> Projector -> Query Layer
 - [Phase 8 Capacity Model](benchmarks/PHASE_8_CAPACITY_MODEL.md)
 - [Phase 8 Resilience Baseline](benchmarks/PHASE_8_RESILIENCE_BASELINE.md)
 - [Phase 9 Parity Report](benchmarks/PHASE_9_PARITY_REPORT.md)
+- [Phase 10 Release Validation](benchmarks/PHASE_10_RELEASE_VALIDATION.md)
 - [Parity Infrastructure Maintenance](operations/PARITY_INFRASTRUCTURE_MAINTENANCE.md)
+- [Post Release Backlog](product/POST_RELEASE_BACKLOG.md)

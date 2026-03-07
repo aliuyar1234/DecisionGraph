@@ -27,4 +27,29 @@ defmodule DecisionGraph.Api.AuthTest do
 
     assert tenant_error.code == "forbidden"
   end
+
+  test "supports rotated tokens via tokens list" do
+    original_accounts = Application.get_env(:dg_api, :service_accounts, [])
+
+    Application.put_env(:dg_api, :service_accounts, [
+      %{
+        account_id: "reader-rotating",
+        permissions: [],
+        roles: ["reader"],
+        tenant_ids: ["tenant-a"],
+        tokens: ["reader-old-token", "reader-new-token"]
+      }
+    ])
+
+    on_exit(fn -> Application.put_env(:dg_api, :service_accounts, original_accounts) end)
+
+    assert {:ok, old_account} =
+             Auth.authenticate("Bearer reader-old-token", "tenant-a", ["reader"])
+
+    assert {:ok, new_account} =
+             Auth.authenticate("Bearer reader-new-token", "tenant-a", ["reader"])
+
+    assert old_account.account_id == "reader-rotating"
+    assert new_account.account_id == "reader-rotating"
+  end
 end

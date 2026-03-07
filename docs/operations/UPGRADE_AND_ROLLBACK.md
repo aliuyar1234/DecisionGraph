@@ -8,7 +8,7 @@ The supported path assumes:
 
 - one application node
 - one PostgreSQL database
-- source-based deployment from this repository
+- source-based deployment from this repository or the packaged OTP release built from it
 
 ## Supported Upgrade Model
 
@@ -63,6 +63,15 @@ After the new version starts, verify:
 - the operator console loads
 - replay admission still works for an admin token
 - recent traces and workflows render correctly
+
+If you are validating a release candidate on a disposable or dedicated demo tenant, you can also run:
+
+```bash
+cd beam
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+```
+
+That command is appropriate for the documented `release-demo` evaluation path. It is not a substitute for production-safe smoke checks on a live tenant because it reseeds a dedicated demo dataset.
 
 If those checks fail, do not continue normal traffic.
 

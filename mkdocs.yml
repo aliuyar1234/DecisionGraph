@@ -25,6 +25,9 @@ nav:
       - Upgrade and Rollback: operations/UPGRADE_AND_ROLLBACK.md
       - Disaster Recovery: operations/DISASTER_RECOVERY.md
       - Semantic Authority Transition: operations/SEMANTIC_AUTHORITY_TRANSITION.md
+      - First Release Limitations: operations/FIRST_RELEASE_LIMITATIONS.md
+      - Early Adopter Feedback: operations/EARLY_ADOPTER_FEEDBACK.md
+      - Post Release Review: operations/POST_RELEASE_REVIEW.md
       - Parity Infrastructure Maintenance: operations/PARITY_INFRASTRUCTURE_MAINTENANCE.md
       - Restart and Recovery Checklist: operations/RESTART_AND_RECOVERY_CHECKLIST.md
       - SLOs and Alerting: operations/SLOS_AND_ALERTING.md
@@ -43,6 +46,10 @@ nav:
       - Self-Hosted Topology: architecture/SELF_HOSTED_TOPOLOGY.md
       - Storage Lifecycle: architecture/STORAGE_LIFECYCLE.md
       - Single-Node Recovery: architecture/SINGLE_NODE_RECOVERY.md
+  - Product:
+      - Demo Scenario: product/DEMO_SCENARIO.md
+      - Workflow Demo Scenario: product/WORKFLOW_DEMO_SCENARIO.md
+      - Post Release Backlog: product/POST_RELEASE_BACKLOG.md
   - Benchmarks:
       - Phase 3 Store Baseline: benchmarks/PHASE_3_STORE_BASELINE.md
       - Phase 4 Projector Baseline: benchmarks/PHASE_4_PROJECTOR_BASELINE.md
@@ -51,6 +58,7 @@ nav:
       - Phase 8 Capacity Model: benchmarks/PHASE_8_CAPACITY_MODEL.md
       - Phase 8 Resilience Baseline: benchmarks/PHASE_8_RESILIENCE_BASELINE.md
       - Phase 9 Parity Report: benchmarks/PHASE_9_PARITY_REPORT.md
+      - Phase 10 Release Validation: benchmarks/PHASE_10_RELEASE_VALIDATION.md
   - Reference:
       - Semantic Parity Policy: reference/SEMANTIC_PARITY_POLICY.md
       - Parity Harness Plan: reference/PARITY_HARNESS_PLAN.md

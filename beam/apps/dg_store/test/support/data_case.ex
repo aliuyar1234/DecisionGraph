@@ -22,6 +22,7 @@ defmodule DecisionGraph.Store.DataCase do
 
     Enum.each(
       [
+        "DELETE FROM dg_workflow_notifications",
         "DELETE FROM dg_workflow_actions",
         "DELETE FROM dg_workflow_items",
         "DELETE FROM dg_workflow_runtime",

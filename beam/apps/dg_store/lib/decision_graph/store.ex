@@ -285,6 +285,7 @@ defmodule DecisionGraph.Store do
           query_all_rows!(
             """
             TRUNCATE TABLE
+              dg_workflow_notifications,
               dg_workflow_actions,
               dg_workflow_items,
               dg_workflow_runtime,
@@ -304,6 +305,9 @@ defmodule DecisionGraph.Store do
           )
 
       tenant_id ->
+        _ =
+          query_all_rows!("DELETE FROM dg_workflow_notifications WHERE tenant_id = ?", [tenant_id])
+
         _ = query_all_rows!("DELETE FROM dg_workflow_actions WHERE tenant_id = ?", [tenant_id])
         _ = query_all_rows!("DELETE FROM dg_workflow_items WHERE tenant_id = ?", [tenant_id])
         _ = query_all_rows!("DELETE FROM dg_workflow_runtime WHERE tenant_id = ?", [tenant_id])

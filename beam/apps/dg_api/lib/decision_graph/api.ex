@@ -36,8 +36,7 @@ defmodule DecisionGraph.Api do
       configured_account_id = Application.get_env(:dg_api, :operator_console_account_id) ->
         configured_account_id = to_string(configured_account_id)
 
-        Application.get_env(:dg_api, :service_accounts, [])
-        |> Enum.map(&ServiceAccount.new/1)
+        configured_service_accounts()
         |> Enum.find(&(&1.account_id == configured_account_id))
 
       true ->
@@ -56,5 +55,10 @@ defmodule DecisionGraph.Api do
   @spec projector_module() :: module()
   def projector_module do
     Application.get_env(:dg_api, :projector_module, @default_projector_module)
+  end
+
+  defp configured_service_accounts do
+    Application.get_env(:dg_api, :service_accounts, [])
+    |> Enum.map(&ServiceAccount.new/1)
   end
 end

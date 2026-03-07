@@ -1,6 +1,6 @@
 # DecisionGraph
 
-Deterministic, append-only decision audit trails for AI agents and automation systems.
+Deterministic decision audit trails, operator workflows, and replay verification for AI agents and automation systems.
 
 [![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg?branch=master&event=push&label=CI)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
 [![Demo](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml/badge.svg?branch=master&event=push&label=Demo)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml)
@@ -20,33 +20,90 @@ When an agent makes a decision, teams need three things:
 - A clear explanation path (inputs, policy outcomes, approvals, actions).
 - Reproducibility guarantees that hold across replays and environments.
 
-DecisionGraph is a local-first library that provides exactly this with deterministic event storage, projection rebuilds, and query surfaces for trace, graph, and precedent retrieval.
+DecisionGraph is a local-first platform with two deliberate surfaces:
+
+- the Python package remains the frozen semantic reference and local embedded library
+- the BEAM umbrella is the self-hosted runtime with APIs, projections, operator console, workflows, and replay controls
+
+That split is intentional. Python preserves the semantic oracle, while BEAM owns the long-running system behavior.
 
 ## V1 Scope
 
-DecisionGraph v1 is intentionally limited to:
+DecisionGraph v1 is intentionally focused on:
 
-- Append-only decision event log.
-- Deterministic projections and replay digests.
-- Query APIs for traces, context graph, and precedents.
-- Local backends: SQLite and PostgreSQL.
-- Read-only inspection CLI.
+- append-only decision event log
+- deterministic projections and replay digests
+- trace, graph, precedent, health, and replay APIs
+- LiveView operator console and human review workflows
+- self-hosted single-node BEAM runtime with PostgreSQL
+- Python reference library for the frozen semantic core
 
-Not in scope: workflow orchestration, policy execution engines, hosted SaaS control plane.
+Not in scope for the first serious release:
 
-## BEAM Bootstrap
+- hosted SaaS
+- clustered multi-node deployment
 
-Phase 2 adds a real Elixir umbrella under `beam/` without changing the Python semantic oracle.
+Packaging paths now available in the repo:
 
-Phase 3 now adds a real Postgres-backed BEAM event store with:
+- buildable OTP release via `mix release decisiongraph_beam`
+- buildable BEAM container image via `beam/Dockerfile` after the release is built
+- optional source-building container path via `beam/Dockerfile.build`
 
-- append-only event persistence in `dg_store`
-- idempotency reuse semantics matched to the Python reference
-- `trace_seq` enforcement under contention
-- deterministic list and batch-read APIs for projector handoff
-- projection-cursor storage for the upcoming projection runtime
+## Fastest Self-Hosted Demo
 
-Current BEAM apps:
+From the repository root:
+
+```bash
+docker compose up postgres otel-collector -d
+cd beam
+mix setup
+set PHX_SERVER=true
+iex -S mix
+```
+
+In a second terminal:
+
+```bash
+cd beam
+mix dg.demo.seed --output ../.tmp/phase10-demo-report.json
+```
+
+Then open the seeded operator console routes:
+
+- `http://localhost:4100/?tenant=release-demo&trace_id=trace-live-renewal-002&workflow_id=trace-live-renewal-002:exception:ex-live-renewal-002`
+- `http://localhost:4100/?tenant=release-demo&trace_id=trace-incident-review-003&workflow_id=trace-incident-review-003:trace_review:incident_triage`
+
+The seeded release demo gives you:
+
+- an approved precedent trace
+- a live escalated exception review
+- an incident review workflow launched from a trace investigation
+- projection health, replay controls, workflow export, and operator-console investigation paths
+
+To validate the whole release candidate path in one command:
+
+```bash
+cd beam
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+```
+
+Generate a rotate-friendly bootstrap file for a self-hosted install:
+
+```bash
+cd beam
+mix dg.accounts.bootstrap --output ../.tmp/service-accounts.json
+```
+
+Build the packaged BEAM release:
+
+```bash
+cd beam
+mix release decisiongraph_beam
+```
+
+## BEAM Runtime
+
+The self-hosted BEAM apps are:
 
 - `dg_domain`
 - `dg_store`
@@ -76,13 +133,12 @@ Self-hosted BEAM operator guides:
 - [docs/benchmarks/PHASE_8_CAPACITY_MODEL.md](docs/benchmarks/PHASE_8_CAPACITY_MODEL.md)
 - [docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md](docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md)
 
-Phase 3 store workflow:
+Release-candidate and platform evidence:
 
 ```bash
 cd beam
-mix test apps/dg_store/test
-set MIX_ENV=test
-mix dg.store.bench --traces 100 --events-per-trace 8 --batch-size 250 --payload-bytes 512
+mix dg.demo.seed --output ../.tmp/phase10-demo-report.json
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json
 ```
 
 Quality gates:
@@ -166,7 +222,7 @@ uv sync
 uv sync --extra postgres
 ```
 
-### Minimal Example
+### Python Reference Example
 
 ```python
 from decisiongraph import DecisionGraph
@@ -222,6 +278,18 @@ python -m decisiongraph dump-trace sample.db trace-123 --include-payload
 
 ## Demo and Smoke Checks
 
+BEAM self-hosted release demo:
+
+```bash
+docker compose up postgres otel-collector -d
+cd beam
+mix setup
+mix dg.demo.seed --output ../.tmp/phase10-demo-report.json
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+```
+
+Python reference demo:
+
 ```bash
 # End-to-end showcase artifact
 uv run python demo/run_demo.py --db demo/showcase.db --output demo/showcase_output.md --force
@@ -260,6 +328,7 @@ uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b 
 ## Documentation
 
 - Full docs: https://aliuyar1234.github.io/DecisionGraph/
+- Showcase walkthrough: [docs/showcase.md](docs/showcase.md)
 - V1 contracts: [docs/v1-contracts.md](docs/v1-contracts.md)
 - Release checklist: [docs/release.md](docs/release.md)
 - Operations runbook: [docs/operations.md](docs/operations.md)
@@ -278,6 +347,7 @@ uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b 
 - Phase 3 benchmark baseline: [docs/benchmarks/PHASE_3_STORE_BASELINE.md](docs/benchmarks/PHASE_3_STORE_BASELINE.md)
 - Phase 8 capacity model: [docs/benchmarks/PHASE_8_CAPACITY_MODEL.md](docs/benchmarks/PHASE_8_CAPACITY_MODEL.md)
 - Phase 8 resilience baseline: [docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md](docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md)
+- Phase 10 release validation: [docs/benchmarks/PHASE_10_RELEASE_VALIDATION.md](docs/benchmarks/PHASE_10_RELEASE_VALIDATION.md)
 - Phase 2 execution plan: [PHASE_2_EXECUTION_PLAN.md](PHASE_2_EXECUTION_PLAN.md)
 - Phase 3 execution plan: [PHASE_3_EXECUTION_PLAN.md](PHASE_3_EXECUTION_PLAN.md)
 
