@@ -37,6 +37,7 @@ nav:
       - Projection Runtime: operations/PROJECTION_RUNTIME.md
       - Workflow Runtime: operations/WORKFLOW_RUNTIME.md
   - Architecture:
+      - Phoenix Platform Architecture: architecture/DECISIONGRAPH_PHOENIX_ARCHITECTURE.md
       - ADR: Phase 9 Semantic Authority: architecture/ADR_PHASE_9_SEMANTIC_AUTHORITY.md
       - Semantic Authority Inventory: architecture/SEMANTIC_AUTHORITY_INVENTORY.md
       - Semantic Authority Decision: architecture/SEMANTIC_AUTHORITY_DECISION.md
@@ -46,6 +47,20 @@ nav:
       - Self-Hosted Topology: architecture/SELF_HOSTED_TOPOLOGY.md
       - Storage Lifecycle: architecture/STORAGE_LIFECYCLE.md
       - Single-Node Recovery: architecture/SINGLE_NODE_RECOVERY.md
+  - Plans:
+      - Overview: plans/index.md
+      - BEAM Master Plan: plans/DECISIONGRAPH_BEAM_MASTERPLAN.md
+      - Phase 0: plans/PHASE_0_EXECUTION_PLAN.md
+      - Phase 1: plans/PHASE_1_EXECUTION_PLAN.md
+      - Phase 2: plans/PHASE_2_EXECUTION_PLAN.md
+      - Phase 3: plans/PHASE_3_EXECUTION_PLAN.md
+      - Phase 4: plans/PHASE_4_EXECUTION_PLAN.md
+      - Phase 5: plans/PHASE_5_EXECUTION_PLAN.md
+      - Phase 6: plans/PHASE_6_EXECUTION_PLAN.md
+      - Phase 7: plans/PHASE_7_EXECUTION_PLAN.md
+      - Phase 8: plans/PHASE_8_EXECUTION_PLAN.md
+      - Phase 9: plans/PHASE_9_EXECUTION_PLAN.md
+      - Phase 10: plans/PHASE_10_EXECUTION_PLAN.md
   - Product:
       - Demo Scenario: product/DEMO_SCENARIO.md
       - Workflow Demo Scenario: product/WORKFLOW_DEMO_SCENARIO.md

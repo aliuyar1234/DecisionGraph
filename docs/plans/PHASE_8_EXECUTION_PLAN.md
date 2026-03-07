@@ -184,7 +184,7 @@ Phase 8 should stay aligned with these earlier assets:
 - `docs/operations/API_RUNTIME.md`
 - `docs/operations/PROJECTION_RUNTIME.md`
 - `docs/operations/WORKFLOW_RUNTIME.md`
-- `DECISIONGRAPH_PHOENIX_ARCHITECTURE.md`
+- `docs/architecture/DECISIONGRAPH_PHOENIX_ARCHITECTURE.md`
 
 This phase is about hardening the existing product shape for self-hosted use, not turning it into a SaaS platform.
 

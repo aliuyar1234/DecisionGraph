@@ -177,7 +177,7 @@ Phase 10 should stay aligned with these earlier assets:
 - `docs/operations/SELF_HOSTED_INSTALL.md`
 - `docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md`
 - `docs/architecture/ADR_PHASE_9_SEMANTIC_AUTHORITY.md`
-- `DECISIONGRAPH_PHOENIX_ARCHITECTURE.md`
+- `docs/architecture/DECISIONGRAPH_PHOENIX_ARCHITECTURE.md`
 
 Release work should sharpen the existing product direction, not redefine it.
 

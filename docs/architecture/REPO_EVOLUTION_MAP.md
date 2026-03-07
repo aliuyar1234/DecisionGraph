@@ -56,22 +56,26 @@ Durable strategy and architecture outputs belong under:
 - `docs/architecture`
 - `docs/product`
 - `docs/reference`
+- `docs/plans`
 
-### Active Execution Plans Location
+### Execution Plans Location
 
-Active execution plans remain in the repo root during the transformation.
+The BEAM master plan and phase execution plans now live under:
 
 Examples:
 
-- `DECISIONGRAPH_BEAM_MASTERPLAN.md`
-- `DECISIONGRAPH_PHOENIX_ARCHITECTURE.md`
-- `PHASE_0_EXECUTION_PLAN.md`
-- `PHASE_1_EXECUTION_PLAN.md`
+- `docs/plans/DECISIONGRAPH_BEAM_MASTERPLAN.md`
+- `docs/plans/PHASE_0_EXECUTION_PLAN.md`
+- `docs/plans/PHASE_1_EXECUTION_PLAN.md`
 
 Reason:
 
-- these are active program-management artifacts, not long-lived end-user docs
-- root placement keeps them visible while the transformation is underway
+- these are durable program-history artifacts now that the initial platform buildout is complete
+- keeping them under `docs/plans` keeps the repository root cleaner without losing the implementation record
+
+The Phoenix architecture record also now lives with the rest of the architecture docs:
+
+- `docs/architecture/DECISIONGRAPH_PHOENIX_ARCHITECTURE.md`
 
 ## Intended Future Layout
 
@@ -79,6 +83,8 @@ Reason:
 /
 |-- docs/
 |   |-- architecture/
+|   |   |-- DECISIONGRAPH_PHOENIX_ARCHITECTURE.md
+|   |-- plans/
 |   |-- product/
 |   |-- reference/
 |   |-- vision/
@@ -95,10 +101,6 @@ Reason:
 |   |   |-- dg_observability/
 |   |-- config/
 |   |-- mix.exs
-|-- DECISIONGRAPH_BEAM_MASTERPLAN.md
-|-- DECISIONGRAPH_PHOENIX_ARCHITECTURE.md
-|-- PHASE_0_EXECUTION_PLAN.md
-|-- PHASE_1_EXECUTION_PLAN.md
 ```
 
 ## Naming Decisions
@@ -155,10 +157,11 @@ Keep the public product and repo name as:
 
 - deepen operator UI, workflows, and multi-tenant runtime behavior
 - reconsider whether the repo should be re-centered only after the BEAM platform is stable and proven
+- move completed transformation plans out of the repo root once the first release is cut
 
 ## Rules
 
 - do not move the Python reference implementation during early migration phases
-- do not hide active execution plans inside deep docs directories while they are still active
+- keep execution plans easy to find, but move completed plan history under `docs/plans` once the release program stabilizes
 - do not introduce umbrella app names that conflict with the public brand
 - prefer clarity and migration safety over elegance during the transition

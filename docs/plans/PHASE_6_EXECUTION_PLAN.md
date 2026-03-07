@@ -168,7 +168,7 @@ Phase 6 should stay aligned with these existing strategy assets:
 - `docs/product/PERSONAS.md`
 - `docs/product/V1_PLATFORM_SCOPE.md`
 - `docs/product/DEMO_SCENARIO.md`
-- `DECISIONGRAPH_PHOENIX_ARCHITECTURE.md`
+- `docs/architecture/DECISIONGRAPH_PHOENIX_ARCHITECTURE.md`
 
 The operator console should present the existing platform capabilities clearly rather than inventing semantics that the backend does not support.
 

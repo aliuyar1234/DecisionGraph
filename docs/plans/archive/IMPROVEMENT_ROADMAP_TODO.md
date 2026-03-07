@@ -3,7 +3,7 @@
 - [x] Complete initial codebase analysis
 - [x] Clarify the CLI contract for `replay`
 - [x] Decide whether `replay` should remain mutating or become fully read-only
-- [x] Update [README](README.md) and CLI help text to match the final `replay` behavior
+- [x] Update [README](../../../README.md) and CLI help text to match the final `replay` behavior
 - [x] Add tests that lock the intended CLI contract in place
 - [x] Align `InMemoryEventStore` idempotency behavior with production backends
 - [x] Reuse shared idempotency validation logic in test fakes where practical
