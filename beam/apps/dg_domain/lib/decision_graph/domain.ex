@@ -10,6 +10,7 @@ defmodule DecisionGraph.Domain do
     "PolicyEvaluated",
     "ExceptionRequested",
     "ApprovalRecorded",
+    "WorkflowReviewRequested",
     "PrecedentCited",
     "ActionProposed",
     "ActionCommitted",

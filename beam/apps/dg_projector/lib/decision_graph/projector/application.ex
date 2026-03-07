@@ -8,7 +8,8 @@ defmodule DecisionGraph.Projector.Application do
     children = [
       {Registry, keys: :unique, name: DecisionGraph.Projector.Registry},
       {DynamicSupervisor, strategy: :one_for_one, name: DecisionGraph.Projector.WorkerSupervisor},
-      {Task.Supervisor, name: DecisionGraph.Projector.ReplaySupervisor}
+      {Task.Supervisor, name: DecisionGraph.Projector.ReplaySupervisor},
+      {DecisionGraph.Projector.ReplayCoordinator, []}
     ]
 
     Supervisor.start_link(children,

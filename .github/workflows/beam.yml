@@ -40,10 +40,23 @@ jobs:
       - run: mix deps.get
       - run: mix format --check-formatted
       - run: mix credo --strict
-      - run: mix cmd --app dg_store mix ecto.create
+      - run: mix cmd --app dg_store mix ecto.setup
         env:
           MIX_ENV: test
-      - run: mix test
+      - name: Projector parity proof
+        run: mix test apps/dg_projector/test/decision_graph/projector/parity_test.exs
+        env:
+          MIX_ENV: test
+      - name: Authenticated service E2E proof
+        run: mix test apps/dg_web/test/decision_graph_web/controllers/api_service_e2e_test.exs
+        env:
+          DG_RUN_SERVICE_E2E: "1"
+          MIX_ENV: test
+      - name: Umbrella test suite
+        run: mix test
+        env:
+          DG_RUN_SERVICE_E2E: "1"
+          MIX_ENV: test
 
   beam-dialyzer:
     name: Elixir Dialyzer

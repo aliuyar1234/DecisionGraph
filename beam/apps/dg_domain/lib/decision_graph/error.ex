@@ -8,7 +8,9 @@ defmodule DecisionGraph.Error do
           | :event_sequence_invalid
           | :idempotency_conflict
           | :invalid_argument
+          | :not_found
           | :pii_policy_violation
+          | :projection_out_of_date
           | :schema_violation
           | :storage
 

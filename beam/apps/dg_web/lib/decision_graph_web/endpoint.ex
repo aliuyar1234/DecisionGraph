@@ -12,6 +12,12 @@ defmodule DecisionGraphWeb.Endpoint do
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
 
   plug Plug.Telemetry, event_prefix: [:decision_graph, :web, :request]
+
+  plug Plug.Parsers,
+    parsers: [:urlencoded, :multipart, :json],
+    pass: ["*/*"],
+    json_decoder: Jason
+
   plug DecisionGraph.Observability.Plugs.RequestContext
   plug Plug.MethodOverride
   plug Plug.Head

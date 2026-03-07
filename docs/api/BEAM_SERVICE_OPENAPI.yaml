@@ -1,0 +1,452 @@
+openapi: 3.1.0
+info:
+  title: DecisionGraph BEAM Service API
+  version: 0.1.0-phase5
+  description: >
+    Phase 5 authenticated HTTP surface for the Phoenix-backed DecisionGraph service.
+servers:
+  - url: http://localhost:4100
+security:
+  - bearerAuth: []
+paths:
+  /api/healthz:
+    get:
+      summary: Deployment health
+      security: []
+      responses:
+        '200':
+          description: Service bootstrap snapshot
+  /api/v1/events:
+    post:
+      summary: Append an event
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventIngestRequest'
+      responses:
+        '201':
+          description: Event appended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAppendEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorEnvelope'
+  /api/v1/traces/{trace_id}:
+    get:
+      summary: Read a trace timeline and summary
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - name: trace_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trace payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraceEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorEnvelope'
+  /api/v1/graph/context:
+    get:
+      summary: Read a context subgraph
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - name: node_type
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: edge_types
+          in: query
+          schema:
+            type: string
+        - name: node_types
+          in: query
+          schema:
+            type: string
+        - name: max_depth
+          in: query
+          schema:
+            type: integer
+        - name: max_edges
+          in: query
+          schema:
+            type: integer
+        - name: max_nodes
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Graph context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphContextEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorEnvelope'
+  /api/v1/graph/edges:
+    get:
+      summary: Page graph edges for a node
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - name: node_type
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum: [incoming, outgoing, both]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: cursor_edge_key
+          in: query
+          schema:
+            type: string
+        - name: cursor_log_seq
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Graph edge page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphEdgesEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorEnvelope'
+  /api/v1/precedents:
+    get:
+      summary: Search precedents
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - name: entity_type
+          in: query
+          schema:
+            type: string
+        - name: entity_id
+          in: query
+          schema:
+            type: string
+        - name: policy_id
+          in: query
+          schema:
+            type: string
+        - name: policy_version
+          in: query
+          schema:
+            type: string
+        - name: outcome
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Precedent list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrecedentsEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorEnvelope'
+  /api/v1/projections/health:
+    get:
+      summary: Read projection lag, cursor, and digest state
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+      responses:
+        '200':
+          description: Projection health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectionHealthEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorEnvelope'
+  /api/v1/admin/replays:
+    post:
+      summary: Start a replay or rebuild
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplayRequest'
+      responses:
+        '202':
+          description: Replay admitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorEnvelope'
+  /api/v1/admin/replays/{job_id}:
+    get:
+      summary: Read replay or rebuild status
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Replay status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorEnvelope'
+  /api/v1/admin/replays/{job_id}/cancel:
+    post:
+      summary: Cancel a replay or rebuild
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Replay cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorEnvelope'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque service-account token
+  parameters:
+    TenantHeader:
+      name: x-tenant-id
+      in: header
+      required: true
+      schema:
+        type: string
+  responses:
+    ErrorEnvelope:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+  schemas:
+    EnvelopeBase:
+      type: object
+      properties:
+        request_id:
+          type: string
+      required: [request_id]
+    ErrorEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code:
+                  type: string
+                message:
+                  type: string
+                details:
+                  type: object
+                  additionalProperties: true
+              required: [code, message, details]
+          required: [error]
+    EventIngestRequest:
+      type: object
+      properties:
+        actor:
+          type: object
+          additionalProperties: true
+        causation_event_id:
+          type: string
+        correlation_id:
+          type: string
+        event_id:
+          type: string
+        event_type:
+          type: string
+        idempotency_key:
+          type: string
+        occurred_at:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        source:
+          type: object
+          additionalProperties: true
+        trace_id:
+          type: string
+        trace_seq:
+          type: integer
+      required:
+        - actor
+        - event_id
+        - event_type
+        - idempotency_key
+        - occurred_at
+        - payload
+        - source
+        - trace_id
+        - trace_seq
+    EventAppendEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                event:
+                  type: object
+                  additionalProperties: true
+                projection_sync_triggered:
+                  type: boolean
+              required: [event, projection_sync_triggered]
+          required: [data]
+    TraceEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                events:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                summary:
+                  type: object
+                  additionalProperties: true
+              required: [events, summary]
+          required: [data]
+    GraphContextEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              additionalProperties: true
+          required: [data]
+    GraphEdgesEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                edges:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+                next_cursor:
+                  type: object
+                  nullable: true
+                  additionalProperties: true
+              required: [edges]
+          required: [data]
+    PrecedentsEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                precedents:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+              required: [precedents]
+          required: [data]
+    ProjectionHealthEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              additionalProperties: true
+          required: [data]
+    ReplayRequest:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [catch_up, rebuild]
+          default: catch_up
+        projection:
+          type: string
+          description: Projection name or `all`
+        reason:
+          type: string
+        since_log_seq:
+          type: integer
+        until_log_seq:
+          type: integer
+        metadata:
+          type: object
+          additionalProperties: true
+      required: [mode, projection, reason]
+    ReplayEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                run:
+                  type: object
+                  additionalProperties: true
+              required: [run]
+          required: [data]

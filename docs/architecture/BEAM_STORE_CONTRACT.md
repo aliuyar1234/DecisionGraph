@@ -47,7 +47,7 @@ Columns:
 - `trace_id`: trace membership key
 - `trace_seq`: per-trace sequence number
 - `event_type`: frozen event vocabulary
-- `occurred_at`: normalized RFC3339 timestamp string from the caller
+- `occurred_at`: validated RFC3339 timestamp string preserved from the caller
 - `recorded_at`: normalized RFC3339 timestamp string assigned at storage time
 - `producer_id`: producer scope for idempotency
 - `source_system`, `source_subsystem`
@@ -91,7 +91,7 @@ This table exists now so projector work can build on a stable cursor surface wit
 2. validate required envelope fields, payload shape, idempotency key, tags, actor, source, and PII rules
 3. canonicalize the payload and compute `payload_hash`
 4. canonicalize tags
-5. assign normalized `occurred_at` and `recorded_at`
+5. preserve the caller-provided `occurred_at` string after validation and assign normalized `recorded_at`
 6. acquire a per-trace advisory transaction lock
 7. check for idempotent reuse under `(tenant_id, producer_id, idempotency_key)`
 8. if a prior event exists, validate reuse metadata parity while intentionally excluding `trace_seq`
@@ -187,4 +187,4 @@ These are operational differences only. They must not change semantic outcomes.
 
 - The BEAM runtime persists only the event log and projection cursors; projection materialization remains Phase 4 work.
 - Benchmark numbers are baseline local measurements, not release SLOs.
-- The store currently persists normalized RFC3339 strings for `occurred_at` and `recorded_at` to stay byte-stable with the current parity approach. A future switch to native Postgres time types is allowed only if observable semantics remain unchanged.
+- The store currently preserves caller-provided `occurred_at` strings and normalizes `recorded_at` so parity-sensitive projection rows and digests stay byte-stable with the Python reference. A future switch to native Postgres time types is allowed only if observable semantics remain unchanged.

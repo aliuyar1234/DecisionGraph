@@ -64,6 +64,13 @@ defmodule DecisionGraph.Projector.Runtime do
     end
   end
 
+  @spec worker_status(String.t(), atom() | String.t()) :: map()
+  def worker_status(tenant_id, projection) do
+    tenant_id
+    |> worker_key(projection)
+    |> ProjectionWorker.status()
+  end
+
   @spec via(worker_key()) :: {:via, Registry, {module(), String.t()}}
   def via(%{tenant_id: tenant_id, projection: projection, partition: partition}) do
     {:via, Registry,

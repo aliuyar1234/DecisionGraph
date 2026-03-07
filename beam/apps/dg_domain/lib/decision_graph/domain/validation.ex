@@ -263,6 +263,9 @@ defmodule DecisionGraph.Domain.Validation do
   defp validate_payload_for_event!("ApprovalRecorded", payload),
     do: validate_approval_recorded_payload!(payload)
 
+  defp validate_payload_for_event!("WorkflowReviewRequested", payload),
+    do: validate_workflow_review_requested_payload!(payload)
+
   defp validate_payload_for_event!("PrecedentCited", payload),
     do: validate_precedent_cited_payload!(payload)
 
@@ -289,6 +292,39 @@ defmodule DecisionGraph.Domain.Validation do
       fetch_value!(primary_entity, "entity_id", "$.primary_entity"),
       "$.primary_entity.entity_id"
     )
+  end
+
+  defp validate_workflow_review_requested_payload!(payload) do
+    validate_required_string!(fetch_value!(payload, "template_id", "$"), "$.template_id")
+    validate_required_string!(fetch_value!(payload, "workflow_kind", "$"), "$.workflow_kind")
+    validate_required_string!(fetch_value!(payload, "title", "$"), "$.title")
+    validate_required_string!(fetch_value!(payload, "reason", "$"), "$.reason")
+    validate_required_string!(fetch_value!(payload, "priority", "$"), "$.priority")
+
+    assignee = require_map!(payload, "assignee", "$")
+    _ = fetch_value(assignee, "account_id")
+    _ = fetch_value(assignee, "role")
+
+    subject = require_map!(payload, "subject", "$")
+
+    validate_required_string!(
+      fetch_value!(subject, "subject_type", "$.subject"),
+      "$.subject.subject_type"
+    )
+
+    validate_required_string!(
+      fetch_value!(subject, "subject_id", "$.subject"),
+      "$.subject.subject_id"
+    )
+
+    simulation = require_map!(payload, "simulation", "$")
+    _ = fetch_value(simulation, "priority")
+
+    sla_hours = fetch_value!(payload, "sla_hours", "$")
+
+    if not (is_integer(sla_hours) and sla_hours > 0) do
+      raise Error, code: :schema_violation, message: "sla_hours must be a positive integer"
+    end
   end
 
   defp validate_input_observed_payload!(payload) do

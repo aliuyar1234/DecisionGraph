@@ -1,6 +1,8 @@
 defmodule DecisionGraph.Api.Health do
   @moduledoc "Operational snapshot used by the Phase 2 web shell and health endpoints."
 
+  alias DecisionGraph.Api.Serialization
+
   @spec snapshot() :: map()
   def snapshot do
     %{
@@ -9,8 +11,20 @@ defmodule DecisionGraph.Api.Health do
         logger_metadata_keys: [:request_id, :trace_id, :tenant_id, :projection, :worker],
         otel_service_name: "decisiongraph-beam"
       },
+      projection_health: projection_health_snapshot(),
       projector: DecisionGraph.Projector.runtime_snapshot(),
       store: DecisionGraph.Store.deployment_snapshot()
     }
+  end
+
+  defp projection_health_snapshot do
+    DecisionGraph.Projector.projection_health()
+    |> Serialization.serialize()
+  rescue
+    error ->
+      %{
+        status: "unavailable",
+        reason: Exception.message(error)
+      }
   end
 end

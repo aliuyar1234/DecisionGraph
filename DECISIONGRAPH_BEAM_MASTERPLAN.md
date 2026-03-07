@@ -179,22 +179,22 @@ Goal:
 - turn DecisionGraph into a real platform service rather than just a library
 
 Tasks:
-- [ ] Create the Phoenix API application
-- [ ] Expose event ingestion endpoints
-- [ ] Expose trace read endpoints
-- [ ] Expose context graph query endpoints
-- [ ] Expose precedent search endpoints
-- [ ] Expose projection health endpoints
-- [ ] Expose replay and admin control endpoints with strong safeguards
-- [ ] Add API authentication and service-account support
-- [ ] Add tenant-aware authorization rules
-- [ ] Add rate limiting and abuse protection
-- [ ] Generate OpenAPI docs for the public surface
-- [ ] Add end-to-end API tests using real Postgres and projector workers
+- [x] Create the Phoenix API application
+- [x] Expose event ingestion endpoints
+- [x] Expose trace read endpoints
+- [x] Expose context graph query endpoints
+- [x] Expose precedent search endpoints
+- [x] Expose projection health endpoints
+- [x] Expose replay and admin control endpoints with strong safeguards
+- [x] Add API authentication and service-account support
+- [x] Add tenant-aware authorization rules
+- [x] Add rate limiting and abuse protection
+- [x] Generate OpenAPI docs for the public surface
+- [x] Add end-to-end API tests using real Postgres and projector workers
 
 Phase exit:
-- [ ] The project is now a usable network service, not just a local library
-- [ ] External systems can write to and query DecisionGraph through stable APIs
+- [x] The project is now a usable network service, not just a local library
+- [x] External systems can write to and query DecisionGraph through stable APIs
 
 ## Phase 6 - Build the Operator UI
 
@@ -202,20 +202,20 @@ Goal:
 - make the platform feel impressive and investigation-grade
 
 Tasks:
-- [ ] Create the Phoenix LiveView operator console
-- [ ] Build a trace explorer with timeline and payload inspection
-- [ ] Build a context graph visualizer
-- [ ] Build a precedent browser and comparison view
-- [ ] Build a projection health dashboard
-- [ ] Build a replay console with digest comparison output
-- [ ] Build a policy and exception review interface
-- [ ] Build a live event stream view for operators
-- [ ] Build tenant and environment status pages
-- [ ] Add polished UI states for loading, failure, and stale projections
+- [x] Create the Phoenix LiveView operator console
+- [x] Build a trace explorer with timeline and payload inspection
+- [x] Build a context graph visualizer
+- [x] Build a precedent browser and comparison view
+- [x] Build a projection health dashboard
+- [x] Build a replay console with digest comparison output
+- [x] Build a policy and exception review interface
+- [x] Build a live event stream view for operators
+- [x] Build tenant and environment status pages
+- [x] Add polished UI states for loading, failure, and stale projections
 
 Phase exit:
-- [ ] Operators can investigate real traces and system state from one place
-- [ ] The project looks and behaves like a serious platform product
+- [x] Operators can investigate real traces and system state from one place
+- [x] The project looks and behaves like a serious platform product
 
 ## Phase 7 - Human Approval and Workflow Layer
 
@@ -223,20 +223,20 @@ Goal:
 - move from passive trace storage to active decision operations
 
 Tasks:
-- [ ] Implement approval queues and reviewer inboxes
-- [ ] Implement exception request workflows
-- [ ] Implement escalation rules and SLA timers
-- [ ] Implement comments and evidence attachments
-- [ ] Implement manual override flows with full audit capture
-- [ ] Implement notifications for approvals, failures, and escalation deadlines
-- [ ] Implement policy simulation and dry-run workflows
-- [ ] Implement workflow templates for common business processes
-- [ ] Implement replay plus review flows for incident analysis
-- [ ] Add audit-focused exports for approvals and overrides
+- [x] Implement approval queues and reviewer inboxes
+- [x] Implement exception request workflows
+- [x] Implement escalation rules and SLA timers
+- [x] Implement comments and evidence attachments
+- [x] Implement manual override flows with full audit capture
+- [x] Implement notifications for approvals, failures, and escalation deadlines
+- [x] Implement policy simulation and dry-run workflows
+- [x] Implement workflow templates for common business processes
+- [x] Implement replay plus review flows for incident analysis
+- [x] Add audit-focused exports for approvals and overrides
 
 Phase exit:
-- [ ] DecisionGraph is now an active control plane for decision workflows
-- [ ] Human-in-the-loop operation is first-class, not bolted on
+- [x] DecisionGraph is now an active control plane for decision workflows
+- [x] Human-in-the-loop operation is first-class, not bolted on
 
 ## Phase 8 - Multi-Tenancy, Reliability, and Scale
 

@@ -8,6 +8,7 @@ defmodule DecisionGraph.Store.Repo.Migrations.CreateDgEventLog do
     "PolicyEvaluated",
     "ExceptionRequested",
     "ApprovalRecorded",
+    "WorkflowReviewRequested",
     "PrecedentCited",
     "ActionProposed",
     "ActionCommitted",

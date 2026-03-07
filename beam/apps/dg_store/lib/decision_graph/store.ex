@@ -283,11 +283,38 @@ defmodule DecisionGraph.Store do
       nil ->
         _ =
           query_all_rows!(
-            "TRUNCATE TABLE dg_projection_cursors, dg_event_log RESTART IDENTITY CASCADE",
+            """
+            TRUNCATE TABLE
+              dg_workflow_actions,
+              dg_workflow_items,
+              dg_workflow_runtime,
+              dg_projection_failures,
+              dg_projection_runs,
+              dg_projection_digests,
+              dg_precedent_index,
+              dg_policy_eval_index,
+              dg_trace_summary,
+              dg_cg_edges,
+              dg_cg_nodes,
+              dg_projection_cursors,
+              dg_event_log
+            RESTART IDENTITY CASCADE
+            """,
             []
           )
 
       tenant_id ->
+        _ = query_all_rows!("DELETE FROM dg_workflow_actions WHERE tenant_id = ?", [tenant_id])
+        _ = query_all_rows!("DELETE FROM dg_workflow_items WHERE tenant_id = ?", [tenant_id])
+        _ = query_all_rows!("DELETE FROM dg_workflow_runtime WHERE tenant_id = ?", [tenant_id])
+        _ = query_all_rows!("DELETE FROM dg_projection_failures WHERE tenant_id = ?", [tenant_id])
+        _ = query_all_rows!("DELETE FROM dg_projection_runs WHERE tenant_id = ?", [tenant_id])
+        _ = query_all_rows!("DELETE FROM dg_projection_digests WHERE tenant_id = ?", [tenant_id])
+        _ = query_all_rows!("DELETE FROM dg_precedent_index WHERE tenant_id = ?", [tenant_id])
+        _ = query_all_rows!("DELETE FROM dg_policy_eval_index WHERE tenant_id = ?", [tenant_id])
+        _ = query_all_rows!("DELETE FROM dg_trace_summary WHERE tenant_id = ?", [tenant_id])
+        _ = query_all_rows!("DELETE FROM dg_cg_edges WHERE tenant_id = ?", [tenant_id])
+        _ = query_all_rows!("DELETE FROM dg_cg_nodes WHERE tenant_id = ?", [tenant_id])
         _ = query_all_rows!("DELETE FROM dg_projection_cursors WHERE tenant_id = ?", [tenant_id])
         _ = query_all_rows!("DELETE FROM dg_event_log WHERE tenant_id = ?", [tenant_id])
     end
@@ -487,7 +514,9 @@ defmodule DecisionGraph.Store do
       measurements: %{payload_bytes: byte_size(payload_json)},
       metadata: append_metadata(tenant_id, normalized_envelope, opts),
       normalized_envelope: normalized_envelope,
-      occurred_at: now_rfc3339(prepared.occurred_at),
+      # Preserve caller-provided event timestamps so projection rows and digests
+      # match the Python reference fixtures byte-for-byte.
+      occurred_at: normalized_envelope.occurred_at,
       payload_hash: prepared.payload_hash,
       payload_json: payload_json,
       recorded_at: now_rfc3339(prepared.recorded_at),
@@ -915,7 +944,25 @@ defmodule DecisionGraph.Store do
   defp now_rfc3339(datetime \\ DateTime.utc_now()) do
     datetime
     |> DateTime.truncate(:microsecond)
-    |> Calendar.strftime("%Y-%m-%dT%H:%M:%S.%6fZ")
+    |> format_rfc3339()
+  end
+
+  defp format_rfc3339(%DateTime{} = datetime) do
+    base = Calendar.strftime(datetime, "%Y-%m-%dT%H:%M:%S")
+
+    case elem(datetime.microsecond, 0) do
+      0 ->
+        base <> "Z"
+
+      microsecond ->
+        fraction =
+          microsecond
+          |> Integer.to_string()
+          |> String.pad_leading(6, "0")
+          |> String.trim_trailing("0")
+
+        base <> "." <> fraction <> "Z"
+    end
   end
 
   defp validate_log_seq_bounds!(nil, _until_log_seq), do: :ok

@@ -20,10 +20,10 @@ By the end of Phase 7 we should have:
 ## Status
 
 Current phase:
-- [ ] Phase 7 active
+- [x] Phase 7 active
 
 Phase complete:
-- [ ] Phase 7 complete
+- [x] Phase 7 complete
 
 ## Dependencies
 
@@ -33,10 +33,10 @@ Phase 7 depends on these earlier checkpoints:
 - [x] Phase 1 semantic reference is frozen
 - [x] Phase 2 Elixir umbrella foundation is in place
 - [x] Phase 3 BEAM event store is in place
-- [ ] Phase 4 projection runtime is complete enough to drive workflow context
-- [ ] Phase 5 service API is complete enough to expose workflow actions
-- [ ] Phase 6 operator console is complete enough to host workflow UX
-- [ ] Phase 7 execution is approved and started
+- [x] Phase 4 projection runtime is complete enough to drive workflow context
+- [x] Phase 5 service API is complete enough to expose workflow actions
+- [x] Phase 6 operator console is complete enough to host workflow UX
+- [x] Phase 7 execution is approved and started
 
 ## Workstreams
 
@@ -52,22 +52,22 @@ Goal:
 - define workflow concepts cleanly before building action-heavy UI and API surfaces
 
 Tasks:
-- [ ] define the workflow entities for approvals, exception requests, escalations, comments, evidence, overrides, and SLA timers
-- [ ] decide what is event-sourced versus what is stored as operational workflow state
-- [ ] define status models and legal transitions for each workflow type
-- [ ] design workflow tables, indexes, and migration strategy
-- [ ] define tenant and environment boundaries for workflow records
-- [ ] document how workflow records connect back to decision traces and projections
+- [x] define the workflow entities for approvals, exception requests, escalations, comments, evidence, overrides, and SLA timers
+- [x] decide what is event-sourced versus what is stored as operational workflow state
+- [x] define status models and legal transitions for each workflow type
+- [x] design workflow tables, indexes, and migration strategy
+- [x] define tenant and environment boundaries for workflow records
+- [x] document how workflow records connect back to decision traces and projections
 
 Deliverables:
-- [ ] workflow domain design in `docs/architecture/WORKFLOW_DOMAIN_MODEL.md`
-- [ ] workflow persistence migrations and schemas under `beam/apps/`
-- [ ] status transition rules documented in `docs/reference/WORKFLOW_STATE_MACHINE.md`
+- [x] workflow domain design in `docs/architecture/WORKFLOW_DOMAIN_MODEL.md`
+- [x] workflow persistence migrations and schemas under `beam/apps/`
+- [x] status transition rules documented in `docs/reference/WORKFLOW_STATE_MACHINE.md`
 
 Acceptance Criteria:
-- [ ] workflow states and legal transitions are explicit enough to be tested and enforced mechanically
-- [ ] workflow records connect cleanly to traces, projections, tenants, and operators without ambiguous ownership
-- [ ] persistence design supports auditability and queryability without weakening the append-only decision history
+- [x] workflow states and legal transitions are explicit enough to be tested and enforced mechanically
+- [x] workflow records connect cleanly to traces, projections, tenants, and operators without ambiguous ownership
+- [x] persistence design supports auditability and queryability without weakening the append-only decision history
 
 ## Workstream 2 - Approvals, Inboxes, and Overrides
 
@@ -75,22 +75,22 @@ Goal:
 - make human-in-the-loop actions operationally usable
 
 Tasks:
-- [ ] implement approval queue creation and reviewer assignment
-- [ ] implement reviewer inboxes with filtering and prioritization
-- [ ] implement approve, reject, request-change, and reassign flows
-- [ ] implement manual override flows with strong justification requirements
-- [ ] define how workflow actions are reflected in the event log and operator UI
-- [ ] define permission rules for sensitive approvals and overrides
+- [x] implement approval queue creation and reviewer assignment
+- [x] implement reviewer inboxes with filtering and prioritization
+- [x] implement approve, reject, request-change, and reassign flows
+- [x] implement manual override flows with strong justification requirements
+- [x] define how workflow actions are reflected in the event log and operator UI
+- [x] define permission rules for sensitive approvals and overrides
 
 Deliverables:
-- [ ] approval service modules under `beam/apps/dg_api/`
-- [ ] approval and inbox UI under `beam/apps/dg_web/`
-- [ ] override policy notes in `docs/operations/APPROVAL_AND_OVERRIDE_POLICY.md`
+- [x] approval service modules under `beam/apps/dg_api/`
+- [x] approval and inbox UI under `beam/apps/dg_web/`
+- [x] override policy notes in `docs/operations/APPROVAL_AND_OVERRIDE_POLICY.md`
 
 Acceptance Criteria:
-- [ ] reviewers can receive, filter, and act on approval items through a clear inbox flow
-- [ ] sensitive approvals and overrides enforce stronger permission and justification requirements than ordinary workflow actions
-- [ ] approval and override actions are reflected in both the operator experience and the audit trail consistently
+- [x] reviewers can receive, filter, and act on approval items through a clear inbox flow
+- [x] sensitive approvals and overrides enforce stronger permission and justification requirements than ordinary workflow actions
+- [x] approval and override actions are reflected in both the operator experience and the audit trail consistently
 
 ## Workstream 3 - Escalation, Collaboration, and Notifications
 
@@ -98,22 +98,22 @@ Goal:
 - make workflows responsive under time pressure and cross-team review
 
 Tasks:
-- [ ] implement escalation rules and SLA timers
-- [ ] implement comments and collaboration history on workflow items
-- [ ] implement evidence attachment metadata and storage strategy
-- [ ] implement notifications for approval assignment, escalation, deadline risk, and failure
-- [ ] decide which notification channels are required for v1
-- [ ] add audit visibility for collaboration and escalation events
+- [x] implement escalation rules and SLA timers
+- [x] implement comments and collaboration history on workflow items
+- [x] implement evidence attachment metadata and storage strategy
+- [x] implement notifications for approval assignment, escalation, deadline risk, and failure
+- [x] decide which notification channels are required for v1
+- [x] add audit visibility for collaboration and escalation events
 
 Deliverables:
-- [ ] notification and escalation modules
-- [ ] collaboration surfaces in the operator console
-- [ ] notification behavior guide in `docs/operations/WORKFLOW_NOTIFICATIONS.md`
+- [x] notification and escalation modules
+- [x] collaboration surfaces in the operator console
+- [x] notification behavior guide in `docs/operations/WORKFLOW_NOTIFICATIONS.md`
 
 Acceptance Criteria:
-- [ ] escalation timing and ownership are deterministic enough that overdue items do not depend on manual watching
-- [ ] comments, collaboration history, and evidence are visible in enough context to support cross-team review
-- [ ] notification behavior is constrained and documented well enough to avoid silent failures or alert spam
+- [x] escalation timing and ownership are deterministic enough that overdue items do not depend on manual watching
+- [x] comments, collaboration history, and evidence are visible in enough context to support cross-team review
+- [x] notification behavior is constrained and documented well enough to avoid silent failures or alert spam
 
 ## Workstream 4 - Simulation, Templates, and Incident Review
 
@@ -121,22 +121,22 @@ Goal:
 - turn workflows into reusable operational patterns rather than one-off actions
 
 Tasks:
-- [ ] implement policy simulation or dry-run workflow entry points
-- [ ] implement workflow templates for common review processes
-- [ ] implement replay-plus-review flows for incident analysis
-- [ ] define how investigators can turn traces into review items quickly
-- [ ] define how precedent context is shown inside workflow reviews
-- [ ] capture the first end-to-end human-review demo journey
+- [x] implement policy simulation or dry-run workflow entry points
+- [x] implement workflow templates for common review processes
+- [x] implement replay-plus-review flows for incident analysis
+- [x] define how investigators can turn traces into review items quickly
+- [x] define how precedent context is shown inside workflow reviews
+- [x] capture the first end-to-end human-review demo journey
 
 Deliverables:
-- [ ] workflow templates and simulation modules
-- [ ] incident review journey in the operator console
-- [ ] demo notes in `docs/product/WORKFLOW_DEMO_SCENARIO.md`
+- [x] workflow templates and simulation modules
+- [x] incident review journey in the operator console
+- [x] demo notes in `docs/product/WORKFLOW_DEMO_SCENARIO.md`
 
 Acceptance Criteria:
-- [ ] teams can start a review from a trace or policy simulation without stitching together unrelated tools
-- [ ] workflow templates reduce setup friction for the most important review scenarios
-- [ ] incident review flows connect replay, precedent context, and human review in one coherent journey
+- [x] teams can start a review from a trace or policy simulation without stitching together unrelated tools
+- [x] workflow templates reduce setup friction for the most important review scenarios
+- [x] incident review flows connect replay, precedent context, and human review in one coherent journey
 
 ## Workstream 5 - Audit, Exports, and Safety Validation
 
@@ -144,22 +144,23 @@ Goal:
 - ensure workflow actions are trustworthy under compliance and incident pressure
 
 Tasks:
-- [ ] implement audit-focused exports for approvals, escalations, comments, and overrides
-- [ ] define retention and redaction rules for workflow artifacts
-- [ ] add end-to-end tests for workflow state transitions and audit capture
-- [ ] add permission and abuse tests for override and escalation paths
-- [ ] define operational runbooks for stuck workflows and missed SLAs
-- [ ] capture known limits for the first workflow release
+- [x] implement audit-focused exports for approvals, escalations, comments, and overrides
+- [x] define retention and redaction rules for workflow artifacts
+- [x] add end-to-end tests for workflow state transitions and audit capture
+- [x] add permission and abuse tests for override and escalation paths
+- [x] define operational runbooks for stuck workflows and missed SLAs
+- [x] capture known limits for the first workflow release
 
 Deliverables:
-- [ ] export surface for workflow records
-- [ ] workflow test suite across API and UI layers
-- [ ] runbook in `docs/operations/WORKFLOW_RUNTIME.md`
+- [x] export surface for workflow records
+- [x] workflow test suite across API and UI layers
+- [x] runbook in `docs/operations/WORKFLOW_RUNTIME.md`
+- [x] retention guidance in `docs/operations/WORKFLOW_RETENTION_AND_REDACTION.md`
 
 Acceptance Criteria:
-- [ ] approvals, escalations, comments, and overrides can be exported in an audit-friendly form
-- [ ] workflow tests prove state transition, permission, and audit behavior end to end
-- [ ] operators have runbook guidance for stuck workflows, missed SLAs, and first-release limitations
+- [x] approvals, escalations, comments, and overrides can be exported in an audit-friendly form
+- [x] workflow tests prove state transition, permission, and audit behavior end to end
+- [x] operators have runbook guidance for stuck workflows, missed SLAs, and first-release limitations
 
 ## Reference Inputs
 
@@ -188,18 +189,18 @@ Phase 7 should not be accepted without:
 - a documented workflow state model and transition rules
 - working approval and inbox surfaces in the operator console
 - audit export capability for workflow actions
-- operational guidance in `docs/operations/APPROVAL_AND_OVERRIDE_POLICY.md`, `docs/operations/WORKFLOW_NOTIFICATIONS.md`, and `docs/operations/WORKFLOW_RUNTIME.md`
+- operational guidance in `docs/operations/APPROVAL_AND_OVERRIDE_POLICY.md`, `docs/operations/WORKFLOW_NOTIFICATIONS.md`, `docs/operations/WORKFLOW_RUNTIME.md`, and `docs/operations/WORKFLOW_RETENTION_AND_REDACTION.md`
 
 ## Exit Criteria
 
 Phase 7 is complete only when:
 
-- [ ] approvals, exceptions, escalations, and overrides are first-class platform flows
-- [ ] workflow actions are fully audited and exportable
-- [ ] comments, evidence, and notifications support realistic operator collaboration
-- [ ] incident review and simulation flows feel integrated rather than bolted on
-- [ ] permission boundaries for workflow actions are credible
-- [ ] the platform clearly supports human-in-the-loop decision operations
+- [x] approvals, exceptions, escalations, and overrides are first-class platform flows
+- [x] workflow actions are fully audited and exportable
+- [x] comments, evidence, and notifications support realistic operator collaboration
+- [x] incident review and simulation flows feel integrated rather than bolted on
+- [x] permission boundaries for workflow actions are credible
+- [x] the platform clearly supports human-in-the-loop decision operations
 
 ## Recommended Execution Order
 
@@ -211,11 +212,11 @@ Phase 7 is complete only when:
 
 ## Immediate Next Actions
 
-- [ ] write the workflow state model and persistence sketch
-- [ ] implement the first approval queue and reviewer inbox flow
-- [ ] implement workflow action audit capture
-- [ ] add escalation and notification rules for a first scenario
-- [ ] add an end-to-end workflow test tied to the Phase 0 demo scenario
+- [x] write the workflow state model and persistence sketch
+- [x] implement the first approval queue and reviewer inbox flow
+- [x] implement workflow action audit capture
+- [x] add escalation and notification rules for a first scenario
+- [x] add an end-to-end workflow test tied to the Phase 0 demo scenario
 
 ## Notes
 

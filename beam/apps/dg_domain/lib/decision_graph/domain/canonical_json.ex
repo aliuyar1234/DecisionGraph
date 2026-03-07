@@ -56,6 +56,7 @@ defmodule DecisionGraph.Domain.CanonicalJson do
   end
 
   defp to_serializable(value) when is_list(value), do: Enum.map(value, &to_serializable/1)
+  defp to_serializable(value) when is_nil(value) or is_boolean(value), do: value
   defp to_serializable(value) when is_atom(value), do: Atom.to_string(value)
 
   defp to_serializable(value) when is_tuple(value) do
