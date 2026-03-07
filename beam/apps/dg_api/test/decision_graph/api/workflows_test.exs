@@ -29,12 +29,14 @@ defmodule DecisionGraph.Api.WorkflowsTest do
     end
 
     migrations_path = Application.app_dir(:dg_store, "priv/repo/migrations")
+    Sandbox.mode(Repo, :auto)
 
     {:ok, _, _} =
       Ecto.Migrator.with_repo(Repo, fn repo ->
         Ecto.Migrator.run(repo, migrations_path, :up, all: true)
       end)
 
+    Sandbox.mode(Repo, :manual)
     :ok
   end
 

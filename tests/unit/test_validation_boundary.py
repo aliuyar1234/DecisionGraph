@@ -45,7 +45,7 @@ class TestPIIGuardEdgeCases:
     def test_at_string_start(self) -> None:
         """Pattern at start of string is detected."""
         with pytest.raises(DecisionGraphError):
-            check_pii_guard({"key": "AKIAIOSFODNN7EXAMPLE"})
+            check_pii_guard({"key": "AKIAIOSFODNN7EXAMPLE"})  # pragma: allowlist secret
 
     def test_at_string_end(self) -> None:
         """Pattern at end of string is detected."""
@@ -64,7 +64,9 @@ class TestPIIGuardEdgeCases:
                 "level2": {
                     "level3": {
                         "level4": {
-                            "level5": {"secret": "Bearer deep_secret"}
+                            "level5": {
+                                "secret": "Bearer deep_secret"  # pragma: allowlist secret
+                            }
                         }
                     }
                 }
