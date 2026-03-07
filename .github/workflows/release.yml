@@ -24,11 +24,11 @@ jobs:
       - run: uv run python scripts/demo_smoke_check.py --artifact-dir .tmp/demo-smoke
       - run: uv run python scripts/docs_snippets_check.py --artifact-dir .tmp/docs-snippets
       - run: uv run python -m build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: python-dist
           path: dist/*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: python-release-preflight
           path: |
@@ -61,7 +61,7 @@ jobs:
         with:
           elixir-version: "1.19.5"
           otp-version: "28.2"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             beam/deps
@@ -92,7 +92,7 @@ jobs:
           MIX_ENV: prod
       - run: tar -C _build/prod/rel -czf ../.tmp/decisiongraph_beam-${{ github.ref_name || 'unreleased' }}.tar.gz decisiongraph_beam
       - run: docker build -f Dockerfile -t decisiongraph-beam:release _build/prod/rel
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: beam-release-evidence
           path: |
@@ -108,11 +108,11 @@ jobs:
       - beam-release-preflight
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: python-dist
           path: dist
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: beam-release-evidence
           path: .tmp
@@ -134,7 +134,7 @@ jobs:
       - publish-github-release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: python-dist
           path: dist
