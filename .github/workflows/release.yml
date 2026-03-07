@@ -127,7 +127,7 @@ jobs:
 
   publish-pypi:
     name: Publish PyPI Package
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') && vars.PYPI_TRUSTED_PUBLISHING_ENABLED == 'true'
     needs:
       - python-release-preflight
       - beam-release-preflight
