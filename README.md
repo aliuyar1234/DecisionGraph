@@ -24,6 +24,48 @@ DecisionGraph is a local-first platform with two deliberate surfaces:
 
 That split is intentional. Python preserves the semantic oracle, while BEAM owns the long-running system behavior.
 
+## Architecture
+
+DecisionGraph has one product and two deliberate implementation surfaces:
+
+- `Python reference core` in `src/decisiongraph`: frozen semantic authority for the Phase 1 event model, local embedded library, reference CLI, golden fixtures, and parity oracle
+- `BEAM self-hosted platform` in `beam/`: OTP runtime with Postgres event store, projection workers, authenticated API, LiveView operator console, review workflows, replay controls, and release packaging
+
+Phase 9 locked that boundary in on purpose: Python remains the semantic authority for the frozen core, while BEAM owns the long-running product runtime. The BEAM side is not a thin wrapper around Python; it is the self-hosted platform, with parity gates proving it stays aligned to the reference semantics.
+
+```mermaid
+flowchart LR
+    subgraph PY["Python Reference Core"]
+        PYLIB["Embedded library + CLI"]
+        PYSEM["Frozen semantic authority"]
+        PYLIB --> PYSEM
+    end
+
+    subgraph BEAM["BEAM Self-Hosted Platform"]
+        API["Phoenix API + LiveView"]
+        STORE["Postgres event log"]
+        PROJ["OTP projector runtime"]
+        QUERY["Projection-backed query layer"]
+        WF["Review workflows + replay controls"]
+
+        API --> STORE
+        STORE --> PROJ
+        PROJ --> QUERY
+        API --> QUERY
+        API --> WF
+    end
+
+    PYSEM -. "parity + contract gates" .-> STORE
+    PYSEM -. "parity + contract gates" .-> PROJ
+    PYSEM -. "frozen-core semantic oracle" .-> API
+```
+
+Practical reading of that split:
+
+- use Python when you want local embedded/reference behavior
+- use BEAM when you want the self-hosted service, operator console, workflows, and replay operations
+- the two sides share contracts and parity evidence, but Python does not silently proxy into BEAM
+
 ## V1 Scope
 
 DecisionGraph v1 is intentionally focused on:
@@ -154,56 +196,6 @@ Run the Phoenix shell:
 cd beam
 set PHX_SERVER=true
 iex -S mix
-```
-
-## Architecture
-
-### System Topology
-
-```mermaid
-flowchart LR
-    subgraph APP["Your Application / Agent Runtime"]
-        API["DecisionGraph API"]
-    end
-
-    API -->|append/start/finish| STORE["Event Store<br/>dg_event_log (append-only)"]
-    STORE -->|log_seq stream| PROJECTOR["Projector<br/>deterministic materialization"]
-
-    PROJECTOR --> TS["dg_trace_summary"]
-    PROJECTOR --> CG["dg_cg_nodes / dg_cg_edges"]
-    PROJECTOR --> PI["dg_precedent_index / dg_policy_eval_index"]
-
-    API --> QUERY["Query layer"]
-    QUERY --> TS
-    QUERY --> CG
-    QUERY --> PI
-
-    CLI["CLI: replay, dump-trace"] --> STORE
-    CLI --> PROJECTOR
-```
-
-### Replay and Query Lifecycle
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API as DecisionGraph API
-    participant Store as Event Store
-    participant Projector
-    participant Query
-
-    Client->>API: append_event(...) / start_trace(...)
-    API->>Store: validate + insert event
-    Store-->>API: log_seq
-    API->>Projector: project through log_seq
-    Projector->>Projector: update projection tables + cursor
-
-    Client->>API: replay_projections()
-    API->>Projector: rebuild + replay from event log
-    Projector-->>API: projection digests
-
-    Client->>Query: get_trace_events(...) / find_precedents(...)
-    Query-->>Client: deterministic ordered results
 ```
 
 ## Quickstart
