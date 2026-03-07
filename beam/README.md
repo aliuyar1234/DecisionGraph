@@ -32,7 +32,7 @@ Create and migrate the BEAM event-store database:
 ```bash
 cd beam
 set MIX_ENV=test
-mix cmd --app dg_store mix ecto.setup
+mix do --app dg_store ecto.setup
 ```
 
 Run the dedicated store suite:
@@ -69,6 +69,26 @@ iex -S mix
 ```
 
 The web shell listens on `http://localhost:4100`.
+
+## Self-Hosted Guidance
+
+The first supported self-hosted topology is intentionally narrow:
+
+- one BEAM node
+- one Postgres instance
+- source-based deployment from this repo
+
+Start with:
+
+- [`docs/architecture/SELF_HOSTED_TOPOLOGY.md`](../docs/architecture/SELF_HOSTED_TOPOLOGY.md)
+- [`docs/architecture/SINGLE_NODE_RECOVERY.md`](../docs/architecture/SINGLE_NODE_RECOVERY.md)
+- [`docs/operations/SELF_HOSTED_INSTALL.md`](../docs/operations/SELF_HOSTED_INSTALL.md)
+- [`docs/operations/BACKUP_AND_RESTORE.md`](../docs/operations/BACKUP_AND_RESTORE.md)
+- [`docs/operations/UPGRADE_AND_ROLLBACK.md`](../docs/operations/UPGRADE_AND_ROLLBACK.md)
+- [`docs/operations/DISASTER_RECOVERY.md`](../docs/operations/DISASTER_RECOVERY.md)
+- [`docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md`](../docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md)
+- [`docs/benchmarks/PHASE_8_CAPACITY_MODEL.md`](../docs/benchmarks/PHASE_8_CAPACITY_MODEL.md)
+- [`docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md`](../docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md)
 
 ## CI Expectations
 

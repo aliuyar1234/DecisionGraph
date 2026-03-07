@@ -18,4 +18,27 @@ nav:
   - API: api.md
   - V1 Contracts: v1-contracts.md
   - Release: release.md
-  - Operations: operations.md
+  - Operations:
+      - Overview: operations.md
+      - Self-Hosted Install: operations/SELF_HOSTED_INSTALL.md
+      - Backup and Restore: operations/BACKUP_AND_RESTORE.md
+      - Upgrade and Rollback: operations/UPGRADE_AND_ROLLBACK.md
+      - Disaster Recovery: operations/DISASTER_RECOVERY.md
+      - Restart and Recovery Checklist: operations/RESTART_AND_RECOVERY_CHECKLIST.md
+      - SLOs and Alerting: operations/SLOS_AND_ALERTING.md
+      - Observability Dashboards: operations/OBSERVABILITY_DASHBOARDS.md
+      - Self-Hosted Release Checklist: operations/SELF_HOSTED_RELEASE_CHECKLIST.md
+      - API Runtime: operations/API_RUNTIME.md
+      - Projection Runtime: operations/PROJECTION_RUNTIME.md
+      - Workflow Runtime: operations/WORKFLOW_RUNTIME.md
+  - Architecture:
+      - Self-Hosted Topology: architecture/SELF_HOSTED_TOPOLOGY.md
+      - Storage Lifecycle: architecture/STORAGE_LIFECYCLE.md
+      - Single-Node Recovery: architecture/SINGLE_NODE_RECOVERY.md
+  - Benchmarks:
+      - Phase 3 Store Baseline: benchmarks/PHASE_3_STORE_BASELINE.md
+      - Phase 4 Projector Baseline: benchmarks/PHASE_4_PROJECTOR_BASELINE.md
+      - Phase 5 API Baseline: benchmarks/PHASE_5_API_BASELINE.md
+      - Phase 6 Operator UI Baseline: benchmarks/PHASE_6_OPERATOR_UI_BASELINE.md
+      - Phase 8 Capacity Model: benchmarks/PHASE_8_CAPACITY_MODEL.md
+      - Phase 8 Resilience Baseline: benchmarks/PHASE_8_RESILIENCE_BASELINE.md

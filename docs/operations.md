@@ -1,5 +1,23 @@
 # Operations Runbook and Reproducibility
 
+## Self-Hosted BEAM Operations
+
+For the current BEAM self-hosted platform shape, start with:
+
+- [Self-Hosted Install](operations/SELF_HOSTED_INSTALL.md)
+- [Backup and Restore](operations/BACKUP_AND_RESTORE.md)
+- [Upgrade and Rollback](operations/UPGRADE_AND_ROLLBACK.md)
+- [Disaster Recovery](operations/DISASTER_RECOVERY.md)
+- [Restart and Recovery Checklist](operations/RESTART_AND_RECOVERY_CHECKLIST.md)
+- [SLOs and Alerting](operations/SLOS_AND_ALERTING.md)
+- [Observability Dashboards](operations/OBSERVABILITY_DASHBOARDS.md)
+- [Self-Hosted Release Checklist](operations/SELF_HOSTED_RELEASE_CHECKLIST.md)
+- [API Runtime](operations/API_RUNTIME.md)
+- [Projection Runtime](operations/PROJECTION_RUNTIME.md)
+- [Workflow Runtime](operations/WORKFLOW_RUNTIME.md)
+
+The rest of this page remains the cross-backend recovery and reproducibility summary.
+
 ## Backup and Restore
 
 ### SQLite

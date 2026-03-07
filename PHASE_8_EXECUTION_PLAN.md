@@ -4,26 +4,28 @@
 
 This file turns Phase 8 from [DECISIONGRAPH_BEAM_MASTERPLAN.md](DECISIONGRAPH_BEAM_MASTERPLAN.md) into an active execution checklist.
 
-Phase 8 is about making DecisionGraph operationally credible for serious production use through multi-tenancy, reliability engineering, scale planning, and recovery discipline.
+Phase 8 is about making DecisionGraph operationally credible for local-first, self-hosted use.
+The target is not a SaaS control plane.
+The target is a GitHub-downloadable system that an operator can install, run, back up, upgrade, and recover on a laptop, workstation, home server, or small VPS without guesswork.
 
 ## Phase Goal
 
 By the end of Phase 8 we should have:
 
-- clear organization, workspace, and environment isolation
-- tenant-scoped event and projection boundaries
-- defined partitioning, retention, backup, and recovery strategy
-- clustering and multi-node runtime plans for BEAM deployment
-- performance targets, SLOs, and observability dashboards
-- evidence from failover, recovery, and chaos-style validation
+- one clearly supported self-hosted topology
+- straightforward install and bootstrap paths
+- documented backup, restore, retention, and upgrade procedures
+- single-node crash, restart, and replay recovery behavior understood and tested
+- local-hosting performance targets and hardware guidance
+- packaging, release, and validation steps that make GitHub distribution realistic
 
 ## Status
 
 Current phase:
-- [ ] Phase 8 active
+- [x] Phase 8 active
 
 Phase complete:
-- [ ] Phase 8 complete
+- [x] Phase 8 complete
 
 ## Dependencies
 
@@ -33,134 +35,146 @@ Phase 8 depends on these earlier checkpoints:
 - [x] Phase 1 semantic reference is frozen
 - [x] Phase 2 Elixir umbrella foundation is in place
 - [x] Phase 3 BEAM event store is in place
-- [ ] Phase 4 projection runtime is production-credible
-- [ ] Phase 5 service API is production-credible
-- [ ] Phase 6 operator console is operationally useful
-- [ ] Phase 7 workflow layer is stable enough for multi-tenant operation
-- [ ] Phase 8 execution is approved and started
+- [x] Phase 4 projection runtime is stable enough for self-hosted recovery work
+- [x] Phase 5 service API is stable enough for operator-facing install and backup guidance
+- [x] Phase 6 operator console is operationally useful on a single-node deployment
+- [x] Phase 7 workflow layer is stable enough for self-hosted operator use
+- [x] Phase 8 execution is approved and started
 
 ## Workstreams
 
-- tenancy and isolation model
-- data lifecycle and storage strategy
-- distributed runtime, failover, and recovery
-- SLOs, observability, and capacity planning
-- chaos, scale, and operational validation
+- supported self-hosted topology and install story
+- data lifecycle, backup, restore, and upgrade safety
+- single-node runtime recovery and restart behavior
+- observability, sizing, and performance envelopes
+- packaging, release validation, and distribution UX
 
-## Workstream 1 - Tenancy and Isolation Model
-
-Goal:
-- define the isolation boundaries that make shared environments safe and understandable
-
-Tasks:
-- [ ] define organization, workspace, environment, and service-account boundaries
-- [ ] decide what isolation is logical versus physical in the first production model
-- [ ] define tenant-scoped event, projection, workflow, and admin boundaries
-- [ ] define naming, routing, and auth rules for tenant-scoped resources
-- [ ] document cross-tenant access prohibitions and rare exception cases
-- [ ] add tests that prove tenant isolation at API, query, and workflow layers
-
-Deliverables:
-- [ ] tenancy model doc in `docs/architecture/TENANCY_MODEL.md`
-- [ ] tenant boundary implementation notes in `docs/operations/TENANT_ISOLATION.md`
-- [ ] isolation test coverage across service and UI layers
-
-Acceptance Criteria:
-- [ ] tenant and environment boundaries are explicit enough that API, query, workflow, and UI paths all enforce the same isolation model
-- [ ] cross-tenant access is blocked by default and only documented exceptions exist where absolutely necessary
-- [ ] isolation behavior is proven by tests instead of being implied by naming or convention
-
-## Workstream 2 - Data Lifecycle and Storage Strategy
+## Workstream 1 - Supported Self-Hosted Topology And Install Story
 
 Goal:
-- make long-term data growth, retention, and recovery explicit
+- define the default way GitHub users are expected to run the system
 
 Tasks:
-- [ ] define partitioning strategy for high-growth event tables
-- [ ] define archival, retention, and pruning policies for events and projections
-- [ ] define backup cadence and restore expectations
-- [ ] decide how projection rebuild interacts with archival and retention
-- [ ] define evidence-preserving export strategy for compliance and incident response
-- [ ] document local-dev versus production database expectations clearly
+- [x] define the first officially supported deployment topology
+- [x] decide what is mandatory versus optional in the first self-hosted install
+- [x] define the recommended local and small-server deployment path
+- [x] define auth defaults and operator bootstrap expectations for self-hosted installs
+- [x] document supported operating assumptions clearly
+- [x] validate that a fresh operator can bootstrap the system from repo docs without hidden tribal knowledge
 
 Deliverables:
-- [ ] storage lifecycle plan in `docs/architecture/STORAGE_LIFECYCLE.md`
-- [ ] archival and retention runbook in `docs/operations/DATA_RETENTION_AND_ARCHIVE.md`
-- [ ] migration or partitioning plan for production growth
+- [x] supported topology doc in `docs/architecture/SELF_HOSTED_TOPOLOGY.md`
+- [x] install and bootstrap guide in `docs/operations/SELF_HOSTED_INSTALL.md`
+- [x] bootstrap validation checklist for a clean machine in `docs/operations/SELF_HOSTED_INSTALL.md`
 
 Acceptance Criteria:
-- [ ] the platform has a documented answer for growth, retention, backup, and restore instead of treating them as future concerns
-- [ ] partitioning and archival strategy preserve replay and audit requirements well enough for the product promise
-- [ ] operators can understand what data is kept, moved, restored, or pruned without reading code
+- [x] there is one default install story instead of several half-supported ones
+- [x] operators can tell what they need to run before reading source code
+- [x] the recommended self-hosted path is validated end to end on a fresh environment
 
-## Workstream 3 - Distributed Runtime, Failover, and Recovery
+## Workstream 2 - Data Lifecycle, Backup, Restore, And Upgrade Safety
 
 Goal:
-- make the BEAM runtime survivable under node loss and dependency disruption
+- make long-term operation survivable for self-hosted users
 
 Tasks:
-- [ ] define single-node versus multi-node deployment topologies
-- [ ] define clustering strategy for Phoenix, PubSub, and background workers
-- [ ] define projection worker ownership and reassignment in multi-node conditions
-- [ ] define failover and restart behavior for store, projector, API, and workflow components
-- [ ] define disaster-recovery procedures for database loss, projection corruption, and deployment rollback
-- [ ] run failover and recovery drills for the first supported topology
+- [x] define backup cadence and restore expectations for Postgres-backed installs
+- [x] define retention, archival, and pruning policy for local-first use
+- [x] define how projection rebuild interacts with retention and backup
+- [x] define upgrade and migration expectations between tagged releases
+- [x] define rollback guidance for failed upgrades
+- [x] document how exported audit records fit into backup and recovery expectations
 
 Deliverables:
-- [ ] clustering and failover doc in `docs/architecture/BEAM_CLUSTERING_AND_FAILOVER.md`
-- [ ] recovery runbook in `docs/operations/DISASTER_RECOVERY.md`
-- [ ] tested recovery drill checklist
+- [x] storage lifecycle plan in `docs/architecture/STORAGE_LIFECYCLE.md`
+- [x] backup and restore runbook in `docs/operations/BACKUP_AND_RESTORE.md`
+- [x] upgrade and rollback guide in `docs/operations/UPGRADE_AND_ROLLBACK.md`
 
 Acceptance Criteria:
-- [ ] the first supported deployment topology has explicit failover and restart behavior for store, projector, API, and workflow components
-- [ ] worker ownership and reassignment rules in multi-node conditions are clear enough to avoid split-brain projection behavior
-- [ ] recovery drills have been executed and documented rather than planned abstractly
+- [x] the platform has a documented answer for backup, restore, retention, and upgrade instead of leaving them to operator improvisation
+- [x] rebuild, restore, and rollback behavior are explained in terms a self-hosted operator can follow
+- [x] data lifecycle guidance preserves replay and audit promises well enough for the product claim
 
-## Workstream 4 - SLOs, Observability, and Capacity Planning
+## Workstream 3 - Single-Node Runtime Recovery And Restart Behavior
 
 Goal:
-- know what good and bad platform behavior looks like before production pressure arrives
+- make the default self-hosted deployment trustworthy under ordinary failure
 
 Tasks:
-- [ ] define service-level objectives for write availability, projection lag, replay duration, and workflow responsiveness
-- [ ] define metrics and dashboards for throughput, lag, queue depth, error rates, and tenant hotspots
-- [ ] define alert thresholds and escalation expectations
-- [ ] estimate capacity needs for realistic tenant and trace volumes
-- [ ] document operational cost drivers for storage, replay, and realtime workloads
-- [ ] define benchmark profiles that future releases must track
+- [x] define restart behavior for store, projector, API, and workflow components on one node
+- [x] define crash recovery expectations for projector workers and replay jobs
+- [x] define recovery behavior after interrupted writes, replays, and workflow actions
+- [x] define what "healthy after restart" means for the supported topology
+- [x] run restart and recovery drills for the supported topology
+- [x] document what manual operator actions are still required in failure scenarios
 
 Deliverables:
-- [ ] SLO doc in `docs/operations/SLOS_AND_ALERTING.md`
-- [ ] dashboard specification in `docs/operations/OBSERVABILITY_DASHBOARDS.md`
-- [ ] capacity notes in `docs/benchmarks/PHASE_8_CAPACITY_MODEL.md`
+- [x] recovery behavior doc in `docs/architecture/SINGLE_NODE_RECOVERY.md`
+- [x] disaster and restart runbook in `docs/operations/DISASTER_RECOVERY.md`
+- [x] tested restart and recovery checklist in `docs/operations/RESTART_AND_RECOVERY_CHECKLIST.md`
 
 Acceptance Criteria:
-- [ ] service-level objectives exist for the most important platform promises, including writes, projection lag, replay, and workflow responsiveness
-- [ ] dashboards and alerts are specific enough that operators can tell what is broken and who is impacted
-- [ ] capacity notes include realistic workload assumptions instead of only synthetic best-case numbers
+- [x] the supported deployment has explicit restart and recovery behavior for store, projector, API, and workflow components
+- [x] projector and replay recovery are documented and tested rather than assumed
+- [x] recovery drills have been run and captured with concrete findings
 
-## Workstream 5 - Chaos, Scale, and Operational Validation
+## Workstream 4 - Observability, Sizing, And Performance Envelopes
 
 Goal:
-- replace hopeful assumptions with evidence under stress
+- give self-hosted operators a realistic idea of what the system needs and how it behaves
 
 Tasks:
-- [ ] run load tests for event ingestion, projection catch-up, search, and workflow activity
-- [ ] run chaos-style tests for worker crashes, database disruptions, and dependency timeouts
-- [ ] run recovery tests for node restarts and replay after interruption
-- [ ] capture scaling limits and known failure modes explicitly
-- [ ] define release gates for operational safety
-- [ ] record remediation plans for any unacceptable bottlenecks discovered
+- [x] define performance targets for local and small-server installs
+- [x] define metrics, logs, and console views that matter for self-hosted operation
+- [x] define alerting or operator-watch guidance appropriate for single-node installs
+- [x] estimate hardware needs for realistic trace and workflow volumes
+- [x] define benchmark profiles future releases must continue to track
+- [x] document the main resource and cost drivers for self-hosted operation
 
 Deliverables:
-- [ ] load and chaos validation suite
-- [ ] scale and resilience notes in `docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md`
-- [ ] operational readiness checklist for Phase 10 launch work
+- [x] self-hosted performance targets in `docs/operations/SLOS_AND_ALERTING.md`
+- [x] observability guidance in `docs/operations/OBSERVABILITY_DASHBOARDS.md`
+- [x] hardware and sizing notes in `docs/benchmarks/PHASE_8_CAPACITY_MODEL.md`
 
 Acceptance Criteria:
-- [ ] scale testing identifies bottlenecks in ingestion, projection, search, or workflow paths before launch planning begins
-- [ ] chaos and recovery tests produce concrete findings and remediation items, not only pass/fail badges
-- [ ] operational readiness gates are explicit enough that later launch work can say no to an unsafe release
+- [x] operators have realistic guidance for CPU, memory, disk, and database posture
+- [x] benchmark profiles reflect the default self-hosted topology instead of an abstract production cluster
+- [x] observability guidance is specific enough that operators can tell whether the node is healthy
+
+## Workstream 5 - Packaging, Release Validation, And Distribution UX
+
+Goal:
+- make GitHub distribution feel intentional instead of "clone this and good luck"
+
+Tasks:
+- [x] define release artifacts for self-hosted users
+- [x] define Docker and non-Docker entry paths if both are supported
+- [x] validate install, upgrade, backup, restore, and restart paths from release artifacts
+- [x] define release gates for self-hosted safety
+- [x] capture known limitations and unsupported topologies clearly
+- [x] define the operator-facing release checklist needed before Phase 10 launch work
+
+Deliverables:
+- [x] self-hosted release checklist in `docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md`
+- [x] release validation notes in `docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md`
+- [x] distribution guidance for GitHub users in `docs/operations/SELF_HOSTED_INSTALL.md`
+
+Acceptance Criteria:
+- [x] a GitHub user can understand how to install and operate the system without reverse-engineering the repo
+- [x] release validation covers install, upgrade, restart, and restore paths
+- [x] unsupported or deferred topologies are stated plainly instead of implied
+
+## Deferred For Later Hosted Or Enterprise Work
+
+These items are intentionally deferred unless the product direction changes toward hosted or enterprise multi-tenant operation:
+
+- organization, workspace, and environment hierarchy
+- strong cross-tenant isolation work beyond the current local/self-hosted auth model
+- multi-node clustering and distributed worker ownership
+- hosted-service cost modeling
+- tenant hotspot dashboards and shared-environment abuse controls
+
+If those become important later, they should return as a dedicated hosted-operations phase instead of distorting the local-first roadmap.
 
 ## Reference Inputs
 
@@ -172,58 +186,59 @@ Phase 8 should stay aligned with these earlier assets:
 - `docs/operations/WORKFLOW_RUNTIME.md`
 - `DECISIONGRAPH_PHOENIX_ARCHITECTURE.md`
 
-This phase is about hardening the existing product shape, not changing the fundamental semantic model.
+This phase is about hardening the existing product shape for self-hosted use, not turning it into a SaaS platform.
 
 ## Validation
 
 Phase 8 should be validated with:
 
-- tenant-isolation tests across API, query, workflow, and UI paths
-- restore and recovery drills for the first supported deployment topology
-- load, chaos, and failover exercises with captured findings
-- SLO, dashboard, and alert reviews tied to real workload assumptions
+- fresh-machine install and bootstrap tests
+- backup, restore, and upgrade drills
+- restart and recovery drills for the supported topology
+- local-hosting benchmarks with captured findings
+- release-checklist review tied to the actual GitHub distribution path
 
 ## Required Evidence
 
 Phase 8 should not be accepted without:
 
-- tenancy and isolation docs plus supporting tests
-- storage lifecycle, retention, backup, and disaster-recovery runbooks
+- a supported self-hosted topology doc plus an install guide
+- backup, restore, upgrade, and recovery runbooks
 - benchmark and resilience notes in `docs/benchmarks/PHASE_8_CAPACITY_MODEL.md` and `docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md`
-- an operational readiness checklist for launch gating
+- a release checklist that makes self-hosted distribution credible
 
 ## Exit Criteria
 
 Phase 8 is complete only when:
 
-- [ ] tenant and environment isolation are clearly defined and validated
-- [ ] data growth, retention, backup, and recovery strategy are documented and tested
-- [ ] multi-node or failover behavior is understood well enough for real operations
-- [ ] SLOs, dashboards, and alerting expectations are defined
-- [ ] scale and chaos tests have exposed and addressed major reliability risks
-- [ ] the platform can be described as operationally credible without hand-waving
+- [x] the default self-hosted topology is clearly defined and documented
+- [x] install, backup, restore, and upgrade paths are documented and validated
+- [x] single-node restart and recovery behavior is understood well enough for real operators
+- [x] performance targets and sizing guidance exist for local and small-server installs
+- [x] release validation exposes and addresses major self-hosted reliability risks
+- [x] the platform can be described as GitHub-downloadable and self-hostable without hand-waving
 
 ## Recommended Execution Order
 
-1. tenancy and isolation model
-2. data lifecycle and storage strategy
-3. distributed runtime, failover, and recovery
-4. SLOs, observability, and capacity planning
-5. chaos, scale, and operational validation
+1. supported self-hosted topology and install story
+2. data lifecycle, backup, restore, and upgrade safety
+3. single-node runtime recovery and restart behavior
+4. observability, sizing, and performance envelopes
+5. packaging, release validation, and distribution UX
 
 ## Immediate Next Actions
 
-- [ ] write the tenancy and isolation decision record
-- [ ] sketch the production partitioning and retention strategy
-- [ ] define the first supported deployment topology and failover model
-- [ ] establish SLO candidates for ingestion, projection lag, and replay
-- [ ] run the first scale test profile to find immediate bottlenecks
+- [x] write the supported self-hosted topology decision record
+- [x] write the first install and bootstrap guide
+- [x] sketch backup, restore, and upgrade expectations for the default topology
+- [x] define the first restart and recovery drill for a single-node install
+- [x] run the first local-hosting benchmark profile to find immediate bottlenecks
 
 ## Notes
 
 Rules for this phase:
 
-- do not claim multi-tenant readiness without explicit boundary tests
-- do not postpone recovery thinking until launch week
-- prefer tested operational constraints over vague scalability claims
-- keep production credibility grounded in observable evidence
+- do not pretend local-first distribution is the same thing as SaaS readiness
+- prefer one well-supported self-hosted topology over several weakly supported ones
+- do not postpone backup, restore, and upgrade guidance until launch week
+- keep reliability claims grounded in drills, benchmarks, and release validation

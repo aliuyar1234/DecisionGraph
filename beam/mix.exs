@@ -28,10 +28,10 @@ defmodule DecisionGraphBeam.MixProject do
 
   defp aliases do
     [
-      setup: ["deps.get", "cmd --app dg_store mix ecto.setup"],
+      setup: ["deps.get", "do --app dg_store ecto.setup"],
       check: ["format --check-formatted", "credo --strict", "test"],
-      "ecto.setup": ["cmd --app dg_store mix ecto.setup"],
-      "ecto.reset": ["cmd --app dg_store mix ecto.reset"]
+      "ecto.setup": ["do --app dg_store ecto.setup"],
+      "ecto.reset": ["do --app dg_store ecto.reset"]
     ]
   end
 

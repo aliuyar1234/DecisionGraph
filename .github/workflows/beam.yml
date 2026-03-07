@@ -40,7 +40,7 @@ jobs:
       - run: mix deps.get
       - run: mix format --check-formatted
       - run: mix credo --strict
-      - run: mix cmd --app dg_store mix ecto.setup
+      - run: mix do --app dg_store ecto.setup
         env:
           MIX_ENV: test
       - name: Projector parity proof

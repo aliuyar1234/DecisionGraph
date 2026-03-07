@@ -28,6 +28,11 @@ Event Log -> Projector -> Query Layer
 - [V1.0 Scope and Contracts](v1-contracts.md)
 - [Release Checklist](release.md)
 - [Operations Runbook](operations.md)
+- [Self-Hosted Install](operations/SELF_HOSTED_INSTALL.md)
+- [Backup and Restore](operations/BACKUP_AND_RESTORE.md)
+- [Upgrade and Rollback](operations/UPGRADE_AND_ROLLBACK.md)
+- [Disaster Recovery](operations/DISASTER_RECOVERY.md)
+- [Self-Hosted Release Checklist](operations/SELF_HOSTED_RELEASE_CHECKLIST.md)
 
 ## Semantic Reference
 
@@ -54,7 +59,12 @@ Event Log -> Projector -> Query Layer
 - [BEAM Supervision Tree](architecture/BEAM_SUPERVISION_TREE.md)
 - [BEAM Process Ownership](architecture/BEAM_PROCESS_OWNERSHIP.md)
 - [BEAM Store Contract](architecture/BEAM_STORE_CONTRACT.md)
+- [Self-Hosted Topology](architecture/SELF_HOSTED_TOPOLOGY.md)
+- [Storage Lifecycle](architecture/STORAGE_LIFECYCLE.md)
+- [Single-Node Recovery](architecture/SINGLE_NODE_RECOVERY.md)
 - [Personas](product/PERSONAS.md)
 - [V1 Platform Scope](product/V1_PLATFORM_SCOPE.md)
 - [Demo Scenario](product/DEMO_SCENARIO.md)
 - [Phase 3 Store Baseline](benchmarks/PHASE_3_STORE_BASELINE.md)
+- [Phase 8 Capacity Model](benchmarks/PHASE_8_CAPACITY_MODEL.md)
+- [Phase 8 Resilience Baseline](benchmarks/PHASE_8_RESILIENCE_BASELINE.md)

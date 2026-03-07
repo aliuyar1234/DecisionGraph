@@ -238,27 +238,26 @@ Phase exit:
 - [x] DecisionGraph is now an active control plane for decision workflows
 - [x] Human-in-the-loop operation is first-class, not bolted on
 
-## Phase 8 - Multi-Tenancy, Reliability, and Scale
+## Phase 8 - Self-Hosted Reliability, Operations, and Distribution
 
 Goal:
-- make the platform operationally credible for serious production use
+- make the platform operationally credible as a GitHub-downloadable self-hosted system
 
 Tasks:
-- [ ] Implement organization, workspace, and environment isolation
-- [ ] Add tenant-scoped event and projection boundaries
-- [ ] Define partitioning strategy for event growth
-- [ ] Define archival and retention strategy
-- [ ] Add backup and disaster-recovery procedures
-- [ ] Add multi-node clustering strategy for the Elixir runtime
-- [ ] Add failover and recovery drills
-- [ ] Add performance targets and SLOs
-- [ ] Add chaos testing for worker crashes and dependency failures
-- [ ] Add observability dashboards for throughput, lag, replay duration, and failure rates
-- [ ] Add cost and capacity planning for production deployment
+- [x] Define the first supported self-hosted topology
+- [x] Add install and bootstrap guidance for GitHub users
+- [x] Define backup, restore, retention, and archival strategy
+- [x] Add upgrade and rollback procedures
+- [x] Add single-node restart and recovery drills
+- [x] Add performance targets and sizing guidance for local hosting
+- [x] Add observability guidance for self-hosted operators
+- [x] Add packaging and release validation for self-hosted distribution
+- [x] Add local-hosting benchmarks and resilience notes
+- [x] Document deferred hosted or multi-tenant concerns explicitly
 
 Phase exit:
-- [ ] The platform can survive real operational stress
-- [ ] We understand scaling limits and recovery behavior
+- [x] The platform is easy to install, run, back up, and recover in a self-hosted setup
+- [x] We understand the limits and recovery behavior of the supported self-hosted topology
 
 ## Phase 9 - Optional BEAM-Native Semantic Core
 

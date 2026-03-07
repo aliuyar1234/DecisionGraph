@@ -14,6 +14,9 @@ Release is blocked until every item is complete:
 - Version bumped in package metadata
 - Signed git tag created
 - Release artifacts verified before publish
+- Self-hosted upgrade and rollback runbook reviewed against the target release
+- Pre-upgrade backup procedure confirmed for the target deployment
+- Self-hosted release checklist reviewed: `docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md`
 
 ## Deprecation Policy
 
@@ -47,6 +50,7 @@ For v1, removals are not allowed in `PATCH`/`MINOR` releases.
 - `python -m decisiongraph projection-status <db>`
 - `python -m decisiongraph projection-status <db> --include-digests`
 - `python -m decisiongraph replay <db>`
+- self-hosted upgrade verification should also follow `docs/operations/UPGRADE_AND_ROLLBACK.md`
 
 ### Rollback
 - Continue using `append_event()` if you do not want to adopt the new helper APIs yet.

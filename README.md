@@ -64,6 +64,18 @@ mix setup
 mix test
 ```
 
+Self-hosted BEAM operator guides:
+
+- [docs/architecture/SELF_HOSTED_TOPOLOGY.md](docs/architecture/SELF_HOSTED_TOPOLOGY.md)
+- [docs/architecture/SINGLE_NODE_RECOVERY.md](docs/architecture/SINGLE_NODE_RECOVERY.md)
+- [docs/operations/SELF_HOSTED_INSTALL.md](docs/operations/SELF_HOSTED_INSTALL.md)
+- [docs/operations/BACKUP_AND_RESTORE.md](docs/operations/BACKUP_AND_RESTORE.md)
+- [docs/operations/UPGRADE_AND_ROLLBACK.md](docs/operations/UPGRADE_AND_ROLLBACK.md)
+- [docs/operations/DISASTER_RECOVERY.md](docs/operations/DISASTER_RECOVERY.md)
+- [docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md](docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md)
+- [docs/benchmarks/PHASE_8_CAPACITY_MODEL.md](docs/benchmarks/PHASE_8_CAPACITY_MODEL.md)
+- [docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md](docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md)
+
 Phase 3 store workflow:
 
 ```bash
@@ -251,11 +263,21 @@ uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b 
 - V1 contracts: [docs/v1-contracts.md](docs/v1-contracts.md)
 - Release checklist: [docs/release.md](docs/release.md)
 - Operations runbook: [docs/operations.md](docs/operations.md)
+- Self-hosted install: [docs/operations/SELF_HOSTED_INSTALL.md](docs/operations/SELF_HOSTED_INSTALL.md)
+- Backup and restore: [docs/operations/BACKUP_AND_RESTORE.md](docs/operations/BACKUP_AND_RESTORE.md)
+- Upgrade and rollback: [docs/operations/UPGRADE_AND_ROLLBACK.md](docs/operations/UPGRADE_AND_ROLLBACK.md)
+- Disaster recovery: [docs/operations/DISASTER_RECOVERY.md](docs/operations/DISASTER_RECOVERY.md)
+- Self-hosted release checklist: [docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md](docs/operations/SELF_HOSTED_RELEASE_CHECKLIST.md)
 - BEAM umbrella guide: [beam/README.md](beam/README.md)
 - BEAM supervision tree: [docs/architecture/BEAM_SUPERVISION_TREE.md](docs/architecture/BEAM_SUPERVISION_TREE.md)
 - BEAM process ownership: [docs/architecture/BEAM_PROCESS_OWNERSHIP.md](docs/architecture/BEAM_PROCESS_OWNERSHIP.md)
 - BEAM store contract: [docs/architecture/BEAM_STORE_CONTRACT.md](docs/architecture/BEAM_STORE_CONTRACT.md)
+- Self-hosted topology: [docs/architecture/SELF_HOSTED_TOPOLOGY.md](docs/architecture/SELF_HOSTED_TOPOLOGY.md)
+- Single-node recovery: [docs/architecture/SINGLE_NODE_RECOVERY.md](docs/architecture/SINGLE_NODE_RECOVERY.md)
+- Storage lifecycle: [docs/architecture/STORAGE_LIFECYCLE.md](docs/architecture/STORAGE_LIFECYCLE.md)
 - Phase 3 benchmark baseline: [docs/benchmarks/PHASE_3_STORE_BASELINE.md](docs/benchmarks/PHASE_3_STORE_BASELINE.md)
+- Phase 8 capacity model: [docs/benchmarks/PHASE_8_CAPACITY_MODEL.md](docs/benchmarks/PHASE_8_CAPACITY_MODEL.md)
+- Phase 8 resilience baseline: [docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md](docs/benchmarks/PHASE_8_RESILIENCE_BASELINE.md)
 - Phase 2 execution plan: [PHASE_2_EXECUTION_PLAN.md](PHASE_2_EXECUTION_PLAN.md)
 - Phase 3 execution plan: [PHASE_3_EXECUTION_PLAN.md](PHASE_3_EXECUTION_PLAN.md)
 
