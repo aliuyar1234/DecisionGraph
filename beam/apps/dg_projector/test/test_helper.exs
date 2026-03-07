@@ -25,6 +25,7 @@ case DecisionGraph.Store.Repo.start_link() do
 end
 
 migrations_path = Application.app_dir(:dg_store, "priv/repo/migrations")
+Ecto.Adapters.SQL.Sandbox.mode(DecisionGraph.Store.Repo, :auto)
 
 {:ok, _, _} =
   Ecto.Migrator.with_repo(DecisionGraph.Store.Repo, fn repo ->
