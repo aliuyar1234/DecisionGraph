@@ -2,15 +2,12 @@
 
 Deterministic decision audit trails, operator workflows, and replay verification for AI agents and automation systems.
 
-[![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg?branch=master&event=push&label=CI)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
-[![Demo](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml/badge.svg?branch=master&event=push&label=Demo)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/demo.yml)
-[![Security](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/security.yml/badge.svg?branch=master&event=push&label=Security)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/security.yml)
-[![Performance](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/performance.yml/badge.svg?branch=master&event=push&label=Performance)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/performance.yml)
-[![Coverage](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codecov.io%2Fapi%2Fv2%2Fgithub%2Faliuyar1234%2Frepos%2Fdecisiongraph&query=%24.totals.coverage&label=coverage&suffix=%25)](https://app.codecov.io/github/aliuyar1234/decisiongraph)
+[![CI](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml/badge.svg?branch=main&event=push&label=CI)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/aliuyar1234/DecisionGraph?display_name=tag&label=release)](https://github.com/aliuyar1234/DecisionGraph/releases)
 [![Docs](https://img.shields.io/badge/docs-github--pages-blue)](https://aliuyar1234.github.io/DecisionGraph/)
+[![Self-Hosted](https://img.shields.io/badge/deployment-self--hosted-2f6f44)](docs/operations/SELF_HOSTED_INSTALL.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
-[![BEAM](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/beam.yml/badge.svg?branch=master&event=push&label=BEAM)](https://github.com/aliuyar1234/DecisionGraph/actions/workflows/beam.yml)
 
 ## Why DecisionGraph
 
