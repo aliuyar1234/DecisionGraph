@@ -6,24 +6,53 @@ repo_name: aliuyar1234/DecisionGraph
 
 theme:
   name: material
+  palette:
+    - scheme: default
+      primary: blue grey
+      accent: teal
   features:
     - navigation.instant
+    - navigation.tabs
     - navigation.sections
+    - navigation.top
+    - navigation.tracking
     - content.code.copy
+    - search.highlight
+    - search.suggest
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+
+extra_css:
+  - assets/stylesheets/extra.css
 
 nav:
   - Home: index.md
   - Showcase: showcase.md
   - Quickstart: quickstart.md
-  - API: api.md
+  - API:
+      - Overview: api.md
+      - BEAM Service API: api/BEAM_SERVICE_API.md
   - V1 Contracts: v1-contracts.md
   - Release: release.md
   - Operations:
       - Overview: operations.md
+      - API Security: operations/API_SECURITY.md
+      - Approval and Override Policy: operations/APPROVAL_AND_OVERRIDE_POLICY.md
       - Self-Hosted Install: operations/SELF_HOSTED_INSTALL.md
       - Backup and Restore: operations/BACKUP_AND_RESTORE.md
       - Upgrade and Rollback: operations/UPGRADE_AND_ROLLBACK.md
       - Disaster Recovery: operations/DISASTER_RECOVERY.md
+      - Operator Console: operations/OPERATOR_CONSOLE.md
+      - Trace Investigation: operations/TRACE_INVESTIGATION.md
       - Semantic Authority Transition: operations/SEMANTIC_AUTHORITY_TRANSITION.md
       - First Release Limitations: operations/FIRST_RELEASE_LIMITATIONS.md
       - Early Adopter Feedback: operations/EARLY_ADOPTER_FEEDBACK.md
@@ -35,10 +64,25 @@ nav:
       - Self-Hosted Release Checklist: operations/SELF_HOSTED_RELEASE_CHECKLIST.md
       - API Runtime: operations/API_RUNTIME.md
       - Projection Runtime: operations/PROJECTION_RUNTIME.md
+      - Workflow Notifications: operations/WORKFLOW_NOTIFICATIONS.md
+      - Workflow Retention and Redaction: operations/WORKFLOW_RETENTION_AND_REDACTION.md
       - Workflow Runtime: operations/WORKFLOW_RUNTIME.md
   - Architecture:
+      - Product North Star: vision/PRODUCT_NORTH_STAR.md
+      - "ADR: Elixir Direction": architecture/ADR_ELIXIR_DIRECTION.md
+      - "ADR: Python Reference Core": architecture/ADR_PYTHON_REFERENCE_CORE.md
+      - "ADR: Phoenix Platform Role": architecture/ADR_PHOENIX_PLATFORM_ROLE.md
       - Phoenix Platform Architecture: architecture/DECISIONGRAPH_PHOENIX_ARCHITECTURE.md
       - "ADR: Phase 9 Semantic Authority": architecture/ADR_PHASE_9_SEMANTIC_AUTHORITY.md
+      - Repo Evolution Map: architecture/REPO_EVOLUTION_MAP.md
+      - BEAM Process Ownership: architecture/BEAM_PROCESS_OWNERSHIP.md
+      - BEAM Projection Process Model: architecture/BEAM_PROJECTION_PROCESS_MODEL.md
+      - BEAM Projection Runtime: architecture/BEAM_PROJECTION_RUNTIME.md
+      - BEAM Projection Schema: architecture/BEAM_PROJECTION_SCHEMA.md
+      - BEAM Service API Boundary: architecture/BEAM_SERVICE_API_BOUNDARY.md
+      - BEAM Store Contract: architecture/BEAM_STORE_CONTRACT.md
+      - BEAM Supervision Tree: architecture/BEAM_SUPERVISION_TREE.md
+      - Workflow Domain Model: architecture/WORKFLOW_DOMAIN_MODEL.md
       - Semantic Authority Inventory: architecture/SEMANTIC_AUTHORITY_INVENTORY.md
       - Semantic Authority Decision: architecture/SEMANTIC_AUTHORITY_DECISION.md
       - Phase 9 Recommendation: architecture/SEMANTIC_AUTHORITY_RECOMMENDATION.md
@@ -61,9 +105,17 @@ nav:
       - Phase 8: plans/PHASE_8_EXECUTION_PLAN.md
       - Phase 9: plans/PHASE_9_EXECUTION_PLAN.md
       - Phase 10: plans/PHASE_10_EXECUTION_PLAN.md
+      - Archive:
+          - Improvement Roadmap TODO: plans/archive/IMPROVEMENT_ROADMAP_TODO.md
+          - Tasklist: plans/archive/Tasklist.md
   - Product:
+      - Personas: product/PERSONAS.md
+      - V1 Platform Scope: product/V1_PLATFORM_SCOPE.md
       - Demo Scenario: product/DEMO_SCENARIO.md
       - Workflow Demo Scenario: product/WORKFLOW_DEMO_SCENARIO.md
+      - Operator Console Information Architecture: product/OPERATOR_CONSOLE_INFORMATION_ARCHITECTURE.md
+      - Operator Console Visual Direction: product/OPERATOR_CONSOLE_VISUAL_DIRECTION.md
+      - Graph and Precedent Investigation: product/GRAPH_AND_PRECEDENT_INVESTIGATION.md
       - Post Release Backlog: product/POST_RELEASE_BACKLOG.md
   - Benchmarks:
       - Phase 3 Store Baseline: benchmarks/PHASE_3_STORE_BASELINE.md
@@ -75,7 +127,20 @@ nav:
       - Phase 9 Parity Report: benchmarks/PHASE_9_PARITY_REPORT.md
       - Phase 10 Release Validation: benchmarks/PHASE_10_RELEASE_VALIDATION.md
   - Reference:
+      - Overview: reference/README.md
+      - Event Envelope Contract: reference/EVENT_ENVELOPE_CONTRACT.md
+      - Payload Shape Matrix: reference/PAYLOAD_SHAPE_MATRIX.md
+      - Append Semantics: reference/APPEND_SEMANTICS.md
+      - Projection and Replay Semantics: reference/PROJECTION_AND_REPLAY_SEMANTICS.md
+      - Precedent and Graph Query Semantics: reference/PRECEDENT_AND_GRAPH_QUERY_SEMANTICS.md
+      - Query and Ordering Invariants: reference/QUERY_AND_ORDERING_INVARIANTS.md
+      - Digest Invariants: reference/DIGEST_INVARIANTS.md
+      - Storage Backend Expectations: reference/STORAGE_BACKEND_EXPECTATIONS.md
       - Semantic Parity Policy: reference/SEMANTIC_PARITY_POLICY.md
       - Parity Harness Plan: reference/PARITY_HARNESS_PLAN.md
       - Semantic Ownership Changelog: reference/SEMANTIC_OWNERSHIP_CHANGELOG.md
+      - Semantic Baseline Release Notes: reference/SEMANTIC_BASELINE_RELEASE_NOTES.md
       - Python SDK Service Compatibility: reference/PYTHON_SDK_SERVICE_COMPATIBILITY.md
+      - BEAM HTTP API Contract: reference/BEAM_HTTP_API_CONTRACT.md
+      - BEAM Projection Replay Behavior: reference/BEAM_PROJECTION_REPLAY_BEHAVIOR.md
+      - Workflow State Machine: reference/WORKFLOW_STATE_MACHINE.md
