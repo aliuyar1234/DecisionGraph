@@ -32,6 +32,7 @@ Event Log -> Projector -> Query Layer
 - [Backup and Restore](operations/BACKUP_AND_RESTORE.md)
 - [Upgrade and Rollback](operations/UPGRADE_AND_ROLLBACK.md)
 - [Disaster Recovery](operations/DISASTER_RECOVERY.md)
+- [Semantic Authority Transition](operations/SEMANTIC_AUTHORITY_TRANSITION.md)
 - [Self-Hosted Release Checklist](operations/SELF_HOSTED_RELEASE_CHECKLIST.md)
 
 ## Semantic Reference
@@ -47,6 +48,7 @@ Event Log -> Projector -> Query Layer
 - [Storage Backend Expectations](reference/STORAGE_BACKEND_EXPECTATIONS.md)
 - [Semantic Parity Policy](reference/SEMANTIC_PARITY_POLICY.md)
 - [Parity Harness Plan](reference/PARITY_HARNESS_PLAN.md)
+- [Semantic Ownership Changelog](reference/SEMANTIC_OWNERSHIP_CHANGELOG.md)
 - [Semantic Baseline Release Notes](reference/SEMANTIC_BASELINE_RELEASE_NOTES.md)
 
 ## Platform Strategy
@@ -54,7 +56,13 @@ Event Log -> Projector -> Query Layer
 - [Product North Star](vision/PRODUCT_NORTH_STAR.md)
 - [ADR: Elixir Direction](architecture/ADR_ELIXIR_DIRECTION.md)
 - [ADR: Python Reference Core](architecture/ADR_PYTHON_REFERENCE_CORE.md)
+- [ADR: Phase 9 Semantic Authority](architecture/ADR_PHASE_9_SEMANTIC_AUTHORITY.md)
 - [ADR: Phoenix Platform Role](architecture/ADR_PHOENIX_PLATFORM_ROLE.md)
+- [Semantic Authority Inventory](architecture/SEMANTIC_AUTHORITY_INVENTORY.md)
+- [Semantic Authority Decision Criteria](architecture/SEMANTIC_AUTHORITY_DECISION.md)
+- [Phase 9 Recommendation Memo](architecture/SEMANTIC_AUTHORITY_RECOMMENDATION.md)
+- [Semantic Governance](architecture/SEMANTIC_GOVERNANCE.md)
+- [Python SDK Bridge Plan](architecture/PYTHON_SDK_BRIDGE_PLAN.md)
 - [Repo Evolution Map](architecture/REPO_EVOLUTION_MAP.md)
 - [BEAM Supervision Tree](architecture/BEAM_SUPERVISION_TREE.md)
 - [BEAM Process Ownership](architecture/BEAM_PROCESS_OWNERSHIP.md)
@@ -68,3 +76,5 @@ Event Log -> Projector -> Query Layer
 - [Phase 3 Store Baseline](benchmarks/PHASE_3_STORE_BASELINE.md)
 - [Phase 8 Capacity Model](benchmarks/PHASE_8_CAPACITY_MODEL.md)
 - [Phase 8 Resilience Baseline](benchmarks/PHASE_8_RESILIENCE_BASELINE.md)
+- [Phase 9 Parity Report](benchmarks/PHASE_9_PARITY_REPORT.md)
+- [Parity Infrastructure Maintenance](operations/PARITY_INFRASTRUCTURE_MAINTENANCE.md)

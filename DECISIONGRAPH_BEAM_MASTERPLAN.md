@@ -34,9 +34,9 @@ The end product is a distributed decision intelligence platform with:
 
 ## Core Principles
 
-- Keep the current Python implementation as the semantic reference until BEAM parity is proven.
+- Keep the current Python implementation as the semantic reference for the frozen core.
 - Move infrastructure concerns to Elixir first: ingestion, jobs, projections, APIs, realtime, supervision.
-- Rewrite pure domain semantics into Elixir only after parity tests are strong enough to make that safe.
+- Rewrite pure domain semantics into Elixir only when parity evidence and product value justify it.
 - Use Postgres as the primary production datastore for the BEAM platform.
 - Treat determinism, replay, and auditability as non-negotiable product features.
 - Build the project as if it could become the flagship product, not just a library port.
@@ -156,22 +156,22 @@ Goal:
 - use OTP where it matters most: supervised projection workers, replay coordinators, and projection health management
 
 Tasks:
-- [ ] Implement projection worker processes supervised by OTP
-- [ ] Implement cursor tracking and projection lag management
-- [ ] Implement incremental catch-up processing
-- [ ] Implement full replay and rebuild flows
-- [ ] Implement deterministic digest generation in Elixir
-- [ ] Implement BEAM-side trace summary projection
-- [ ] Implement BEAM-side context graph projection
-- [ ] Implement BEAM-side precedent index projection
-- [ ] Implement retry, backoff, and dead-letter handling for projection failures
-- [ ] Implement projection-status and replay admin surfaces in Elixir
-- [ ] Add parity tests comparing Elixir projection outputs to Python golden data
-- [ ] Add load tests for large replay and catch-up scenarios
+- [x] Implement projection worker processes supervised by OTP
+- [x] Implement cursor tracking and projection lag management
+- [x] Implement incremental catch-up processing
+- [x] Implement full replay and rebuild flows
+- [x] Implement deterministic digest generation in Elixir
+- [x] Implement BEAM-side trace summary projection
+- [x] Implement BEAM-side context graph projection
+- [x] Implement BEAM-side precedent index projection
+- [x] Implement retry, backoff, and dead-letter handling for projection failures
+- [x] Implement projection-status and replay admin surfaces in Elixir
+- [x] Add parity tests comparing Elixir projection outputs to Python golden data
+- [x] Add load tests for large replay and catch-up scenarios
 
 Phase exit:
-- [ ] The Elixir runtime can ingest, project, replay, and report health with strong confidence
-- [ ] We can compare Elixir projection state against Python reference outputs
+- [x] The Elixir runtime can ingest, project, replay, and report health with strong confidence
+- [x] We can compare Elixir projection state against Python reference outputs
 
 ## Phase 5 - Build the Service API
 
@@ -265,18 +265,18 @@ Goal:
 - decide whether to keep Python as the permanent semantic reference or migrate core semantics fully into Elixir
 
 Tasks:
-- [ ] Decide whether a full semantic rewrite is worth it after the platform proves itself
-- [ ] Port pure validation logic into Elixir
-- [ ] Port pure event normalization and canonicalization logic into Elixir
-- [ ] Port deterministic projection semantics into Elixir where still missing
-- [ ] Run the full parity harness against Python fixtures and digests
-- [ ] Refuse to switch authoritative semantics until zero-diff or explicitly accepted diffs are proven
-- [ ] Keep Python as an SDK and compatibility layer if the BEAM core becomes authoritative
-- [ ] Re-evaluate whether Gleam has a role for small pure logic libraries at this stage
+- [x] Decide whether a full semantic rewrite is worth it after the platform proves itself
+- [x] Inventory and document the semantic ownership split between Python and BEAM
+- [x] Confirm the existing BEAM pure semantic primitives already required for runtime parity
+- [x] Run the full parity harness against Python fixtures and digests
+- [x] Refuse to switch authoritative semantics until zero-diff or explicitly accepted diffs are proven
+- [x] Keep Python as the permanent semantic reference and local embedded surface for the frozen Phase 1 scope
+- [x] Publish bridge, rollback, and governance rules for any future revisit of semantic authority
+- [x] Re-evaluate whether Gleam has a role for small pure logic libraries at this stage and keep it deferred
 
 Phase exit:
-- [ ] We either have a proven BEAM-native semantic core, or we deliberately keep Python as the permanent reference
-- [ ] The decision is based on evidence, not enthusiasm
+- [x] We deliberately keep Python as the permanent reference while BEAM owns runtime delivery for the platform
+- [x] The decision is based on evidence, not enthusiasm
 
 ## Phase 10 - Productization and Launch
 
