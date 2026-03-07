@@ -103,11 +103,10 @@ defmodule Mix.Tasks.Dg.Accounts.Bootstrap do
 
     lines =
       payload["service_accounts"]
-      |> Enum.map(fn account ->
+      |> Enum.map_join("\n", fn account ->
         token = account["tokens"] |> List.first()
         "  #{account["account_id"]}: #{token}"
       end)
-      |> Enum.join("\n")
 
     IO.puts("""
     DecisionGraph service-account bootstrap generated

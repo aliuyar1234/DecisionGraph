@@ -6,8 +6,8 @@ defmodule DecisionGraph.Projector.ProjectionWorker do
   use GenServer
 
   alias DecisionGraph.Error
-  alias DecisionGraph.Projector.Engine
   alias DecisionGraph.Observability
+  alias DecisionGraph.Projector.Engine
   alias DecisionGraph.Projector.Runtime
   alias DecisionGraph.Projector.Support
   alias DecisionGraph.Store

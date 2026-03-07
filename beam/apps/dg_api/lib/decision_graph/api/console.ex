@@ -943,10 +943,10 @@ defmodule DecisionGraph.Api.Console do
 
   defp latest_event(_events, _event_type), do: nil
 
-  defp policy_event_summary(event) do
-    payload = Map.get(event || %{}, "payload") || %{}
+  defp policy_event_summary(event) when is_map(event) do
+    payload = Map.get(event, "payload") || %{}
 
-    case Map.get(event || %{}, "event_type") do
+    case Map.get(event, "event_type") do
       "PolicyEvaluated" ->
         payload_value(payload, ["decision"]) ||
           payload_value(payload, ["explanation", "summary"]) ||

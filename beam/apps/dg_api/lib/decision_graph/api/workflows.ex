@@ -1303,30 +1303,32 @@ defmodule DecisionGraph.Api.Workflows do
   end
 
   defp review_context_for(tenant_id, item) do
-    with {:ok, trace} <- Api.service(:traces).get_trace(item["trace_id"], tenant_id: tenant_id) do
-      template_id =
-        decode_json(item["metadata_json"])
-        |> payload_value(["review_template", "template_id"])
-        |> normalize_optional_string()
+    case Api.service(:traces).get_trace(item["trace_id"], tenant_id: tenant_id) do
+      {:ok, trace} ->
+        template_id =
+          decode_json(item["metadata_json"])
+          |> payload_value(["review_template", "template_id"])
+          |> normalize_optional_string()
 
-      studio =
-        build_review_studio(
-          item["trace_id"],
-          trace,
-          tenant_id,
-          resolve_template(template_id, trace)
-        )
+        studio =
+          build_review_studio(
+            item["trace_id"],
+            trace,
+            tenant_id,
+            resolve_template(template_id, trace)
+          )
 
-      %{
-        "existing_workflows" => Map.get(studio, "existing_workflows", []),
-        "precedent_preview" => Map.get(studio, "precedent_preview", []),
-        "recommended_replay" => Map.get(studio, "replay_suggestion"),
-        "simulation" => Map.get(studio, "simulation"),
-        "trace_summary" => get_in(trace, [:summary]),
-        "templates" => Map.get(studio, "templates", [])
-      }
-    else
-      _error -> nil
+        %{
+          "existing_workflows" => Map.get(studio, "existing_workflows", []),
+          "precedent_preview" => Map.get(studio, "precedent_preview", []),
+          "recommended_replay" => Map.get(studio, "replay_suggestion"),
+          "simulation" => Map.get(studio, "simulation"),
+          "trace_summary" => get_in(trace, [:summary]),
+          "templates" => Map.get(studio, "templates", [])
+        }
+
+      _error ->
+        nil
     end
   rescue
     _error -> nil
@@ -2054,12 +2056,14 @@ defmodule DecisionGraph.Api.Workflows do
   defp add_hours(timestamp, hours) do
     hours = normalize_sla_hours(hours)
 
-    with {:ok, parsed, _offset} <- DateTime.from_iso8601(timestamp) do
-      parsed
-      |> DateTime.add(hours * 60 * 60, :second)
-      |> SQL.now_rfc3339()
-    else
-      _error -> timestamp
+    case DateTime.from_iso8601(timestamp) do
+      {:ok, parsed, _offset} ->
+        parsed
+        |> DateTime.add(hours * 60 * 60, :second)
+        |> SQL.now_rfc3339()
+
+      _error ->
+        timestamp
     end
   end
 
@@ -2271,7 +2275,7 @@ defmodule DecisionGraph.Api.Workflows do
     end)
   end
 
-  defp encode_json(value), do: Jason.encode!(value || %{})
+  defp encode_json(value), do: Jason.encode!(value)
   defp decode_json(nil), do: %{}
   defp decode_json(value) when is_map(value), do: value
 

@@ -27,6 +27,11 @@ defmodule DecisionGraph.Projector.ContextGraph do
 
     @enforce_keys [:nodes, :edges]
     defstruct [:nodes, :edges]
+
+    @type t :: %__MODULE__{
+            nodes: [Node.t()],
+            edges: [Edge.t()]
+          }
   end
 
   @spec emit(StoredEvent.t()) :: GraphEmission.t()

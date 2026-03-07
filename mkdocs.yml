@@ -38,7 +38,7 @@ nav:
       - Workflow Runtime: operations/WORKFLOW_RUNTIME.md
   - Architecture:
       - Phoenix Platform Architecture: architecture/DECISIONGRAPH_PHOENIX_ARCHITECTURE.md
-      - ADR: Phase 9 Semantic Authority: architecture/ADR_PHASE_9_SEMANTIC_AUTHORITY.md
+      - "ADR: Phase 9 Semantic Authority": architecture/ADR_PHASE_9_SEMANTIC_AUTHORITY.md
       - Semantic Authority Inventory: architecture/SEMANTIC_AUTHORITY_INVENTORY.md
       - Semantic Authority Decision: architecture/SEMANTIC_AUTHORITY_DECISION.md
       - Phase 9 Recommendation: architecture/SEMANTIC_AUTHORITY_RECOMMENDATION.md

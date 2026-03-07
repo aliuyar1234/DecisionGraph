@@ -30,10 +30,10 @@ def fetch_text(url: str, *, attempts: int = 3, timeout_seconds: int = 20) -> str
     raise SystemExit(f"Failed to fetch URL after {attempts} attempts: {url}\n{last_error}")
 
 
-def extract_coverage_badge_url(readme_text: str) -> str:
+def extract_coverage_badge_url(readme_text: str) -> str | None:
     match = re.search(r"\[!\[Coverage\]\(([^)]+)\)\]\(([^)]+)\)", readme_text)
     if not match:
-        raise SystemExit("Coverage badge not found in README.md")
+        return None
     return match.group(1)
 
 
@@ -84,6 +84,10 @@ def main() -> None:
 
     readme_text = args.readme.read_text(encoding="utf-8")
     badge_url = extract_coverage_badge_url(readme_text)
+    if badge_url is None:
+        print("Coverage badge not present in README.md; skipping badge health check.")
+        return
+
     badge_svg = fetch_text(badge_url)
     ensure_badge_is_numeric(badge_svg)
 

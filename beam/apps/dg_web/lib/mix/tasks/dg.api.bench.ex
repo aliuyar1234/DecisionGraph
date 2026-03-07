@@ -695,8 +695,8 @@ defmodule Mix.Tasks.Dg.Api.Bench do
 
   defp machine_label do
     case :os.type() do
-      {family, name} -> "#{family}/#{name}"
-      other -> inspect(other)
+      {:unix, name} -> "unix/#{name}"
+      {:win32, name} -> "win32/#{name}"
     end
   end
 

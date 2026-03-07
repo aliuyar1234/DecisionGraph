@@ -5,7 +5,7 @@ defmodule DecisionGraphBeam.MixProject do
     [
       apps_path: "apps",
       aliases: aliases(),
-      dialyzer: [ignore_warnings: ".dialyzer_ignore.exs"],
+      dialyzer: [ignore_warnings: ".dialyzer_ignore.exs", plt_add_apps: [:mix]],
       elixir: "~> 1.19",
       releases: releases(),
       start_permanent: Mix.env() == :prod,
