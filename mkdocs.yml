@@ -8,18 +8,14 @@ theme:
   name: material
   palette:
     - scheme: default
-      primary: blue grey
-      accent: teal
+      primary: black
+      accent: grey
   features:
     - navigation.instant
-    - navigation.tabs
     - navigation.sections
-    - navigation.top
     - navigation.tracking
     - content.code.copy
     - search.highlight
-    - search.suggest
-    - toc.follow
 
 markdown_extensions:
   - admonition
