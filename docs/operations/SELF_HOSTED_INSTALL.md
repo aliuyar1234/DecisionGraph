@@ -133,6 +133,10 @@ DECISION_GRAPH_SERVICE_ACCOUNTS_FILE=/absolute/path/to/service-accounts.json
 DECISION_GRAPH_OPERATOR_ACCOUNT_ID=admin-main
 ```
 
+After the runtime is up, you can also open `http://localhost:4100/bootstrap` to preview a
+fresh bootstrap payload and inspect a safe token-overlap rotation plan for the configured
+service accounts.
+
 For packaged OTP releases, you can also place the file at:
 
 ```text
@@ -221,10 +225,17 @@ For the supported self-hosted evaluation path, the one-command release validator
 
 ```bash
 cd beam
-mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
 ```
 
 This command starts the real HTTP runtime, seeds the `release-demo` tenant, and records validation evidence for the current release candidate.
+
+For a staging-style verification pass that reuses existing seeded data instead of resetting the tenant:
+
+```bash
+cd beam
+mix dg.release.validate --seed-mode reuse --quiet --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
+```
 
 ## OTP Release Packaging
 
@@ -253,6 +264,11 @@ cd beam
 _build/prod/rel/decisiongraph_beam/bin/decisiongraph_beam start
 ```
 
+Tagged GitHub releases can also publish:
+
+- a signed packaged OTP tarball attached to the GitHub Release
+- a prebuilt GHCR image derived from `beam/Dockerfile`
+
 ## Container Image Build
 
 Build the repo-provided image from the packaged OTP release:
@@ -275,9 +291,7 @@ docker build -f Dockerfile.build -t decisiongraph-beam:source .
 Current Phase 8 limits are explicit:
 
 - there is no hosted SaaS path
-- there is no prebuilt published app image yet; the repo now ships `beam/Dockerfile` and `beam/Dockerfile.build`
-- there is no prebuilt published OTP release asset yet; the repo now supports `mix release decisiongraph_beam`
-- auth bootstrap is file-driven or env-driven, not UI-driven
+- auth bootstrap writes are still file-driven or env-driven; the `/bootstrap` UI is a preview and planning surface, not a persistence wizard
 - clustering and multi-node failover are out of scope for the supported topology
 
 If those limits are acceptable, this is the supported self-hosted path today.

@@ -1,8 +1,10 @@
 defmodule DecisionGraph.Api.Console do
   @moduledoc false
 
+  import DecisionGraph.Api.ConsoleSupport
+
   alias DecisionGraph.Api
-  alias DecisionGraph.Api.{Errors, Serialization, ServiceAccount}
+  alias DecisionGraph.Api.{ConsoleSupport, Errors, ServiceAccount}
 
   @default_event_limit 12
   @default_failure_limit 5
@@ -21,28 +23,49 @@ defmodule DecisionGraph.Api.Console do
 
   @spec snapshot(keyword()) :: map()
   def snapshot(opts \\ []) do
-    tenant_id = normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
-    recent_limit = normalize_recent_limit(Keyword.get(opts, :recent_limit, @default_recent_limit))
-    event_limit = normalize_event_limit(Keyword.get(opts, :event_limit, @default_event_limit))
-    replay_limit = normalize_run_limit(Keyword.get(opts, :run_limit, @default_run_limit))
+    tenant_id = ConsoleSupport.normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
+
+    recent_limit =
+      ConsoleSupport.normalize_recent_limit(
+        Keyword.get(opts, :recent_limit, @default_recent_limit),
+        @default_recent_limit
+      )
+
+    event_limit =
+      ConsoleSupport.normalize_event_limit(
+        Keyword.get(opts, :event_limit, @default_event_limit),
+        @default_event_limit
+      )
+
+    replay_limit =
+      ConsoleSupport.normalize_run_limit(
+        Keyword.get(opts, :run_limit, @default_run_limit),
+        @default_run_limit
+      )
 
     workflow_limit =
-      normalize_run_limit(Keyword.get(opts, :workflow_limit, @default_workflow_limit))
+      ConsoleSupport.normalize_run_limit(
+        Keyword.get(opts, :workflow_limit, @default_workflow_limit),
+        @default_workflow_limit
+      )
 
     failure_limit =
-      normalize_failure_limit(Keyword.get(opts, :failure_limit, @default_failure_limit))
+      ConsoleSupport.normalize_failure_limit(
+        Keyword.get(opts, :failure_limit, @default_failure_limit),
+        @default_failure_limit
+      )
 
-    projector = serialize_data(DecisionGraph.Projector.runtime_snapshot())
-    store = serialize_data(DecisionGraph.Store.deployment_snapshot())
+    projector = ConsoleSupport.serialize_data(DecisionGraph.Projector.runtime_snapshot())
+    store = ConsoleSupport.serialize_data(DecisionGraph.Store.deployment_snapshot())
     console_controls = console_controls_section()
     projection_health = projection_health_section(tenant_id)
     recent_traces = recent_traces_section(tenant_id, recent_limit)
 
     trace_id =
       Keyword.get(opts, :trace_id)
-      |> normalize_optional_string()
+      |> ConsoleSupport.normalize_optional_string()
       |> case do
-        nil -> first_recent_trace_id(recent_traces)
+        nil -> ConsoleSupport.first_recent_trace_id(recent_traces)
         selected_trace_id -> selected_trace_id
       end
 
@@ -51,9 +74,9 @@ defmodule DecisionGraph.Api.Console do
 
     workflow_id =
       Keyword.get(opts, :workflow_id)
-      |> normalize_optional_string()
+      |> ConsoleSupport.normalize_optional_string()
       |> case do
-        nil -> first_workflow_id(workflow_inbox, trace_id)
+        nil -> ConsoleSupport.first_workflow_id(workflow_inbox, trace_id)
         selected_workflow_id -> selected_workflow_id
       end
 
@@ -114,17 +137,17 @@ defmodule DecisionGraph.Api.Console do
   @spec start_replay(map(), keyword()) ::
           {:ok, map()} | {:error, DecisionGraph.Api.HttpError.t()}
   def start_replay(attrs, opts \\ []) do
-    tenant_id = normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
+    tenant_id = ConsoleSupport.normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
 
-    with {:ok, actor} <- operator_actor_result(),
+    with {:ok, actor} <- ConsoleSupport.operator_actor_result(),
          {:ok, run} <-
            Api.service(:admin).start_replay(
              attrs,
              tenant_id: tenant_id,
              actor: actor,
-             request_id: operator_request_id("replay")
+             request_id: ConsoleSupport.operator_request_id("replay")
            ) do
-      {:ok, serialize_data(run)}
+      {:ok, ConsoleSupport.serialize_data(run)}
     end
   rescue
     error -> {:error, Errors.from_exception(error)}
@@ -133,17 +156,17 @@ defmodule DecisionGraph.Api.Console do
   @spec cancel_replay(String.t(), keyword()) ::
           {:ok, map()} | {:error, DecisionGraph.Api.HttpError.t()}
   def cancel_replay(job_id, opts \\ []) do
-    tenant_id = normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
+    tenant_id = ConsoleSupport.normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
 
-    with {:ok, actor} <- operator_actor_result(),
+    with {:ok, actor} <- ConsoleSupport.operator_actor_result(),
          {:ok, run} <-
            Api.service(:admin).cancel_replay(
              job_id,
              tenant_id: tenant_id,
              actor: actor,
-             request_id: operator_request_id("cancel")
+             request_id: ConsoleSupport.operator_request_id("cancel")
            ) do
-      {:ok, serialize_data(run)}
+      {:ok, ConsoleSupport.serialize_data(run)}
     end
   rescue
     error -> {:error, Errors.from_exception(error)}
@@ -152,18 +175,18 @@ defmodule DecisionGraph.Api.Console do
   @spec act_on_workflow(String.t(), map(), keyword()) ::
           {:ok, map()} | {:error, DecisionGraph.Api.HttpError.t()}
   def act_on_workflow(workflow_id, attrs, opts \\ []) do
-    tenant_id = normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
+    tenant_id = ConsoleSupport.normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
 
-    with {:ok, actor} <- operator_actor_result(),
+    with {:ok, actor} <- ConsoleSupport.operator_actor_result(),
          {:ok, result} <-
            Api.service(:workflows).act_on_workflow(
              workflow_id,
              attrs,
              tenant_id: tenant_id,
              actor: actor,
-             request_id: operator_request_id("workflow")
+             request_id: ConsoleSupport.operator_request_id("workflow")
            ) do
-      {:ok, serialize_data(result)}
+      {:ok, ConsoleSupport.serialize_data(result)}
     end
   rescue
     error -> {:error, Errors.from_exception(error)}
@@ -172,16 +195,16 @@ defmodule DecisionGraph.Api.Console do
   @spec export_workflow(String.t(), keyword()) ::
           {:ok, map()} | {:error, DecisionGraph.Api.HttpError.t()}
   def export_workflow(workflow_id, opts \\ []) do
-    tenant_id = normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
+    tenant_id = ConsoleSupport.normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
 
-    with {:ok, actor} <- operator_actor_result(),
+    with {:ok, actor} <- ConsoleSupport.operator_actor_result(),
          {:ok, result} <-
            Api.service(:workflows).export_workflow(
              workflow_id,
              tenant_id: tenant_id,
              actor: actor
            ) do
-      {:ok, serialize_data(result)}
+      {:ok, ConsoleSupport.serialize_data(result)}
     end
   rescue
     error -> {:error, Errors.from_exception(error)}
@@ -190,18 +213,18 @@ defmodule DecisionGraph.Api.Console do
   @spec start_trace_review(String.t(), map(), keyword()) ::
           {:ok, map()} | {:error, DecisionGraph.Api.HttpError.t()}
   def start_trace_review(trace_id, attrs, opts \\ []) do
-    tenant_id = normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
+    tenant_id = ConsoleSupport.normalize_tenant_id(Keyword.get(opts, :tenant_id, "default"))
 
-    with {:ok, actor} <- operator_actor_result(),
+    with {:ok, actor} <- ConsoleSupport.operator_actor_result(),
          {:ok, result} <-
            Api.service(:workflow_studio).start_review(
              trace_id,
              attrs,
              tenant_id: tenant_id,
              actor: actor,
-             request_id: operator_request_id("review")
+             request_id: ConsoleSupport.operator_request_id("review")
            ) do
-      {:ok, serialize_data(result)}
+      {:ok, ConsoleSupport.serialize_data(result)}
     end
   rescue
     error -> {:error, Errors.from_exception(error)}
@@ -212,7 +235,7 @@ defmodule DecisionGraph.Api.Console do
       %ServiceAccount{} = actor ->
         %{
           data:
-            serialize_data(%{
+            ConsoleSupport.serialize_data(%{
               account_id: actor.account_id,
               actions_enabled: true,
               can_rebuild: ServiceAccount.allows?(actor, "projection_rebuild"),
@@ -233,7 +256,7 @@ defmodule DecisionGraph.Api.Console do
       nil ->
         %{
           data:
-            serialize_data(%{
+            ConsoleSupport.serialize_data(%{
               account_id: nil,
               actions_enabled: false,
               can_rebuild: false,
@@ -257,7 +280,7 @@ defmodule DecisionGraph.Api.Console do
   defp projection_health_section(tenant_id) do
     case Api.service(:admin).projection_health(tenant_id: tenant_id) do
       {:ok, health} ->
-        serialized = serialize_data(health)
+        serialized = ConsoleSupport.serialize_data(health)
 
         %{
           data: serialized,
@@ -883,286 +906,4 @@ defmodule DecisionGraph.Api.Console do
       replay_console.error
     )
   end
-
-  defp investigator_handoff(%{"events" => events, "summary" => summary}) do
-    policy = trace_policy_from_events(events)
-    approval = latest_event(events, "ApprovalRecorded")
-    exception = latest_event(events, "ExceptionRequested")
-
-    [
-      "trace_id=#{Map.get(summary, "trace_id")}",
-      "workflow=#{Map.get(summary, "workflow") || "unknown"}",
-      "entity=#{entity_label(summary)}",
-      "outcome=#{Map.get(summary, "outcome") || "pending"}",
-      "policy=#{Map.get(policy, "policy_id") || "unknown"}@#{Map.get(policy, "policy_version") || "n/a"}",
-      "exception_id=#{payload_value(exception, ["exception_id"]) || "none"}",
-      "approval=#{payload_value(approval, ["decision"]) || payload_value(approval, ["status"]) || "pending"}",
-      "events=#{Map.get(summary, "event_count") || length(events)}"
-    ]
-    |> Enum.join("\n")
-  end
-
-  defp investigator_handoff(_trace), do: nil
-
-  defp precedent_query(summary, policy) do
-    %{
-      "entity_id" => Map.get(summary, "primary_entity_id"),
-      "entity_type" => Map.get(summary, "primary_entity_type"),
-      "limit" => 6,
-      "outcome" => Map.get(summary, "outcome"),
-      "policy_id" => Map.get(policy, "policy_id"),
-      "policy_version" => Map.get(policy, "policy_version")
-    }
-    |> Enum.reject(fn {_key, value} -> blank?(value) end)
-    |> Map.new()
-  end
-
-  defp trace_policy(trace) do
-    trace
-    |> get_in([:data, "events"])
-    |> trace_policy_from_events()
-  end
-
-  defp trace_policy_from_events(events) when is_list(events) do
-    events
-    |> latest_event("PolicyEvaluated")
-    |> payload_value(["policy"])
-    |> case do
-      policy when is_map(policy) -> serialize_data(policy)
-      _other -> %{}
-    end
-  end
-
-  defp trace_policy_from_events(_events), do: %{}
-
-  defp latest_event(events, event_type) when is_list(events) do
-    events
-    |> Enum.reverse()
-    |> Enum.find(&(Map.get(&1, "event_type") == event_type))
-  end
-
-  defp latest_event(_events, _event_type), do: nil
-
-  defp policy_event_summary(event) when is_map(event) do
-    payload = Map.get(event, "payload") || %{}
-
-    case Map.get(event, "event_type") do
-      "PolicyEvaluated" ->
-        payload_value(payload, ["decision"]) ||
-          payload_value(payload, ["explanation", "summary"]) ||
-          "Policy evaluated"
-
-      "ExceptionRequested" ->
-        payload_value(payload, ["exception_id"]) || "Exception requested"
-
-      "ApprovalRecorded" ->
-        payload_value(payload, ["decision"]) ||
-          payload_value(payload, ["status"]) ||
-          "Approval recorded"
-
-      "ActionProposed" ->
-        payload_value(payload, ["action_id"]) || "Action proposed"
-
-      "ActionCommitted" ->
-        payload_value(payload, ["action_id"]) || "Action committed"
-
-      "TraceFinished" ->
-        payload_value(payload, ["outcome"]) || "Trace finished"
-
-      _other ->
-        "Event recorded"
-    end
-  end
-
-  defp operator_actor_result do
-    case Api.operator_console_actor() do
-      %ServiceAccount{} = actor ->
-        {:ok, actor}
-
-      nil ->
-        {:error,
-         Errors.forbidden(
-           "Replay controls are disabled until operator_console_account_id or operator_console_actor is configured"
-         )}
-    end
-  end
-
-  defp operator_request_id(prefix) do
-    "#{prefix}-console-#{System.unique_integer([:positive])}"
-  end
-
-  defp maybe_add_alert(alerts, false, _kind, _title, _detail), do: alerts
-
-  defp maybe_add_alert(alerts, true, kind, title, detail) do
-    alerts ++ [%{"detail" => detail, "kind" => kind, "title" => title}]
-  end
-
-  defp first_recent_trace_id(%{items: [%{"trace_id" => trace_id} | _rest]}), do: trace_id
-  defp first_recent_trace_id(_section), do: nil
-
-  defp first_workflow_id(%{data: %{"items" => items}}, trace_id) when is_list(items) do
-    items
-    |> Enum.find(fn item ->
-      Map.get(item, "trace_id") == trace_id or
-        Map.get(item, "status") in ["requested", "changes_requested"]
-    end)
-    |> case do
-      %{"workflow_id" => workflow_id} -> workflow_id
-      _other -> nil
-    end
-  end
-
-  defp first_workflow_id(_section, _trace_id), do: nil
-
-  defp normalize_recent_limit(limit) when is_integer(limit) and limit > 0 do
-    min(limit, 24)
-  end
-
-  defp normalize_recent_limit(limit) do
-    limit
-    |> to_string()
-    |> Integer.parse()
-    |> case do
-      {value, ""} when value > 0 -> min(value, 24)
-      _other -> @default_recent_limit
-    end
-  end
-
-  defp normalize_event_limit(limit) when is_integer(limit) and limit > 0 do
-    min(limit, 24)
-  end
-
-  defp normalize_event_limit(limit) do
-    limit
-    |> to_string()
-    |> Integer.parse()
-    |> case do
-      {value, ""} when value > 0 -> min(value, 24)
-      _other -> @default_event_limit
-    end
-  end
-
-  defp normalize_run_limit(limit) when is_integer(limit) and limit > 0 do
-    min(limit, 12)
-  end
-
-  defp normalize_run_limit(limit) do
-    limit
-    |> to_string()
-    |> Integer.parse()
-    |> case do
-      {value, ""} when value > 0 -> min(value, 12)
-      _other -> @default_run_limit
-    end
-  end
-
-  defp normalize_failure_limit(limit) when is_integer(limit) and limit > 0 do
-    min(limit, 10)
-  end
-
-  defp normalize_failure_limit(limit) do
-    limit
-    |> to_string()
-    |> Integer.parse()
-    |> case do
-      {value, ""} when value > 0 -> min(value, 10)
-      _other -> @default_failure_limit
-    end
-  end
-
-  defp normalize_tenant_id(value) do
-    value
-    |> normalize_optional_string()
-    |> case do
-      nil -> "default"
-      tenant_id -> tenant_id
-    end
-  end
-
-  defp normalize_optional_string(nil), do: nil
-
-  defp normalize_optional_string(value) do
-    value
-    |> to_string()
-    |> String.trim()
-    |> case do
-      "" -> nil
-      normalized -> normalized
-    end
-  end
-
-  defp field_integer(map, key) do
-    case Map.get(map, key) do
-      value when is_integer(value) -> value
-      _other -> 0
-    end
-  end
-
-  defp truthy_field?(map, key), do: Map.get(map, key) in [true, "true"]
-
-  defp payload_value(nil, _path), do: nil
-  defp payload_value(value, []), do: value
-
-  defp payload_value(map, [key | rest]) when is_map(map) do
-    atom_key =
-      if is_binary(key) do
-        try do
-          String.to_existing_atom(key)
-        rescue
-          ArgumentError -> nil
-        end
-      end
-
-    next_value =
-      cond do
-        Map.has_key?(map, key) -> Map.get(map, key)
-        atom_key && Map.has_key?(map, atom_key) -> Map.get(map, atom_key)
-        true -> nil
-      end
-
-    payload_value(next_value, rest)
-  end
-
-  defp payload_value(_value, _path), do: nil
-
-  defp blank?(nil), do: true
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
-  defp blank?(_value), do: false
-
-  defp entity_label(summary) do
-    [
-      Map.get(summary, "primary_entity_system"),
-      Map.get(summary, "primary_entity_type"),
-      Map.get(summary, "primary_entity_id")
-    ]
-    |> Enum.reject(&blank?/1)
-    |> Enum.join(":")
-    |> case do
-      "" -> "unknown"
-      label -> label
-    end
-  end
-
-  defp serialize_data(value) do
-    value
-    |> Serialization.serialize()
-    |> stringify_keys()
-  end
-
-  defp stringify_keys(%_{} = struct), do: struct |> Map.from_struct() |> stringify_keys()
-
-  defp stringify_keys(map) when is_map(map) do
-    Map.new(map, fn {key, value} ->
-      normalized_key =
-        case key do
-          atom when is_atom(atom) -> Atom.to_string(atom)
-          other -> other
-        end
-
-      {normalized_key, stringify_keys(value)}
-    end)
-  end
-
-  defp stringify_keys(list) when is_list(list), do: Enum.map(list, &stringify_keys/1)
-  defp stringify_keys(value), do: value
 end

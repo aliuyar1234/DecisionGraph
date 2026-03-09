@@ -61,7 +61,25 @@ What you should see immediately:
 - an escalated exception workflow with audit history
 - a trace review workflow launched from an incident-style investigation
 
-## 4. Probe The API Surface
+## 4. Suggested 7-Minute Walkthrough
+
+If you want the fastest impressive path through the seeded console, use this order:
+
+1. stay on the live exception review route and inspect the trace timeline plus payload inspection
+2. jump down to the precedent browser and open the approved precedent trace
+3. return to the live trace and review the workflow detail plus review studio surface
+4. open the replay console and confirm the digest-alignment state before queueing any replay work
+5. switch to the incident review route and confirm that the second workflow is already overdue and escalated
+
+This gives you the shortest path through the platform's strongest story:
+
+- one tenant
+- one active exception review
+- one precedent-backed comparison
+- one incident review workflow
+- one replay-safe operator control path
+
+## 5. Probe The API Surface
 
 The seeded demo reports these API paths:
 
@@ -89,11 +107,11 @@ Example:
 curl http://localhost:4100/api/v1/projections/health -H "Authorization: Bearer dev-reader-token" -H "x-tenant-id: release-demo"
 ```
 
-## 5. Run The One-Command Release Validation
+## 6. Run The One-Command Release Validation
 
 ```bash
 cd beam
-mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
 ```
 
 This validates the real HTTP runtime by checking:
@@ -108,7 +126,14 @@ This validates the real HTTP runtime by checking:
 
 The first recorded successful run is documented in `docs/benchmarks/PHASE_10_RELEASE_VALIDATION.md`.
 
-## 6. Python Reference Demo Still Exists
+For a quieter staging-style pass that reuses existing seeded tenant data:
+
+```bash
+cd beam
+mix dg.release.validate --seed-mode reuse --quiet --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
+```
+
+## 7. Python Reference Demo Still Exists
 
 The Python package remains the semantic reference and local embedded surface.
 

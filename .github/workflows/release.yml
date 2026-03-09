@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write
   id-token: write
+  packages: write
 
 jobs:
   python-release-preflight:
@@ -57,6 +58,9 @@ jobs:
         working-directory: beam
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
       - uses: erlef/setup-beam@v1
         with:
           elixir-version: "1.19.5"
@@ -68,10 +72,17 @@ jobs:
             beam/_build
           key: ${{ runner.os }}-beam-release-${{ hashFiles('beam/mix.lock', 'beam/mix.exs', 'beam/apps/**/mix.exs') }}
       - run: mix deps.get
+      - run: python ../scripts/beam_docs_snippets_check.py --artifact-dir ../.tmp/beam-docs-snippets
       - run: mix do --app dg_store ecto.setup
         env:
           MIX_ENV: test
+      - run: mix test apps/dg_store/test/decision_graph/store/parity_test.exs
+        env:
+          MIX_ENV: test
       - run: mix test apps/dg_projector/test/decision_graph/projector/parity_test.exs
+        env:
+          MIX_ENV: test
+      - run: mix test apps/dg_projector/test/decision_graph/projector/query_parity_test.exs
         env:
           MIX_ENV: test
       - run: mix test apps/dg_web/test/decision_graph_web/controllers/api_service_e2e_test.exs
@@ -84,7 +95,7 @@ jobs:
       - run: mix dg.demo.seed --output ../.tmp/phase10-demo-report.json
         env:
           MIX_ENV: dev
-      - run: mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+      - run: mix dg.release.validate --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md --quiet --seed-mode reset
         env:
           MIX_ENV: dev
       - run: mix release decisiongraph_beam
@@ -96,9 +107,57 @@ jobs:
         with:
           name: beam-release-evidence
           path: |
+            .tmp/beam-docs-snippets
             .tmp/phase10-demo-report.json
             .tmp/phase10-release-validation.json
+            .tmp/phase10-release-validation.md
             .tmp/decisiongraph_beam-${{ github.ref_name || 'unreleased' }}.tar.gz
+
+  publish-ghcr-image:
+    name: Publish GHCR Image
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - python-release-preflight
+      - beam-release-preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v5
+        with:
+          name: beam-release-evidence
+          path: .tmp
+      - run: mkdir -p .tmp/release-root
+      - run: tar -C .tmp/release-root -xzf .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/decisiongraph-beam
+          tags: |
+            type=ref,event=tag
+            type=raw,value=latest
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - id: build_push
+        uses: docker/build-push-action@v6
+        with:
+          context: .tmp/release-root
+          file: beam/Dockerfile
+          push: true
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+      - run: |
+          printf '%s\n' "${{ steps.build_push.outputs.digest }}" > .tmp/ghcr-image-digest.txt
+          printf '%s\n' "${{ steps.meta.outputs.tags }}" > .tmp/ghcr-image-tags.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ghcr-image-metadata
+          path: |
+            .tmp/ghcr-image-digest.txt
+            .tmp/ghcr-image-tags.txt
 
   publish-github-release:
     name: Publish GitHub Release
@@ -106,6 +165,7 @@ jobs:
     needs:
       - python-release-preflight
       - beam-release-preflight
+      - publish-ghcr-image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v5
@@ -116,14 +176,28 @@ jobs:
         with:
           name: beam-release-evidence
           path: .tmp
+      - uses: actions/download-artifact@v5
+        with:
+          name: ghcr-image-metadata
+          path: .tmp
+      - uses: sigstore/cosign-installer@v3
+      - run: sha256sum .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz > .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz.sha256
+      - run: cosign sign-blob --yes --output-signature .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz.sig --output-certificate .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz.pem .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
             dist/*
+            .tmp/beam-docs-snippets/*
             .tmp/phase10-demo-report.json
             .tmp/phase10-release-validation.json
+            .tmp/phase10-release-validation.md
             .tmp/decisiongraph_beam-*.tar.gz
+            .tmp/decisiongraph_beam-*.tar.gz.sha256
+            .tmp/decisiongraph_beam-*.tar.gz.sig
+            .tmp/decisiongraph_beam-*.tar.gz.pem
+            .tmp/ghcr-image-digest.txt
+            .tmp/ghcr-image-tags.txt
 
   publish-pypi:
     name: Publish PyPI Package

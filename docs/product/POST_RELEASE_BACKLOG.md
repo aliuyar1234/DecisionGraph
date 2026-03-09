@@ -10,24 +10,41 @@ It is intentionally higher signal than a raw issue dump.
 
 ### Must Address Soon
 
-- publish signed tagged OTP release artifacts from the release workflow
-- publish a prebuilt container image from the repo Dockerfile
-- add a first-run UI bootstrap and token-rotation management experience
-- add quieter release-validator output modes or a generated human-readable summary page beside the JSON artifacts
+- [x] Post-release maintainability and contributor-experience pass
+  - [x] Split oversized modules without weakening the current public contracts:
+    - `beam/apps/dg_web/lib/decision_graph_web/live/dashboard_live.ex`
+    - `beam/apps/dg_api/lib/decision_graph/api/console.ex`
+    - `beam/apps/dg_store/lib/decision_graph/store.ex`
+    - `src/decisiongraph/api.py`
+  - [x] Make fresh-checkout setup and testing smoother for contributors:
+    - document one obvious Python dev path with test dependencies included
+    - keep the BEAM test-database bootstrap path short and explicit
+    - add lightweight smoke or verification commands for both implementation surfaces
+  - [x] Keep tightening docs, demos, and release packaging:
+    - add more screenshot, walkthrough, and demo-support assets for the seeded operator-console path
+    - keep install, validation, and packaging docs aligned to the exact supported source-first workflow
+    - keep the tagged release workflow validating the packaged OTP release and Docker image paths
+  - [x] Keep parity coverage strong as the BEAM runtime grows:
+    - extend shared golden-fixture and parity checks whenever frozen-core BEAM behavior changes
+    - classify any semantic drift explicitly instead of allowing silent divergence
+- [x] Publish signed tagged OTP release artifacts from the release workflow
+- [x] Publish a prebuilt container image from the repo Dockerfile
+- [x] Add a first-run UI bootstrap and token-rotation management experience
+- [x] Add quieter release-validator output modes or a generated human-readable summary page beside the JSON artifacts
 
 ### Next Release Candidates
 
-- add a BEAM demo screenshot pack or walkthrough asset set for docs and release notes
-- add a staging-safe validation mode that exercises production-like configs without reseeding the demo tenant
-- add a Python service client path that is explicit and documented without weakening the current semantic-authority split
-- add automated documentation snippet coverage for the BEAM install and demo commands
+- [x] Add a BEAM demo screenshot pack or walkthrough asset set for docs and release notes
+- [x] Add a staging-safe validation mode that exercises production-like configs without reseeding the demo tenant
+- [x] Add a Python service client path that is explicit and documented without weakening the current semantic-authority split
+- [x] Add automated documentation snippet coverage for the BEAM install and demo commands
 
 ### Later Opportunities
 
-- packaged installers beyond source checkout
-- multi-node or clustered deployment work if product direction changes
-- richer import flows for turning real customer-like data into demo or evaluation tenants
-- broader operator onboarding and guided console tours
+- [ ] Packaged installers beyond source checkout
+- [ ] Multi-node or clustered deployment work if product direction changes
+- [ ] Richer import flows for turning real customer-like data into demo or evaluation tenants
+- [ ] Broader operator onboarding and guided console tours
 
 ## Intake Rules
 

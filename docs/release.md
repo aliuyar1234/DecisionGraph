@@ -25,6 +25,8 @@ The supported operational posture is the same one defined during Phase 8:
 - source checkout
 - BEAM umbrella under `beam/`
 - packaged OTP release built from `mix release decisiongraph_beam`
+- signed packaged OTP release tarball attached by the tagged release workflow
+- tagged GHCR image built from `beam/Dockerfile`
 - repo-provided container build via `beam/Dockerfile`
 - optional source-building container path via `beam/Dockerfile.build`
 - repository `docker-compose.yml` for Postgres and optional OTEL
@@ -33,8 +35,6 @@ The supported operational posture is the same one defined during Phase 8:
 This release policy does not assume:
 
 - hosted SaaS operation
-- a registry-published app image
-- a guaranteed prebuilt binary release artifact
 - clustered multi-node runtime packaging
 
 ## Versioning Policy
@@ -84,6 +84,7 @@ Release is blocked until every item is complete:
 - install, upgrade, backup, restore, and restart drills have current validation notes
 - authenticated service E2E and projector recovery coverage pass
 - demo smoke checks and docs snippet checks pass
+- BEAM install and demo docs snippet checks pass
 - README, showcase, and release-facing docs are updated for the candidate release
 - no open critical or high security issue remains untriaged for the release decision
 - release notes, migration notes, and known limitations are prepared
@@ -153,6 +154,7 @@ Release is blocked until every item below is complete:
 - CI green for required workflows
 - parity, recovery, and service validation evidence current
 - docs snippet and demo smoke checks passing with artifacts attached
+- BEAM docs snippet smoke checks passing with artifacts attached
 - migration compatibility and determinism suites passing
 - Phase 10 release validation artifact captured for the current candidate
 - no open critical or high security findings without explicit sign-off

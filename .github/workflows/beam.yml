@@ -27,6 +27,9 @@ jobs:
         working-directory: beam
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
       - uses: erlef/setup-beam@v1
         with:
           elixir-version: "1.19.5"
@@ -38,13 +41,22 @@ jobs:
             beam/_build
           key: ${{ runner.os }}-beam-${{ hashFiles('beam/mix.lock', 'beam/mix.exs', 'beam/apps/**/mix.exs') }}
       - run: mix deps.get
+      - run: python ../scripts/beam_docs_snippets_check.py --artifact-dir ../.tmp/beam-docs-snippets
       - run: mix format --check-formatted
       - run: mix credo --strict
       - run: mix do --app dg_store ecto.setup
         env:
           MIX_ENV: test
+      - name: Store parity proof
+        run: mix test apps/dg_store/test/decision_graph/store/parity_test.exs
+        env:
+          MIX_ENV: test
       - name: Projector parity proof
         run: mix test apps/dg_projector/test/decision_graph/projector/parity_test.exs
+        env:
+          MIX_ENV: test
+      - name: Query parity proof
+        run: mix test apps/dg_projector/test/decision_graph/projector/query_parity_test.exs
         env:
           MIX_ENV: test
       - name: Authenticated service E2E proof

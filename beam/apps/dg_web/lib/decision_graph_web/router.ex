@@ -33,6 +33,7 @@ defmodule DecisionGraphWeb.Router do
     pipe_through :browser
 
     live "/", DashboardLive
+    live "/bootstrap", BootstrapLive
   end
 
   scope "/api", DecisionGraphWeb do

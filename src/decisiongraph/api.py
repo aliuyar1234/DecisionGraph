@@ -3,10 +3,21 @@
 This module provides the main entry point for using DecisionGraph.
 """
 
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Literal
 
+from decisiongraph.api_payloads import (
+    build_action_committed_payload,
+    build_action_proposed_payload,
+    build_approval_recorded_payload,
+    build_entity_observed_payload,
+    build_exception_requested_payload,
+    build_input_observed_payload,
+    build_policy_evaluated_payload,
+    build_precedent_cited_payload,
+    build_trace_finished_payload,
+    build_trace_started_payload,
+)
 from decisiongraph.domain.events import (
     EVENT_TYPE_ACTION_COMMITTED,
     EVENT_TYPE_ACTION_PROPOSED,
@@ -250,17 +261,7 @@ class DecisionGraph:
         if trace_id is None:
             trace_id = generate_trace_id()
 
-        payload: dict[str, Any] = {
-            "workflow": workflow,
-            "title": title,
-            "primary_entity": {
-                "entity_type": primary_entity.entity_type,
-                "entity_id": primary_entity.entity_id,
-                "system": primary_entity.system,
-            },
-        }
-        if context:
-            payload["context"] = context
+        payload = build_trace_started_payload(workflow, title, primary_entity, context)
 
         self._append_event(
             trace_id=trace_id,
@@ -280,9 +281,7 @@ class DecisionGraph:
         actor: ActorRef,
         summary: str | None = None,
     ) -> StoredEvent:
-        payload: dict[str, Any] = {"outcome": outcome}
-        if summary:
-            payload["summary"] = summary
+        payload = build_trace_finished_payload(outcome, summary)
 
         return self._append_event(
             trace_id=trace_id,
@@ -308,11 +307,7 @@ class DecisionGraph:
         tags: list[str] | None = None,
         occurred_at: str | None = None,
     ) -> StoredEvent:
-        payload = {
-            "input_id": input_id,
-            "source": asdict(input_source),
-            "facts": [asdict(fact) for fact in facts],
-        }
+        payload = build_input_observed_payload(input_id, input_source, facts)
         return self._append_structured_event(
             trace_id,
             EVENT_TYPE_INPUT_OBSERVED,
@@ -342,11 +337,7 @@ class DecisionGraph:
         tags: list[str] | None = None,
         occurred_at: str | None = None,
     ) -> StoredEvent:
-        payload = {
-            "entity": asdict(entity),
-            "role": role,
-            "facts": [asdict(fact) for fact in facts],
-        }
+        payload = build_entity_observed_payload(entity, role, facts)
         return self._append_structured_event(
             trace_id,
             EVENT_TYPE_ENTITY_OBSERVED,
@@ -378,15 +369,13 @@ class DecisionGraph:
         tags: list[str] | None = None,
         occurred_at: str | None = None,
     ) -> StoredEvent:
-        payload: dict[str, Any] = {
-            "policy": asdict(policy),
-            "inputs": inputs,
-            "decision": decision,
-        }
-        if violations:
-            payload["violations"] = [asdict(violation) for violation in violations]
-        if explanation:
-            payload["explanation"] = explanation
+        payload = build_policy_evaluated_payload(
+            policy,
+            inputs,
+            decision,
+            violations,
+            explanation,
+        )
         return self._append_structured_event(
             trace_id,
             EVENT_TYPE_POLICY_EVALUATED,
@@ -417,13 +406,12 @@ class DecisionGraph:
         tags: list[str] | None = None,
         occurred_at: str | None = None,
     ) -> StoredEvent:
-        payload: dict[str, Any] = {
-            "exception_id": exception_id,
-            "policy": asdict(policy),
-            "reason": reason,
-        }
-        if evidence:
-            payload["evidence"] = [asdict(item) for item in evidence]
+        payload = build_exception_requested_payload(
+            exception_id,
+            policy,
+            reason,
+            evidence,
+        )
         return self._append_structured_event(
             trace_id,
             EVENT_TYPE_EXCEPTION_REQUESTED,
@@ -456,16 +444,14 @@ class DecisionGraph:
         tags: list[str] | None = None,
         occurred_at: str | None = None,
     ) -> StoredEvent:
-        payload: dict[str, Any] = {
-            "approval_id": approval_id,
-            "subject": asdict(subject),
-            "approver": asdict(approver),
-            "decision": decision,
-        }
-        if reason is not None:
-            payload["reason"] = reason
-        if evidence:
-            payload["evidence"] = [asdict(item) for item in evidence]
+        payload = build_approval_recorded_payload(
+            approval_id,
+            subject,
+            approver,
+            decision,
+            reason,
+            evidence,
+        )
         return self._append_structured_event(
             trace_id,
             EVENT_TYPE_APPROVAL_RECORDED,
@@ -495,12 +481,11 @@ class DecisionGraph:
         tags: list[str] | None = None,
         occurred_at: str | None = None,
     ) -> StoredEvent:
-        payload: dict[str, Any] = {
-            "cited_trace_id": cited_trace_id,
-            "reason": reason,
-        }
-        if similarity_score is not None:
-            payload["similarity_score"] = similarity_score
+        payload = build_precedent_cited_payload(
+            cited_trace_id,
+            reason,
+            similarity_score,
+        )
         return self._append_structured_event(
             trace_id,
             EVENT_TYPE_PRECEDENT_CITED,
@@ -532,13 +517,13 @@ class DecisionGraph:
         tags: list[str] | None = None,
         occurred_at: str | None = None,
     ) -> StoredEvent:
-        payload = {
-            "action_id": action_id,
-            "action_type": action_type,
-            "target_entity": asdict(target_entity),
-            "target_system": target_system,
-            "changes": [asdict(change) for change in changes],
-        }
+        payload = build_action_proposed_payload(
+            action_id,
+            action_type,
+            target_entity,
+            target_system,
+            changes,
+        )
         return self._append_structured_event(
             trace_id,
             EVENT_TYPE_ACTION_PROPOSED,
@@ -569,14 +554,12 @@ class DecisionGraph:
         tags: list[str] | None = None,
         occurred_at: str | None = None,
     ) -> StoredEvent:
-        payload: dict[str, Any] = {
-            "action_id": action_id,
-            "status": status,
-        }
-        if external_reference is not None:
-            payload["external_reference"] = external_reference
-        if error is not None:
-            payload["error"] = error
+        payload = build_action_committed_payload(
+            action_id,
+            status,
+            external_reference,
+            error,
+        )
         return self._append_structured_event(
             trace_id,
             EVENT_TYPE_ACTION_COMMITTED,

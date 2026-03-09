@@ -21,6 +21,7 @@ mix credo --strict
 mix dialyzer
 mix test
 mix test apps/dg_store/test
+python ../scripts/beam_docs_snippets_check.py --artifact-dir ../.tmp/beam-docs-snippets
 ```
 
 `mix check` currently runs formatter validation, Credo, and the umbrella test suite. Dialyzer runs as its own gate locally and in CI.
@@ -94,7 +95,14 @@ Validate the supported release path with the real HTTP runtime:
 
 ```bash
 cd beam
-mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
+```
+
+For a quieter staging-style validation pass that reuses existing seeded data:
+
+```bash
+cd beam
+mix dg.release.validate --seed-mode reuse --quiet --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
 ```
 
 That release validator checks:
@@ -112,6 +120,9 @@ Generate a production-style bootstrap file:
 cd beam
 mix dg.accounts.bootstrap --output ../.tmp/service-accounts.json
 ```
+
+Once the Phoenix app is running, `/bootstrap` provides a first-run bootstrap preview plus
+token-rotation overlap guidance for the currently configured service accounts.
 
 Build the OTP release artifact:
 
@@ -138,6 +149,11 @@ cd beam
 mix release decisiongraph_beam
 docker build -f Dockerfile -t decisiongraph-beam:local _build/prod/rel
 ```
+
+Tagged GitHub releases now support:
+
+- a signed packaged OTP tarball attached to the GitHub Release
+- a prebuilt GHCR image built from `beam/Dockerfile`
 
 That default image packages the already-built OTP release from `_build/prod/rel/decisiongraph_beam` and uses `_build/prod/rel` as the Docker build context.
 
@@ -175,6 +191,8 @@ The repo-level BEAM workflow lives in `.github/workflows/beam.yml` and runs:
 
 - `mix format --check-formatted`
 - `mix credo --strict`
+- `python ../scripts/beam_docs_snippets_check.py --artifact-dir ../.tmp/beam-docs-snippets`
+- store, projector, and query parity proofs
 - `mix test`
 - `mix dialyzer`
 

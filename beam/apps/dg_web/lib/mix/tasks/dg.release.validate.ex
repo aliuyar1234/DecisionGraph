@@ -12,6 +12,7 @@ defmodule Mix.Tasks.Dg.Release.Validate do
   @requirements ["loadpaths"]
   @default_port 4105
   @default_timeout_ms 5_000
+  @default_seed_mode :reset
 
   @impl true
   def run(args) do
@@ -27,8 +28,8 @@ defmodule Mix.Tasks.Dg.Release.Validate do
     seeded =
       ReleaseDemo.seed(
         tenant_id: Keyword.fetch!(opts, :tenant_id),
-        reset: true,
-        rebuild: true
+        reset: Keyword.fetch!(opts, :seed_mode) == :reset,
+        rebuild: not Keyword.fetch!(opts, :skip_rebuild)
       )
 
     base_url = "http://127.0.0.1:#{Keyword.fetch!(opts, :port)}"
@@ -54,12 +55,19 @@ defmodule Mix.Tasks.Dg.Release.Validate do
         database: Repo.config()[:database],
         mix_env: Mix.env() |> to_string(),
         port: Keyword.fetch!(opts, :port),
+        seed_mode: Keyword.fetch!(opts, :seed_mode) |> Atom.to_string(),
+        skip_rebuild: Keyword.fetch!(opts, :skip_rebuild),
         tenant_id: Keyword.fetch!(opts, :tenant_id)
       }
     }
 
     maybe_write_report(report, Keyword.get(opts, :output))
-    print_report(report)
+    maybe_write_summary(report, Keyword.get(opts, :summary_output))
+    maybe_write_step_summary(report)
+
+    unless Keyword.fetch!(opts, :quiet) do
+      print_report(report)
+    end
 
     unless report.success? do
       Mix.raise("DecisionGraph self-hosted release validation failed")
@@ -69,7 +77,15 @@ defmodule Mix.Tasks.Dg.Release.Validate do
   defp parse_args!(args) do
     {opts, _argv, invalid} =
       OptionParser.parse(args,
-        strict: [output: :string, port: :integer, tenant_id: :string],
+        strict: [
+          output: :string,
+          port: :integer,
+          quiet: :boolean,
+          seed_mode: :string,
+          skip_rebuild: :boolean,
+          summary_output: :string,
+          tenant_id: :string
+        ],
         aliases: [o: :output]
       )
 
@@ -80,8 +96,20 @@ defmodule Mix.Tasks.Dg.Release.Validate do
     [
       output: Keyword.get(opts, :output),
       port: Keyword.get(opts, :port, @default_port),
+      quiet: Keyword.get(opts, :quiet, false),
+      seed_mode: normalize_seed_mode(Keyword.get(opts, :seed_mode, @default_seed_mode)),
+      skip_rebuild: Keyword.get(opts, :skip_rebuild, false),
+      summary_output: Keyword.get(opts, :summary_output),
       tenant_id: Keyword.get(opts, :tenant_id, ReleaseDemo.default_tenant_id())
     ]
+  end
+
+  defp normalize_seed_mode(mode) when mode in [:reset, "reset"], do: :reset
+  defp normalize_seed_mode(mode) when mode in [:reuse, "reuse"], do: :reuse
+
+  defp normalize_seed_mode(mode) do
+    raise ArgumentError,
+          "Unsupported dg.release.validate --seed-mode #{inspect(mode)}. Expected reset or reuse."
   end
 
   defp configure_endpoint!(port) do
@@ -383,6 +411,26 @@ defmodule Mix.Tasks.Dg.Release.Validate do
     File.write!(output_path, Jason.encode_to_iodata!(report, pretty: true))
   end
 
+  defp maybe_write_summary(_report, nil), do: :ok
+
+  defp maybe_write_summary(report, output_path) do
+    output_path |> Path.dirname() |> File.mkdir_p!()
+    File.write!(output_path, summary_markdown(report))
+  end
+
+  defp maybe_write_step_summary(report) do
+    case System.get_env("GITHUB_STEP_SUMMARY") do
+      nil ->
+        :ok
+
+      "" ->
+        :ok
+
+      step_summary_path ->
+        File.write!(step_summary_path, summary_markdown(report), [:append])
+    end
+  end
+
   defp print_report(report) do
     IO.puts("""
     DecisionGraph self-hosted release validation
@@ -394,6 +442,28 @@ defmodule Mix.Tasks.Dg.Release.Validate do
     Checks
     #{Enum.map_join(report.checks, "\n", &"  #{&1["status"]} #{&1["name"]}: #{&1["detail"]}")}
     """)
+  end
+
+  defp summary_markdown(report) do
+    checks =
+      Enum.map_join(report.checks, "\n", fn check ->
+        "- `#{check["status"]}` `#{check["name"]}`: #{check["detail"]}"
+      end)
+
+    """
+    ## DecisionGraph release validation
+
+    - release candidate: `#{report.release_candidate}`
+    - endpoint: `#{report.endpoint}`
+    - tenant id: `#{report.topology.tenant_id}`
+    - seed mode: `#{report.topology.seed_mode}`
+    - skip rebuild: `#{report.topology.skip_rebuild}`
+    - success: `#{report.success?}`
+
+    ### Checks
+
+    #{checks}
+    """
   end
 
   defp ensure_non_sandbox_pool! do

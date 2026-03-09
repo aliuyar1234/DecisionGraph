@@ -123,7 +123,14 @@ To validate the whole release candidate path in one command:
 
 ```bash
 cd beam
-mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
+```
+
+To validate a staging-style tenant without resetting existing seeded data:
+
+```bash
+cd beam
+mix dg.release.validate --seed-mode reuse --quiet --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
 ```
 
 Generate a rotate-friendly bootstrap file for a self-hosted install:
@@ -133,11 +140,39 @@ cd beam
 mix dg.accounts.bootstrap --output ../.tmp/service-accounts.json
 ```
 
+After the Phoenix app is running, operators can also open `http://localhost:4100/bootstrap`
+to preview a first-run bootstrap payload and plan token overlap during rotation without
+hand-authoring JSON.
+
 Build the packaged BEAM release:
 
 ```bash
 cd beam
 mix release decisiongraph_beam
+```
+
+Tagged GitHub releases can now publish:
+
+- a signed packaged OTP tarball attached to the GitHub Release
+- a prebuilt GHCR image derived from `beam/Dockerfile`
+
+## Python Service Client
+
+The local `DecisionGraph(...)` API remains the semantic reference and embedded mode.
+If you want Python to talk to the authenticated BEAM HTTP service explicitly, use
+`decisiongraph.service_client.DecisionGraphServiceClient`:
+
+```python
+from decisiongraph.service_client import DecisionGraphServiceClient
+
+client = DecisionGraphServiceClient(
+    base_url="http://127.0.0.1:4100",
+    bearer_token="dev-reader-token",
+    tenant_id="release-demo",
+)
+
+health = client.get_projection_health()
+trace = client.get_trace("trace-live-renewal-002")
 ```
 
 ## BEAM Runtime
@@ -177,7 +212,7 @@ Release-candidate and platform evidence:
 ```bash
 cd beam
 mix dg.demo.seed --output ../.tmp/phase10-demo-report.json
-mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
 ```
 
 Quality gates:
@@ -274,7 +309,8 @@ docker compose up postgres otel-collector -d
 cd beam
 mix setup
 mix dg.demo.seed --output ../.tmp/phase10-demo-report.json
-mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
+python ../scripts/beam_docs_snippets_check.py --artifact-dir ../.tmp/beam-docs-snippets
 ```
 
 Python reference demo:
@@ -344,11 +380,20 @@ uv run python demo/run_llm_demo.py --backend ollama --ollama-model qwen2.5:0.5b 
 ## Development
 
 ```bash
-uv sync --extra dev
+uv sync --extra dev --extra postgres
 uv run ruff check src demo scripts tests
 uv run mypy src
 uv run lint-imports
 uv run pytest -q
+```
+
+```bash
+docker compose up postgres otel-collector -d
+cd beam
+mix setup
+mix do --app dg_store ecto.setup
+mix test
+python ../scripts/beam_docs_snippets_check.py --artifact-dir ../.tmp/beam-docs-snippets
 ```
 
 ## Repository Layout

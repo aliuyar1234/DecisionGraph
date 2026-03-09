@@ -11,15 +11,12 @@ The supported self-hosted release artifacts today are:
 - a git tag or GitHub source archive for this repository
 - the `beam/` umbrella application
 - a packaged OTP release built from `mix release decisiongraph_beam`
+- a signed packaged OTP release tarball attached by the tagged release workflow
+- a tagged GHCR image built from `beam/Dockerfile`
 - a repo-provided container build path via `beam/Dockerfile`
 - an optional source-building container path via `beam/Dockerfile.build`
 - the repo `docker-compose.yml` for Postgres and optional OTEL
 - operator docs and runbooks under `docs/`
-
-Current non-artifacts:
-
-- there is no guaranteed prebuilt published container image
-- there is no guaranteed prebuilt published OTP release asset
 
 ## Supported Entry Paths
 
@@ -28,6 +25,7 @@ Supported:
 - source checkout plus local or nearby Postgres
 - source checkout plus Docker-managed Postgres from `docker-compose.yml`
 - packaged OTP release plus local or nearby Postgres
+- tagged GHCR image plus operator-supplied runtime env and service-account bootstrap file
 - repo-built container image plus operator-supplied runtime env and service-account bootstrap file
 
 Optional:
@@ -46,6 +44,7 @@ Not currently supported:
 - `mix setup` succeeds on the supported source path
 - `mix release decisiongraph_beam` succeeds
 - `docker build -f Dockerfile -t decisiongraph-beam:release _build/prod/rel` succeeds from `beam/` after the release is built
+- the tagged release workflow publishes the signed OTP tarball plus GHCR image metadata successfully
 - `/api/healthz` and authenticated projection health smoke checks pass
 - backup artifact creation succeeds
 - restore drill succeeds against a throwaway database
@@ -103,10 +102,13 @@ mix setup
 set DG_RUN_SERVICE_E2E=1
 set MIX_ENV=test
 mix test apps/dg_projector/test/decision_graph/projector/parity_test.exs
+mix test apps/dg_store/test/decision_graph/store/parity_test.exs
+mix test apps/dg_projector/test/decision_graph/projector/query_parity_test.exs
 mix test apps/dg_web/test/decision_graph_web/controllers/api_service_e2e_test.exs
 set MIX_ENV=dev
 mix dg.demo.seed --output ../.tmp/phase10-demo-report.json
-mix dg.release.validate --output ../.tmp/phase10-release-validation.json
+python ../scripts/beam_docs_snippets_check.py --artifact-dir ../.tmp/beam-docs-snippets
+mix dg.release.validate --output ../.tmp/phase10-release-validation.json --summary-output ../.tmp/phase10-release-validation.md
 set MIX_ENV=prod
 mix release decisiongraph_beam
 docker build -f Dockerfile -t decisiongraph-beam:release _build/prod/rel
@@ -138,4 +140,4 @@ This checklist is intentionally matched to the current self-hosted story:
 - packaged OTP release path
 - release-derived Docker build path
 
-If the project later publishes signed binary releases or registry-hosted images, this checklist should expand again rather than pretending those distribution steps already exist.
+This checklist should expand again if the release workflow later adds stronger distribution guarantees such as broader installer formats or multi-node packaging.

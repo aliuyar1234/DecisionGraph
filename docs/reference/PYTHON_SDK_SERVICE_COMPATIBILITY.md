@@ -79,12 +79,12 @@ Those differences are acceptable as long as the underlying semantic outcomes sta
 
 ## Chosen Bridge Direction
 
-Phase 9 does not require a Python-to-BEAM bridge for semantic authority, because Python remains the reference.
+Phase 9 did not require a Python-to-BEAM bridge for semantic authority, because Python remains the reference.
 
-If the project later adds a Python service client anyway, the bridge direction is:
+The project has now added an explicit Python service client, and the bridge direction is:
 
 - keep `DecisionGraph` as the explicit local/reference API
-- add a separate explicit BEAM service client surface
+- add and preserve a separate explicit BEAM service client surface at `decisiongraph.service_client`
 - keep migration from local mode to service mode opt-in and visible in code
 
 The project explicitly rejects:
@@ -98,20 +98,20 @@ The project explicitly rejects:
 What exists now:
 
 - a first authenticated `/api/v1` BEAM service surface
+- an explicit Python `DecisionGraphServiceClient` for authenticated BEAM HTTP access
 - projection-backed trace, graph, precedent, and health endpoints
 - replay and rebuild admin routes with tenant-aware guards
 
 What does not exist yet:
 
-- a full Python client SDK that wraps the BEAM service
-- a committed long-term policy for when Python helpers should auto-route to HTTP
 - a stable public migration layer from local Python storage to remote BEAM service usage
 
-The second item above is now resolved:
+What is resolved in a deliberately narrow way:
 
+- the repo now ships an explicit transport client, not a hidden replacement for `DecisionGraph`
 - Python helpers should not auto-route to HTTP
 
-The remaining open item is not policy ambiguity anymore; it is whether the project actually wants to build the explicit client surface for convenience.
+The remaining open item is not policy ambiguity anymore; it is how much migration convenience the project wants beyond the explicit client surface.
 
 ## Recommended Compatibility Rule
 
@@ -172,10 +172,10 @@ This repo must not change local Python APIs into remote-default APIs in a patch 
 After Phase 9:
 
 - use Python for semantic reference and embedded workflows
-- use BEAM HTTP directly for shared runtime integration
+- use BEAM HTTP directly for shared runtime integration, either over raw HTTP or through `DecisionGraphServiceClient`
 - keep parity tests grounded in the frozen fixture bundle and reference contracts
 
-If a client is added later:
+With the explicit client now available:
 
 - keep local and remote modes separate and explicit
 - preserve semantic error categories across both modes

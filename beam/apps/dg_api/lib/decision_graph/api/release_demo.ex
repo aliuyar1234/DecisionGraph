@@ -159,6 +159,40 @@ defmodule DecisionGraph.Api.ReleaseDemo do
     }
   end
 
+  @spec reference_snapshot(keyword()) :: map()
+  def reference_snapshot(opts \\ []) do
+    tenant_id = Keyword.get(opts, :tenant_id, @default_tenant_id) |> normalize_required_string()
+    events = build_events()
+
+    %{
+      api_examples: %{
+        export_workflow_path: "/api/v1/admin/workflows/#{incident_review_workflow_id()}/export",
+        projection_health_path: "/api/v1/projections/health",
+        recent_workflows_path: "/api/v1/workflows",
+        selected_trace_path: "/api/v1/traces/#{@live_trace_id}"
+      },
+      console_paths: %{
+        default: operator_console_path(tenant_id, @live_trace_id, live_workflow_id()),
+        incident_review:
+          operator_console_path(tenant_id, @incident_trace_id, incident_review_workflow_id())
+      },
+      event_count: length(events),
+      highlighted_traces: highlighted_traces(),
+      live_trace: %{
+        event_count: Enum.count(events, &(&1.trace_id == @live_trace_id)),
+        trace_id: @live_trace_id,
+        workflow_id: live_workflow_id()
+      },
+      precedent_trace_id: @precedent_trace_id,
+      review_workflow: %{
+        trace_id: @incident_trace_id,
+        workflow_id: incident_review_workflow_id()
+      },
+      seed_profile: @seed_profile,
+      tenant_id: tenant_id
+    }
+  end
+
   @spec highlighted_traces() :: [map()]
   def highlighted_traces do
     [

@@ -31,12 +31,12 @@ The plan is:
 
 - keep `decisiongraph` as the Python package name
 - keep `DecisionGraph` as the explicit local embedded/reference surface
-- introduce a separate explicit Python service client surface for BEAM-backed operation
+- introduce and preserve a separate explicit Python service client surface for BEAM-backed operation
 - keep parity/reference assets in Python even if authority later moves to Elixir
 
-Recommended future service-client shape:
+Current explicit service-client shape:
 
-- `decisiongraph.service.DecisionGraphServiceClient`
+- `decisiongraph.service_client.DecisionGraphServiceClient`
 
 Optional convenience factory if it is later implemented:
 
@@ -110,7 +110,7 @@ Python can still consume these features, but it should do so through an explicit
 
 ## Python Method Mapping
 
-If a Python service client is added, the mapping should follow the current BEAM HTTP service surface.
+The explicit Python service client should follow the current BEAM HTTP service surface.
 
 Suggested mapping:
 
@@ -142,7 +142,7 @@ Rules:
 
 ## Auth and Tenant Model
 
-The future Python service client should make BEAM auth explicit:
+The explicit Python service client should make BEAM auth explicit:
 
 - `base_url`
 - bearer token
@@ -184,9 +184,9 @@ During any authority-handoff candidate period:
 
 Recommended rollout order:
 
-1. Current state: Python authoritative, no Python service client required
-2. Bridge introduction: add explicit Python service client without changing existing local Python behavior
-3. Dual-support period: local Python remains available while BEAM-backed Python client is documented and tested
+1. Current state: Python authoritative, explicit Python service client available but optional
+2. Bridge introduction: keep the explicit Python service client additive without changing existing local Python behavior
+3. Dual-support period: local Python remains available while the BEAM-backed Python client is documented and tested
 4. Authority decision: decide whether Python stays authoritative or Elixir becomes authoritative
 5. Post-decision cleanup: deprecate only what is explicitly chosen, never by implication
 
@@ -196,5 +196,5 @@ For the current repo state:
 
 - keep the existing Python package local and explicit
 - do not add silent transport magic
-- if a Python service client is built, make it a separate explicit surface
+- keep the Python service client as a separate explicit surface
 - preserve local or reference Python tooling as part of the long-term product split
