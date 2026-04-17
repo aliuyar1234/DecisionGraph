@@ -25,11 +25,11 @@ jobs:
       - run: uv run python scripts/demo_smoke_check.py --artifact-dir .tmp/demo-smoke
       - run: uv run python scripts/docs_snippets_check.py --artifact-dir .tmp/docs-snippets
       - run: uv run python -m build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: python-dist
           path: dist/*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: python-release-preflight
           path: |
@@ -65,7 +65,7 @@ jobs:
         with:
           elixir-version: "1.19.5"
           otp-version: "28.2"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             beam/deps
@@ -103,7 +103,7 @@ jobs:
           MIX_ENV: prod
       - run: tar -C _build/prod/rel -czf ../.tmp/decisiongraph_beam-${{ github.ref_name || 'unreleased' }}.tar.gz decisiongraph_beam
       - run: docker build -f Dockerfile -t decisiongraph-beam:release _build/prod/rel
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: beam-release-evidence
           path: |
@@ -122,27 +122,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: beam-release-evidence
           path: .tmp
       - run: mkdir -p .tmp/release-root
       - run: tar -C .tmp/release-root -xzf .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/decisiongraph-beam
           tags: |
             type=ref,event=tag
             type=raw,value=latest
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
       - id: build_push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .tmp/release-root
           file: beam/Dockerfile
@@ -152,7 +152,7 @@ jobs:
       - run: |
           printf '%s\n' "${{ steps.build_push.outputs.digest }}" > .tmp/ghcr-image-digest.txt
           printf '%s\n' "${{ steps.meta.outputs.tags }}" > .tmp/ghcr-image-tags.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ghcr-image-metadata
           path: |
@@ -168,22 +168,22 @@ jobs:
       - publish-ghcr-image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: python-dist
           path: dist
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: beam-release-evidence
           path: .tmp
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: ghcr-image-metadata
           path: .tmp
       - uses: sigstore/cosign-installer@v3
       - run: sha256sum .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz > .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz.sha256
       - run: cosign sign-blob --yes --output-signature .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz.sig --output-certificate .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz.pem .tmp/decisiongraph_beam-${{ github.ref_name }}.tar.gz
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           files: |
@@ -208,11 +208,11 @@ jobs:
       - publish-github-release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: python-dist
           path: dist
-      - uses: pypa/gh-action-pypi-publish@v1.13.0
+      - uses: pypa/gh-action-pypi-publish@v1.14.0
         with:
           packages-dir: dist
           print-hash: true

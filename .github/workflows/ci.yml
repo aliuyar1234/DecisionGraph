@@ -56,7 +56,7 @@ jobs:
       - run: uv run lint-imports
       - run: uv run pytest --cov=decisiongraph --cov-branch --cov-report=xml --cov-fail-under=75
       - run: python -c "import os; assert os.path.exists('coverage.xml') and os.path.getsize('coverage.xml') > 0, 'coverage.xml missing or empty'"
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           files: ./coverage.xml
           disable_search: true
